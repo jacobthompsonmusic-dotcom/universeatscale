@@ -126,6 +126,7 @@ def block(f, p):
         f'<meta name="twitter:title" content="{t}">',
         f'<meta name="twitter:description" content="{d}">',
         f'<meta name="twitter:image" content="{img}">',
+        *(['<meta name="msvalidate.01" content="AE41016DF86C9910A0C934ABB196E6EF">'] if f == 'index.html' else []),
         ld(graph(f, p)),
         '<!-- seo:end -->'])
 
