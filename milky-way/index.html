@@ -2080,7 +2080,7 @@ const FIELD_IDX = []; for (let i = 0; i < NF; i++) if (fname[i]) FIELD_IDX.push(
 // On the joined page the search box also finds the planets and moons in the Solar System map (asked through the page that holds both)
 const sepRow = t => `<div style="padding:6px 12px 3px;font:600 10px Inter,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:rgba(200,205,222,.55)">${t}</div>`;
 let localHits = [], extHits = [], searchId = 0;
-function chooseHit(o) { if (!o) return; sIn.blur(); sRes.style.display = 'none'; if (o.ext) parent.postMessage({ src: 'uas-mw', pick: { map: 'ss', name: o.name } }, '*'); else select(o, true); }
+function chooseHit(o) { if (!o) return; sIn.blur(); sRes.style.display = 'none'; if (o.ext) { sIn.value = ''; hits = []; } if (o.ext) parent.postMessage({ src: 'uas-mw', pick: { map: 'ss', name: o.name } }, '*'); else select(o, true); }
 function searchHere(q, n) {
   const score = o => { const nm = o.name.toLowerCase(); return nm.startsWith(q) ? 0 : nm.includes(q) ? 1 : 2; };
   const main = [...OBJ, ...REGIONS, ...VOIDS].filter(o => (o.name + ' ' + TYPES[o.type].label + ' ' + (o.con || '')).toLowerCase().includes(q));
