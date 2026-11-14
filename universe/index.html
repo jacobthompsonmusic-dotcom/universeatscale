@@ -111,8 +111,22 @@ function mark(spanLy) {   // light up the stop nearest the current scale
   for (const b of buttons) b.classList.toggle('on', b === best);
 }
 
+// one search box for both maps: pass each map's query to the other, the answers back, and a pick to the right map
+function relaySearch(m, fromSS) {
+  if (m.search !== undefined) { (fromSS ? toMW : toSS)({ cmd: 'search', q: m.search, id: m.id }); return true; }
+  if (m.results !== undefined) { (fromSS ? toMW : toSS)({ cmd: 'results', results: m.results, id: m.id }); return true; }
+  if (m.pick) {   // travel there the way the ladder does: pull out to the galaxy map, or dive back through the Sun, then fly to it
+    const s = { map: m.pick.map, cmd: { cmd: 'pick', name: m.pick.name } };
+    if (s.map === st.driver) { (s.map === 'ss' ? toSS : toMW)(s.cmd); return true; }
+    st.pending = s;
+    if (s.map === 'ss') { if (st.ssReady) toMW({ cmd: 'dive' }); } else toSS({ cmd: 'fly', key: 'far', span: 6.15 });
+    return true;
+  }
+  return false;
+}
 addEventListener('message', e => {
   const m = e.data; if (!m || typeof m !== 'object') return;
+  if ((m.src === 'uas-ss' && e.source === ssEl.contentWindow && relaySearch(m, true)) || (m.src === 'uas-mw' && e.source === mwEl.contentWindow && relaySearch(m, false))) return;
   if (m.src === 'uas-ss' && e.source === ssEl.contentWindow) {
     if (m.ready) {
       st.ssReady = true; toMW({ cmd: 'ssready' });
