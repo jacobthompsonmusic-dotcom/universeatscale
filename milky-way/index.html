@@ -60,6 +60,10 @@
   #info dd { margin: 0; }
   #info dd.src { color: #a9b0c6; font-size: 12px; }
   #info .blurb { margin: 0; color: #c9cee0; font-size: 13.5px; }
+  canvas#bh { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+  #bhnote { position: fixed; left: 50%; bottom: 64px; transform: translateX(-50%); display: none; max-width: min(620px, calc(100% - 32px)); text-align: center;
+    font: 400 11.5px/1.45 Inter, sans-serif; color: rgba(214,218,232,0.78); text-shadow: 0 1px 3px #000; pointer-events: none; }
+  #bhnote b { color: #ffd9a0; font-weight: 600; }
   #gc { position: fixed; left: 0; top: 0; z-index: 4; display: none; padding: 3px 10px 3px 8px; border-radius: 999px; border: 1px solid rgba(201,182,255,0.45);
     background: rgba(16,14,24,0.72); color: rgba(214,200,255,0.92); font: 500 12px Inter, sans-serif; white-space: nowrap; cursor: pointer; text-shadow: 0 1px 2px #000; }
   #gc .arr { display: inline-block; margin-right: 6px; color: #c9b6ff; }
@@ -114,6 +118,60 @@
 </head>
 <body>
 <canvas id="map"></canvas>
+<canvas id="bh"></canvas>
+<div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
+<script type="x-shader/x-fragment" id="bh-fs">precision highp float;
+uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
+uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
+uniform float uT, uA, uSpot, uDark;               // time (Rs/c), fade, flare strength, how much to darken the sky behind
+// units: Schwarzschild radius Rs = 1, c = 1. Photon paths follow the Schwarzschild null geodesic, written as x'' = -1.5 h² x / r⁵
+float hash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float vnoise(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(hash(i), hash(i + vec3(1,0,0)), f.x), mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x), mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z); }
+float fbm(vec3 p) { return 0.55 * vnoise(p) + 0.3 * vnoise(p * 2.03 + 7.1) + 0.15 * vnoise(p * 4.1 + 3.3); }
+// turbulent gas, sheared by differential rotation: two generations of pattern, each wound up for a while then faded out
+float turb(vec3 p, float R, float om) {
+  float s = 0.0;
+  for (int k = 0; k < 2; k++) {
+    float T = 90.0, age = mod(uT + float(k) * T * 0.5, T), w = sin(3.14159265 * age / T);
+    float ph = atan(p.y, p.x) - om * age, lr = log(R);
+    s += w * w * fbm(vec3(cos(ph) * 2.2 + lr * 3.0, sin(ph) * 2.2 - lr * 1.5, p.z * 1.2 / max(R, 1.0) + float(k) * 17.0));
+  }
+  return s;
+}
+void main() {
+  vec2 b = (gl_FragCoord.xy - uC) / uPx;
+  if (length(b) > 34.0) { gl_FragColor = vec4(0.0, 0.0, 0.0, uDark); return; }
+  vec3 pos = uR * b.x + uU * b.y + uF * 42.0, vel = -uF;
+  float h2 = dot(cross(pos, vel), cross(pos, vel)), I = 0.0; bool hole = false;
+  vec3 sp = 4.0 * vec3(cos(0.0884 * uT), sin(0.0884 * uT), 0.0);   // the flare: a hot spot orbiting at 4 Rs, once every ~50 minutes
+  for (int i = 0; i < 320; i++) {
+    float r = length(pos);
+    if (r < 1.0) { hole = true; break; }
+    if (r > 46.0 && dot(pos, vel) > 0.0) break;
+    float dt = clamp(0.05 * r, 0.02, 0.9);
+    // emission: a hot, puffy, optically thin flow (not a thin bright disc), densest near the hole
+    float R = length(pos.xy), H = 0.42 * R + 0.25;
+    float j = pow(r, -3.2) * exp(-pos.z * pos.z / (2.0 * H * H)) * smoothstep(1.0, 1.7, r) * (1.0 - smoothstep(9.0, 24.0, r));
+    float js = uSpot * 0.55 * exp(-dot(pos - sp, pos - sp) / 0.5);
+    if (j + js > 1e-5) {
+      float Rc = max(R, 1.5), v = min(sqrt(0.5 / Rc), 0.62), om = v / Rc;
+      vec3 beta = v * normalize(vec3(-pos.y, pos.x, 0.0) + 1e-6);
+      if (r < 3.0) beta += -0.25 * (3.0 - r) / 2.0 * normalize(vec3(pos.xy, 0.0) + 1e-6);   // inside the last stable orbit the gas plunges in
+      vec3 k = -normalize(vel);                                                       // the way the light is actually going: toward us
+      float g = sqrt(max(1.0 - 1.0 / r, 0.0)) * sqrt(max(1.0 - dot(beta, beta), 0.0)) / (1.0 - dot(beta, k));
+      I += (j * (0.35 + 1.3 * turb(pos, Rc, om)) + js) * pow(g, 4.0) * dt;
+    }
+    vec3 acc = -1.5 * h2 * pos / pow(r, 5.0);
+    vel += acc * dt; pos += vel * dt;
+  }
+  float x = 1.0 - exp(-I * 5.5);
+  vec3 col = vec3(clamp(1.5 * x, 0.0, 1.0), clamp(1.7 * x - 0.55, 0.0, 1.0), clamp(2.0 * x - 1.3, 0.0, 1.0));   // false colour, after the EHT's palette
+  float a = max(hole ? 1.0 : 0.0, max(col.r, max(col.g, col.b)));
+  gl_FragColor = vec4(col, a) * uA + (1.0 - a * uA) * vec4(0.0, 0.0, 0.0, uDark);
+}
+</script>
 
 <div id="top" class="panel">
   <a class="homelink" href="../index.html">← All maps · Universe at Scale</a>
@@ -384,6 +442,7 @@ const GALAXIES = [
   return { name, type, d, l, b, diam, sprite, tilt, aspect, pr, con, blurb, src: GSRC[name] || null, gal: true, mw: name === 'Milky Way', ...p };
 });
 OBJ.push(...GALAXIES);
+const GCO = OBJ.find(o => o.name === 'Sagittarius A*');
 const gpos = n => GALAXIES.find(g => g.name.startsWith(n));
 const REGIONS = [
   { name: 'Local Group', type: 'region', x: gpos('Andromeda').x * 0.4, y: gpos('Andromeda').y * 0.4, z: gpos('Andromeda').z * 0.4, r: 5e6, d: 1e6,
@@ -764,7 +823,8 @@ const edgeAng = () => Math.acos(Math.min(1, Math.abs(Math.cos(view.tilt))));   /
 const fitScale = () => Math.min(Wd, Ht) / 108000;
 const minScale = () => Math.min(Wd, Ht) / 1.1e11;
 const farOut = () => view.s < fitScale() * 0.22;
-const maxScale = () => Math.min(Wd, Ht) / 6;
+// closest zoom: a 6-light-year view, except around Sagittarius A*, where you can go all the way down to the black hole
+const maxScale = () => Math.min(Wd, Ht) / Math.max(4e-6, Math.min(6, 1.5 * Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z)));
 const clampS = s => Math.max(minScale(), Math.min(maxScale(), s));
 function proj(x, y, z) {
   const dx = x - view.x, dy = y - view.y, dz = z - view.z;
@@ -827,6 +887,8 @@ function render(t) {
   drawField();
   if (opts.zodiac) drawZodiac();
   drawObjects();
+  const s2a = drawS2(), bhOn = drawBH();
+  if ((s2a > 0 || bhOn) && !anim) draw();   // keep S2 and the flow moving
   updateScale();
   updateGC();
   const tb = document.getElementById('go3d'), lab = Math.abs(view.tilt) > 0.05 ? '3D' : 'TOP';
@@ -1133,9 +1195,10 @@ function drawObjects() {
 }
 
 function updateScale() {
-  const ly = niceStep(130 / view.s), px = ly * view.s;
-  document.getElementById('scale-bar').style.width = px + 'px';
-  document.getElementById('scale-label').textContent = fmtLy(ly);
+  let ly = niceStep(130 / view.s), label = fmtLy(ly);
+  if (130 / view.s < 0.03) { const au = niceStep(130 / view.s * AU_PER_LY); ly = au / AU_PER_LY; label = (au < 1 ? +au.toPrecision(2) : au.toLocaleString('en-CA')) + ' AU'; }
+  document.getElementById('scale-bar').style.width = ly * view.s + 'px';
+  document.getElementById('scale-label').textContent = label;
 }
 
 // ---------- interaction ----------
@@ -1220,6 +1283,7 @@ function diveToSun() {   // fly to the Sun, then hand over
 const zoomTo = (X, Y, f) => { const [ax, ay] = zoomAnchor(X, Y); zoomAt(ax, ay, f); };
 function zoomAt(X, Y, f) {
   if (sunDive(X, Y, f)) return;
+  if (gcSteer(X, Y, f)) return;
   setupView();
   const p = unproj(X, Y);
   view.s = clampS(view.s * f);
@@ -1247,6 +1311,124 @@ function updateGC() {
   for (const r of rects) if (lx + bw > r.left && lx < r.right && ly + 14 > r.top && ly - 14 < r.bottom) { if (Math.abs(dy) > Math.abs(dx) * 0.95) lx = (lx + bw / 2 < Wd / 2) ? r.right + 10 : r.left - bw - 10; else ly = (ly < Ht / 2) ? r.bottom + 18 : r.top - 18; }
   gcEl.style.transform = `translate(${lx.toFixed(1)}px, ${(ly - 12).toFixed(1)}px)`;
 }
+// ===================================================================
+//  Sagittarius A* up close: the star S2 on its measured orbit, then the black hole itself
+// ===================================================================
+// Mass 4.297 million Suns (GRAVITY Collaboration 2022). Gravitational radius GM/c² = 6.345 million km; Schwarzschild radius Rs = twice that.
+const GM_LY = 6.707e-7, RS_LY = 2 * GM_LY, AU_PER_LY = 63241.077, RS_SEC = 42.33;   // light crosses one Rs in 42.3 s
+const BH_TIME = 120;                     // the flow is shown 120× faster than real time
+const S2_RATE = 1;                       // S2's orbit is shown at one year per second
+// directions on the sky at Sgr A* (Reid & Brunthaler 2004: RA 266.41684°, Dec −29.00781°), as vectors in the galactic frame and in this map's frame
+const EQ2GAL = [[-0.0548755604, -0.8734370902, -0.4838350155], [0.4941094279, -0.4448296300, 0.7469822445], [-0.8676661490, -0.1980763734, 0.4559837762]];
+const eqToGal = v => EQ2GAL.map(r => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
+const galDirToWorld = v => { const a = helioToWorld(v[0], v[1], v[2]), o = helioToWorld(0, 0, 0); return [a.x - o.x, a.y - o.y, a.z - o.z]; };
+const worldDirToGal = w => { const yh = -w[0], xg = -w[1], zg = w[2]; return [xg * cTH - zg * sTH, yh, xg * sTH + zg * cTH]; };
+const SKY = (() => {
+  const a = 266.41684 * DEG, d = -29.00781 * DEG;
+  const away = [Math.cos(d) * Math.cos(a), Math.cos(d) * Math.sin(a), Math.sin(d)], east = [-Math.sin(a), Math.cos(a), 0], north = [-Math.sin(d) * Math.cos(a), -Math.sin(d) * Math.sin(a), Math.cos(d)];
+  const g = { away: eqToGal(away), east: eqToGal(east), north: eqToGal(north) };
+  return { g, w: { away: galDirToWorld(g.away), east: galDirToWorld(g.east), north: galDirToWorld(g.north) } };
+})();
+const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const norm3 = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+// an orbit's place on the sky: north and east offsets plus depth along the line of sight (visual-binary convention; i > 90° turns clockwise on the sky)
+function skyOffset(r, u, i, Om) {
+  const n = r * (Math.cos(Om) * Math.cos(u) - Math.sin(Om) * Math.sin(u) * Math.cos(i)), e = r * (Math.sin(Om) * Math.cos(u) + Math.cos(Om) * Math.sin(u) * Math.cos(i)), z = r * Math.sin(u) * Math.sin(i);
+  return [n, e, z];
+}
+const skyToGal = ([n, e, z]) => [0, 1, 2].map(k => n * SKY.g.north[k] + e * SKY.g.east[k] + z * SKY.g.away[k]);
+const skyToWorld = ([n, e, z]) => [0, 1, 2].map(k => n * SKY.w.north[k] + e * SKY.w.east[k] + z * SKY.w.away[k]);
+// S2 (GRAVITY Collaboration 2020): a = 125.058 mas, e = 0.884649, i = 134.567°, Ω = 228.171°, ω = 66.263°, pericentre 2018.379, period 16.0455 yr
+const S2 = { a: 0.125058 * 8275, e: 0.884649, i: 134.567 * DEG, Om: 228.171 * DEG, w: 66.263 * DEG, tp: 2018.379, P: 16.0455 };
+function s2At(year) {
+  const M = 2 * Math.PI * (((year - S2.tp) / S2.P) % 1); let E = M + S2.e * Math.sin(M);
+  for (let k = 0; k < 8; k++) E -= (E - S2.e * Math.sin(E) - M) / (1 - S2.e * Math.cos(E));
+  const nu = 2 * Math.atan2(Math.sqrt(1 + S2.e) * Math.sin(E / 2), Math.sqrt(1 - S2.e) * Math.cos(E / 2)), r = S2.a * (1 - S2.e * Math.cos(E));
+  return skyToWorld(skyOffset(r, S2.w + nu, S2.i, S2.Om)).map(v => v / AU_PER_LY);
+}
+const S2_PATH = Array.from({ length: 361 }, (_, k) => s2At(S2.tp + S2.P * k / 360));
+// The accretion flow turns the same way as the flares GRAVITY tracked orbiting just outside the hole (2018, 2023): clockwise on the sky,
+// inclined about 152° with its node at 108°, so we see it within ~30° of face-on (EHT 2022 also favours a near face-on view)
+const DISC = (() => {
+  const n = norm3(cross3(skyToGal(skyOffset(1, 0, 152 * DEG, 108 * DEG)), skyToGal(skyOffset(1, Math.PI / 2, 152 * DEG, 108 * DEG))));
+  const e1 = norm3(cross3(n, Math.abs(n[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0])), e2 = cross3(n, e1);
+  return { n, e1, e2 };
+})();
+const yearNow = () => 2000 + (Date.now() - Date.UTC(2000, 0, 1, 12)) / (365.25 * 864e5);
+const T0 = performance.now(), Y0 = yearNow();
+
+// the S2 orbit, drawn on the map
+function drawS2() {
+  const span = viewSpan(); if (span > 0.6 || span < 2e-5) return 0;
+  const [gx, gy] = proj(GC.x, GC.y, GC.z); if (gx < -Wd || gx > 2 * Wd || gy < -Ht || gy > 2 * Ht) return 0;
+  const a = Math.min(1, Math.log(0.6 / span) / Math.log(4)) * Math.min(1, Math.log(span / 2e-5) / Math.log(3));
+  ctx.strokeStyle = `rgba(255,214,150,${0.5 * a})`; ctx.lineWidth = 1.2; ctx.setLineDash([]); ctx.beginPath();
+  S2_PATH.forEach((p, k) => { const [X, Y] = proj(GC.x + p[0], GC.y + p[1], GC.z + p[2]); k ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }); ctx.stroke();
+  const yr = Y0 + (performance.now() - T0) / 1000 * S2_RATE, s = s2At(yr), [X, Y] = proj(GC.x + s[0], GC.y + s[1], GC.z + s[2]);
+  const gr = ctx.createRadialGradient(X, Y, 0, X, Y, 9); gr.addColorStop(0, `rgba(220,232,255,${a})`); gr.addColorStop(0.3, `rgba(170,200,255,${0.6 * a})`); gr.addColorStop(1, 'rgba(150,180,255,0)');
+  ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y, 9, 0, 7); ctx.fill();
+  ctx.font = '600 12px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = `rgba(225,232,250,${a})`; ctx.fillText('S2', X + 10, Y - 6);
+  ctx.font = '400 11px Inter, sans-serif'; ctx.fillStyle = `rgba(200,206,225,${0.75 * a})`;
+  ctx.fillText(`${Math.floor(yr)} · ${Math.round(Math.hypot(...s) * AU_PER_LY).toLocaleString('en-CA')} AU from the black hole`, X + 10, Y + 9);
+  return a;
+}
+
+// the black hole itself: every pixel's light traced back through curved spacetime (WebGL)
+const bhCv = document.getElementById('bh'), bhNote = document.getElementById('bhnote');
+let bhGL = null, bhProg = null, bhU = {}, bhFailed = false;
+function bhInit() {
+  const gl = bhCv.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false });
+  if (!gl) { bhFailed = true; return; }
+  const vs = 'attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }';
+  const fs = document.getElementById('bh-fs').textContent;
+  const sh = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(s)); return null; } return s; };
+  const v = sh(gl.VERTEX_SHADER, vs), f = sh(gl.FRAGMENT_SHADER, fs); if (!v || !f) { bhFailed = true; return; }
+  const pr = gl.createProgram(); gl.attachShader(pr, v); gl.attachShader(pr, f); gl.linkProgram(pr);
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { bhFailed = true; return; }
+  gl.useProgram(pr); const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  for (const n of ['uRes', 'uC', 'uPx', 'uR', 'uU', 'uF', 'uT', 'uA', 'uSpot', 'uDark']) bhU[n] = gl.getUniformLocation(pr, n);
+  bhGL = gl; bhProg = pr;
+}
+function drawBH() {
+  const [gx, gy] = proj(GC.x, GC.y, GC.z), pxRs = view.s * RS_LY, shadowPx = 2.6 * pxRs;
+  const on = !bhFailed && shadowPx > 1.5 && gx > -40 * pxRs && gx < Wd + 40 * pxRs && gy > -40 * pxRs && gy < Ht + 40 * pxRs;
+  if (!on) { if (bhCv.style.display !== 'none') { bhCv.style.display = 'none'; bhNote.style.display = 'none'; } return false; }
+  if (!bhGL) { bhInit(); if (!bhGL) return false; }
+  const now = performance.now(), ft = now - (drawBH.last || now); drawBH.last = now;   // too slow on this machine? draw it a little coarser
+  if (ft > 45 && ft < 400) drawBH.qs = Math.max(0.4, (drawBH.qs || 1) * 0.92); else if (ft < 22) drawBH.qs = Math.min(1, (drawBH.qs || 1) * 1.02);
+  const q = Math.min(1, 1000 / Math.max(Wd, Ht)) * Math.min(dpr, 1.25) * (drawBH.qs || 1), w = Math.round(Wd * q), h = Math.round(Ht * q);
+  if (bhCv.width !== w || bhCv.height !== h) { bhCv.width = w; bhCv.height = h; }
+  bhCv.style.display = 'block';
+  const gl = bhGL; gl.viewport(0, 0, w, h);
+  // the map's screen axes, turned into the frame of the accretion disc (normal = +z)
+  const R = worldDirToGal([CY, -SY, 0]), U = worldDirToGal([-SY * CT, -CY * CT, ST]).map(v => v), F = cross3(R, U);
+  const toDisc = v => [dot3(v, DISC.e1), dot3(v, DISC.e2), dot3(v, DISC.n)];
+  const t = (performance.now() - T0) / 1000 * BH_TIME / RS_SEC;   // time in units of Rs/c
+  const cyc = ((performance.now() - T0) / 1000 * BH_TIME / 3600) % 3, spot = 0.25 + 0.75 * Math.pow(Math.max(0, Math.sin(Math.PI * Math.min(cyc, 1))), 2);   // a flare for about an hour, every three hours
+  gl.uniform2f(bhU.uRes, w, h); gl.uniform2f(bhU.uC, gx * q, (Ht - gy) * q); gl.uniform1f(bhU.uPx, pxRs * q);
+  gl.uniform3fv(bhU.uR, toDisc(R)); gl.uniform3fv(bhU.uU, toDisc(U)); gl.uniform3fv(bhU.uF, toDisc(F));
+  gl.uniform1f(bhU.uT, t); gl.uniform1f(bhU.uA, Math.min(1, (shadowPx - 1.5) / 6)); gl.uniform1f(bhU.uSpot, spot); gl.uniform1f(bhU.uDark, 0.85 * Math.max(0, Math.min(1, (shadowPx - 2) / 40)));
+  gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  bhNote.style.display = shadowPx > 12 ? 'block' : 'none';
+  return true;
+}
+// zooming in on Sgr A*: ease it to the middle of the screen on the way down, so you can follow it all the way to the event horizon
+function gcSteer(X, Y, f) {
+  if (f <= 1 || viewSpan() > 80) return false;
+  setupView();
+  const [sx, sy] = proj(GC.x, GC.y, GC.z), M = Math.min(Wd, Ht);
+  if (sx < 0 || sx > Wd || sy < 0 || sy > Ht || (Math.hypot(sx - X, sy - Y) > 150 && selected !== GC)) return false;
+  const sNew = Math.min(M / 4e-6, view.s * f), spanNew = M / sNew, k = Math.max(0, Math.min(1, Math.log(spanNew / 4e-6) / Math.log(80 / 4e-6)));
+  let ox = sx - Wd / 2, oy = sy - Ht / 2; const m = Math.hypot(ox, oy), cap = 0.5 * M * Math.pow(k, 1.5);
+  if (m > cap) { ox *= cap / m; oy *= cap / m; }
+  const u = ox / sNew, v = oy / sNew;
+  view.s = sNew; view.x = GC.x - (CY * u + SY * CT * v); view.y = GC.y - (-SY * u + CY * CT * v); view.z = GC.z + ST * v;
+  anim = null; draw(); return true;
+}
+
 function flyTo(x, y, z, span, dur = 1100, orient) {
   const s = clampS(Math.min(Wd, Ht) / span);
   anim = { from: { ...view }, to: { x, y, z, s, yaw: orient ? orient.yaw : view.yaw, tilt: orient ? orient.tilt : view.tilt }, t0: performance.now(), dur };
@@ -1349,7 +1531,10 @@ function select(o, fly) {
   }
   document.getElementById('info-facts').innerHTML = facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
   document.getElementById('info-blurb').textContent = blurb || '';
-  document.getElementById('info-go').style.display = EMBED && ssReady && o.type === 'sun' ? 'inline-block' : 'none';
+  { const go = document.getElementById('info-go'), bh = o === GCO, sun = EMBED && ssReady && o.type === 'sun';
+    go.style.display = bh || sun ? 'inline-block' : 'none';
+    go.textContent = bh ? 'Fly down to the black hole' : 'Dive into the Solar System';
+    go.onclick = bh ? () => { select(null); anim = { from: { ...view }, to: { x: GCO.x, y: GCO.y, z: GCO.z, s: Math.min(Wd, Ht) / 1.4e-5, yaw: view.yaw, tilt: view.tilt }, t0: performance.now(), dur: 6500 }; draw(); } : diveToSun; }
   info.style.display = 'block';
   if (fly) flyTo(o.x, o.y, o.z || 0, spanFor(o));
 }

@@ -1581,6 +1581,9 @@ const gcEl = document.createElement('div'); gcEl.className = 'lab gc'; gcEl.titl
 labelBox.appendChild(gcEl);
 gcEl.addEventListener('click', ev => { ev.stopPropagation(); if (EMBED) parent.postMessage({ src: 'uas-ss', go: 'milky-way' }, '*'); });
 function updateGC() {
+  const ga = sstep(Math.log(camNom.distanceTo(controls.target) / AUS), Math.log(70000), Math.log(110000));   // only once you're out past the Oort cloud
+  if (ga < 0.01) { gcEl.style.display = 'none'; return; }
+  gcEl.style.opacity = ga.toFixed(2);
   const W = innerWidth, H = innerHeight, v = GC_DIR.clone().multiplyScalar(GC_LY).applyQuaternion(skyRoot.quaternion).project(skyCam);
   if (v.z < 1 && Math.abs(v.x) < 0.97 && Math.abs(v.y) < 0.95) {   // in view: just name the spot
     gcEl.classList.remove('edge'); gcEl.textContent = 'Galactic centre'; gcEl.style.display = 'block';
