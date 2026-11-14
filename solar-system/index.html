@@ -79,6 +79,8 @@
   .lab.mark { color:rgba(190,206,236,0.72); font-size:10.5px; letter-spacing:0.09em; text-transform:uppercase; pointer-events:none; cursor:default; }
   .lab.mark::before { display:none; }
   .lab.probe { color:var(--c); font-size:11px; letter-spacing:0.04em; }
+  .lab.nearstar { color:rgba(232,236,248,0.85); font-size:11.5px; pointer-events:none; cursor:default; }
+  .lab.nearstar small { margin-left:6px; color:rgba(190,198,220,0.6); font-size:10px; }
   body.embed .solo { display:none; }
   .lab.sel { background:rgba(240,181,106,0.22); }
   .lab.sun { color:#ffe9a8; font-weight:600; font-size:13px; letter-spacing:0.02em; }
@@ -1824,6 +1826,25 @@ function updateGC() {
   }
   gcEl.style.transform = `translate(${lx.toFixed(1)}px, ${ly.toFixed(1)}px) translateY(-50%)`;
 }
+// The nearest stars, named once you're far enough out to see them as places (same measured positions as the galaxy map, so the
+// names stay put through the hand-over): distance in ly, galactic l and b
+const NEAR = [['Alpha Centauri', 4.32, 315.74, -0.68], ["Barnard's Star", 5.96, 31.01, 14.06], ['Wolf 359', 7.86, 244.06, 56.12], ['Lalande 21185', 8.3, 185.12, 65.43],
+  ['Sirius', 8.6, 227.23, -8.89], ['Epsilon Eridani', 10.5, 195.84, -48.05], ['61 Cygni', 11.4, 82.32, -5.82], ['Procyon', 11.46, 213.7, 13.02],
+  ['Epsilon Indi', 11.87, 336.19, -48.04], ['Tau Ceti', 11.91, 173.1, -73.44]].map(([name, d, l, b]) => {
+  const el = document.createElement('div'); el.className = 'lab nearstar'; el.innerHTML = `${name}<small>${d} ly</small>`; el.style.display = 'none'; labelBox.appendChild(el);
+  return { el, p: galToScene(Math.cos(b * DEG) * Math.cos(l * DEG) * d, Math.cos(b * DEG) * Math.sin(l * DEG) * d, Math.sin(b * DEG) * d) };
+});
+const _np = new THREE.Vector3();
+function updateNear() {
+  const ly = camNom.distanceTo(controls.target) / LY, a = opts.labels ? sstep(Math.log(ly), Math.log(0.15), Math.log(0.6)) : 0, W = innerWidth, H = innerHeight;
+  for (const s of NEAR) {
+    if (a < 0.02) { s.el.style.display = 'none'; continue; }
+    _np.copy(s.p).applyQuaternion(skyRoot.quaternion).project(skyCam);
+    const on = _np.z < 1 && Math.abs(_np.x) < 0.98 && Math.abs(_np.y) < 0.96;
+    s.el.style.display = on ? 'block' : 'none';
+    if (on) { s.el.style.opacity = a.toFixed(2); s.el.style.transform = `translate(${((_np.x + 1) / 2 * W + 7).toFixed(1)}px, ${((1 - _np.y) / 2 * H).toFixed(1)}px) translateY(-50%)`; }
+  }
+}
 function updateMarks(camD) {   // distance rings and the names of the outskirts, each shown while it is a sensible size on screen
   const pxs0 = innerHeight / 2 / TAN20, p = new THREE.Vector3(), W = innerWidth, H = innerHeight;
   for (const m of MARKS) {
@@ -2046,7 +2067,7 @@ function frame(t) {
   renderer.clearDepth();
   updateProbes(camD);
   renderer.render(scene, camera);
-  updateLabels(); updateMarks(camD); updateGC();
+  updateLabels(); updateMarks(camD); updateGC(); updateNear();
   camera.position.copy(camNom); camera.fov = 40; camera.updateProjectionMatrix();
   if (t - (frame.lt || 0) > 250) {
     frame.lt = t;
