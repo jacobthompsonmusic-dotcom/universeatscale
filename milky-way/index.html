@@ -1042,7 +1042,7 @@ function drawGalaxy3D() {
     gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform3f(U.uRight, CY, -SY, 0); gl.uniform3f(U.uUp, -SY * CT, -CY * CT, ST); gl.uniform3f(U.uFwd, -F[0], -F[1], -F[2]);
     // inside the bulge the light piles up and would clip to a flat white disc: lower the exposure there so its shape still shows
-    const dGx = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), expo = 1.35 * (0.28 + 0.72 * sstep(Math.log(Math.max(dGx, Ht / view.s * 0.5, 1)), Math.log(3000), Math.log(30000)));
+    const dGx = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), expo = 1.35 * (0.28 + 0.72 * sstep(Math.log(Math.max(dGx, Ht / view.s * 0.5, 1)), Math.log(3000), Math.log(60000)));
     gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uExpo, expo); gl.uniform1f(U.uAlpha, 1);
     if (PD === Infinity) { gl.uniform1f(U.uOrtho, 1); gl.uniform3f(U.uCam, view.x, view.y, view.z); gl.uniform1f(U.uHalfH, Ht / 2 / view.s); gl.uniform1f(U.uTanH, 0); }
     else { gl.uniform1f(U.uOrtho, 0); gl.uniform3f(U.uCam, view.x + F[0] * PD, view.y + F[1] * PD, view.z + F[2] * PD); gl.uniform1f(U.uTanH, PT); gl.uniform1f(U.uHalfH, 1); }
