@@ -965,8 +965,13 @@ function render(t) {
   if (anim) {
     const k = Math.min(1, (t - anim.t0) / anim.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
     const f = anim.from, to = anim.to;
-    view.s = Math.exp(Math.log(f.s) + (Math.log(to.s) - Math.log(f.s)) * e);
-    view.x = f.x + (to.x - f.x) * e; view.y = f.y + (to.y - f.y) * e; view.z = f.z + (to.z - f.z) * e;
+    if (anim.vw) {   // along the zoom-and-pan path, easing in and out of it
+      const v = anim.vw, q = v.S * (0.5 - 0.5 * Math.cos(Math.PI * k)), { u, w } = k >= 1 ? { u: v.u1, w: v.w1 } : vwAt(v, q), a = v.flat || !v.u1 ? 0 : Math.min(1, u / v.u1);
+      view.s = k >= 1 ? to.s : v.M / w; view.x = v.c0[0] + v.d[0] * a; view.y = v.c0[1] + v.d[1] * a; view.z = v.c0[2] + v.d[2] * a;
+    } else {
+      view.s = Math.exp(Math.log(f.s) + (Math.log(to.s) - Math.log(f.s)) * e);
+      view.x = f.x + (to.x - f.x) * e; view.y = f.y + (to.y - f.y) * e; view.z = f.z + (to.z - f.z) * e;
+    }
     view.yaw = f.yaw + angDiff(f.yaw, to.yaw) * e; view.tilt = clampTilt(f.tilt + angDiff(f.tilt, to.tilt) * e);
     if (k >= 1) { const done = anim.done; anim = null; if (done) done(); } else draw();
   }
@@ -1429,10 +1434,24 @@ function sunDive(X, Y, f) {
 function diveToSun() {   // fly to the Sun, then hand over
   if (!EMBED || !ssReady) return;
   const M = Math.min(Wd, Ht); select(null);
-  anim = { from: { ...view }, to: { x: SUNW.x, y: SUNW.y, z: SUNW.z, s: M / (DIVE * 1.05), yaw: view.yaw, tilt: view.tilt }, t0: performance.now(), dur: viewSpan() > 3000 ? 2200 : 1300, done: () => handOver(M / 5.4) };
-  draw();
+  flyTo(SUNW.x, SUNW.y, SUNW.z, DIVE * 1.05, { raw: true, done: () => handOver(M / 5.4) });
 }
-const zoomTo = (X, Y, f) => { const [ax, ay] = zoomAnchor(X, Y); zoomAt(ax, ay, f); };
+const zoomTo = (X, Y, f, viaWheel) => {
+  if (f > 1 && selected && steerIn(X, Y, f, viaWheel)) return;
+  const [ax, ay] = zoomAnchor(X, Y); zoomAt(ax, ay, f);
+};
+// With something selected, zooming in heads for it — even from far off, or with it off screen — gliding it to the middle as you
+// close in (as in the Solar System). Over another object, the wheel zooms there instead.
+let wheelHover = null, lastWheel = 0;
+function steerIn(X, Y, f, viaWheel) {
+  if (viaWheel) { const now = performance.now(); if (now - lastWheel > 280) wheelHover = pick(X, Y); lastWheel = now; if (wheelHover && wheelHover !== selected) return false; }
+  const o = selected; if (o.type === 'region' && !o.d) return false;
+  if ((o.type === 'sun' && sunDive(Wd / 2, Ht / 2, f)) || (o === GCO && gcSteer(Wd / 2, Ht / 2, f))) return true;   // their own approaches (hand-over; down to the black hole)
+  setupView();
+  const T = { x: o.x, y: o.y, z: o.z || 0 }, k = Math.pow(f, -1.6);   // the gap closes faster than the zoom, so the object slides to the middle
+  view.x = T.x + (view.x - T.x) * k; view.y = T.y + (view.y - T.y) * k; view.z = T.z + (view.z - T.z) * k;
+  view.s = clampS(view.s * f); anim = null; draw(); return true;
+}
 function zoomAt(X, Y, f) {
   if (sunDive(X, Y, f)) return;
   if (gcSteer(X, Y, f)) return;
@@ -1754,10 +1773,35 @@ function gcSteer(X, Y, f) {
   anim = null; draw(); return true;
 }
 
-function flyTo(x, y, z, span, dur = 1100, orient) {
-  const s = clampS(Math.min(Wd, Ht) / span);
-  anim = { from: { ...view }, to: { x, y, z, s, yaw: orient ? orient.yaw : view.yaw, tilt: orient ? orient.tilt : view.tilt }, t0: performance.now(), dur };
+// Flights take the path that feels shortest to the eye (van Wijk & Nuij 2003): pull back until both ends are in view, glide
+// across, then sink in — so a long trip shows you the distance it covers. The duration grows with the path's length, from
+// a couple of seconds for a nearby star to 12 s for the edge of the observable universe.
+const RHO = 1.42;
+function clampAt(s, x, y, z) {   // clampS, with the zoom limit of the destination rather than of here
+  const near = Math.hypot(x - GCO.x, y - GCO.y, z - GCO.z);
+  return Math.max(minScale(), Math.min(Math.min(Wd, Ht) / Math.max(4e-6, Math.min(6, 1.5 * near)), s));
+}
+function flyTo(x, y, z, span, o = {}) {
+  if (typeof o === 'number') o = { max: o };
+  const M = Math.min(Wd, Ht), s1 = o.raw ? M / span : clampAt(M / span, x, y, z);
+  const c0 = [view.x, view.y, view.z], d = [x - c0[0], y - c0[1], z - c0[2]], u1 = Math.hypot(...d);
+  const w0 = M / view.s, w1 = M / s1;
+  let S, r0 = 0, flat = u1 < 1e-6 * Math.max(w0, w1);
+  if (flat) S = Math.abs(Math.log(w1 / w0)) / RHO;
+  else {
+    const b0 = (w1 * w1 - w0 * w0 + RHO ** 4 * u1 * u1) / (2 * w0 * RHO * RHO * u1), b1 = (w1 * w1 - w0 * w0 - RHO ** 4 * u1 * u1) / (2 * w1 * RHO * RHO * u1);
+    r0 = -Math.asinh(b0); S = (-Math.asinh(b1) - r0) / RHO;
+  }
+  const dur = o.dur || Math.min(o.max || 12000, Math.max(2200, 1800 + 1400 * S));
+  anim = { vw: { c0, d, u1, w0, w1, S, r0, flat, M }, from: { ...view }, to: { x, y, z, s: s1, yaw: o.orient ? o.orient.yaw : view.yaw, tilt: o.orient ? o.orient.tilt : view.tilt },
+    t0: performance.now(), dur, done: o.done };
   draw();
+}
+// where the flight is at path position q (0…S): centre and view width
+function vwAt(v, q) {
+  if (v.flat) return { u: 0, w: v.w0 * Math.exp(Math.sign(Math.log(v.w1 / v.w0)) * RHO * q) };
+  const k = v.w0 / (RHO * RHO);
+  return { u: k * Math.cosh(v.r0) * Math.tanh(RHO * q + v.r0) - k * Math.sinh(v.r0), w: v.w0 * Math.cosh(v.r0) / Math.cosh(RHO * q + v.r0) };
 }
 function orient(yaw, tilt, dur = 900) {
   repivot();
@@ -1859,7 +1903,7 @@ function select(o, fly) {
   { const go = document.getElementById('info-go'), bh = o === GCO, sun = EMBED && ssReady && o.type === 'sun';
     go.style.display = bh || sun ? 'inline-block' : 'none';
     go.textContent = bh ? 'Fly down to the black hole' : 'Dive into the Solar System';
-    go.onclick = bh ? () => { select(null); anim = { from: { ...view }, to: { x: GCO.x, y: GCO.y, z: GCO.z, s: Math.min(Wd, Ht) / 1.4e-5, yaw: view.yaw, tilt: view.tilt }, t0: performance.now(), dur: 6500 }; draw(); } : diveToSun; }
+    go.onclick = bh ? () => { select(null); flyTo(GCO.x, GCO.y, GCO.z, 1.4e-5, { raw: true }); } : diveToSun; }
   info.style.display = 'block';
   if (fly) flyTo(o.x, o.y, o.z || 0, spanFor(o));
 }
@@ -1869,6 +1913,7 @@ let drag = null, gest = null;
 const isOrbit = e => e.button === 2 || e.shiftKey || e.altKey;
 cv.addEventListener('contextmenu', e => e.preventDefault());
 cv.addEventListener('pointerdown', e => {
+  if (anim && anim.vw && !anim.done) anim = null;   // grab the view mid-flight to stop there
   cv.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId, [e.clientX, e.clientY]);
   if (isOrbit(e) || pointers.size === 2) repivot();
@@ -1940,8 +1985,13 @@ const endPtr = e => {
 cv.addEventListener('pointerup', endPtr);
 cv.addEventListener('pointercancel', endPtr);
 cv.addEventListener('pointerleave', () => { document.getElementById('tip').style.display = 'none'; if (hover) { hover = null; draw(); } });
-cv.addEventListener('wheel', e => { e.preventDefault(); zoomTo(e.clientX, e.clientY, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0018))); }, { passive: false });
-cv.addEventListener('dblclick', e => { if (!pick(e.clientX, e.clientY)) zoomAt(e.clientX, e.clientY, 2.5); });
+cv.addEventListener('wheel', e => { e.preventDefault(); zoomTo(e.clientX, e.clientY, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0018)), true); }, { passive: false });
+cv.addEventListener('dblclick', e => {
+  const o = pick(e.clientX, e.clientY);
+  if (o) { if (selected !== o) select(o); if (o.type === 'sun' && EMBED && ssReady && viewSpan() < 400) diveToSun(); else flyTo(o.x, o.y, o.z || 0, spanFor(o)); return; }
+  setupView(); const p = unproj(e.clientX, e.clientY), sp = viewSpan() / 2.5;   // empty space: a short glide in, toward the spot clicked
+  flyTo(p.x + (view.x - p.x) / 2.5, p.y + (view.y - p.y) / 2.5, p.z + (view.z - p.z) / 2.5, sp, { dur: 900 });
+});
 
 document.getElementById('zin').onclick = () => zoomTo(Wd / 2, Ht / 2, 2);
 document.getElementById('zout').onclick = () => zoomTo(Wd / 2, Ht / 2, 0.5);
@@ -1949,9 +1999,9 @@ document.getElementById('go3d').onclick = () => Math.abs(view.tilt) > 0.05 ? ori
 document.getElementById('spin').onclick = () => orient(view.yaw + 45 * DEG, Math.abs(view.tilt) < 0.05 ? 50 * DEG : view.tilt);
 document.getElementById('gosun').onclick = () => select(SUN, true);
 document.getElementById('goall').onclick = () => flyTo(0, 4000, 0, 118000);
-document.getElementById('golan').onclick = () => { const r = REGIONS[1]; flyTo(r.x * 0.5, r.y * 0.5, r.z * 0.5, 7e8, 1800); };
-document.getElementById('goobs').onclick = () => flyTo(0, 0, 0, 1.0e11, 2200);
-document.getElementById('golg').onclick = () => { const m = gpos('Andromeda'); flyTo(m.x * 0.45, m.y * 0.45, m.z * 0.45, 3.6e6, 1600); };
+document.getElementById('golan').onclick = () => { const r = REGIONS[1]; flyTo(r.x * 0.5, r.y * 0.5, r.z * 0.5, 7e8); };
+document.getElementById('goobs').onclick = () => flyTo(0, 0, 0, 1.0e11);
+document.getElementById('golg').onclick = () => { const m = gpos('Andromeda'); flyTo(m.x * 0.45, m.y * 0.45, m.z * 0.45, 3.6e6); };
 document.querySelector('#info .close').onclick = () => select(null);
 document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); draw();
   if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-mw', opt: 'zodiac', on: opts.zodiac }, '*'); });
@@ -1965,7 +2015,7 @@ if (EMBED) {
     else if (m.cmd === 'release') { following = false; render.sp = 0; draw(); }
     else if (m.cmd === 'dive') diveToSun();
     else if (m.cmd === 'go') { following = false; select(null);
-      if (m.key === 'stars') flyTo(SUNW.x, SUNW.y, SUNW.z, 60, 1500);
+      if (m.key === 'stars') flyTo(SUNW.x, SUNW.y, SUNW.z, 60);
       else document.getElementById({ milkyway: 'goall', lg: 'golg', lan: 'golan', obs: 'goobs' }[m.key]).onclick(); }
     else if (m.cmd === 'opt') { opts[m.k] = m.on; document.querySelector(`.tg[data-k="${m.k}"]`).classList.toggle('on', m.on); draw(); }
   });
@@ -1977,7 +2027,7 @@ addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
   if (e.key === '+' || e.key === '=') zoomTo(Wd / 2, Ht / 2, 1.6);
   if (e.key === '-' || e.key === '_') zoomTo(Wd / 2, Ht / 2, 1 / 1.6);
-  if (e.key === '0') flyTo(0, 4000, 0, 118000, 1100, { yaw: 0, tilt: 0 });
+  if (e.key === '0') flyTo(0, 4000, 0, 118000, { orient: { yaw: 0, tilt: 0 } });
   if (e.key.startsWith('Arrow')) repivot();
   if (e.key === 'ArrowLeft') { view.yaw -= 0.08; anim = null; draw(); e.preventDefault(); }
   if (e.key === 'ArrowRight') { view.yaw += 0.08; anim = null; draw(); e.preventDefault(); }
