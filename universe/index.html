@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From Earth to the Edge of the Universe — One Continuous Zoom | Universe at Scale</title>
+<meta name="description" content="Start at Earth and scroll out: past the Moon, the planets, the Oort cloud and the nearest stars, through the Milky Way and the Local Group, to the edge of the observable universe. One continuous, true-scale 3D map built on real measurements.">
+<meta property="og:title" content="From Earth to the Edge of the Universe — One Continuous Zoom | Universe at Scale">
+<meta property="og:description" content="Start at Earth and scroll out to the edge of the observable universe. One continuous, true-scale 3D map built on real measurements.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://universeatscale.com/universe/">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://universeatscale.com/universe/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #020205; overflow: hidden; font: 12px/1.3 Inter, system-ui, sans-serif; color: #e9ecf5; }
+  iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #020205; }
+  #mw { z-index: 1; } #ss { z-index: 2; }
+  /* the scale ladder: where you are between Earth and the edge of the observable universe */
+  #ladder { position: fixed; z-index: 3; top: 16px; left: 50%; transform: translateX(-50%); display: flex; align-items: stretch; gap: 0; padding: 5px 6px;
+    background: rgba(12, 13, 20, 0.78); border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 999px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  #ladder button { position: relative; border: 0; background: none; color: #8d93a8; font: 500 11.5px Inter, system-ui, sans-serif; padding: 6px 11px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+  #ladder button:hover, #ladder button:focus-visible { color: #e9ecf5; background: rgba(255, 255, 255, 0.06); outline: none; }
+  #ladder button.on { color: #14110a; background: #ffcf6e; }
+  #ladder button + button::before { content: ""; position: absolute; left: -1px; top: 50%; width: 2px; height: 2px; border-radius: 50%; background: rgba(255, 255, 255, 0.25); }
+  #ladder button.on::before, #ladder button.on + button::before { display: none; }
+  @media (max-width: 1180px) { #ladder { top: auto; bottom: 16px; max-width: calc(100% - 32px); overflow-x: auto; scrollbar-width: none; } #ladder::-webkit-scrollbar { display: none; } }
+  @media (max-width: 760px) { #ladder { display: none; } }
+</style>
+</head>
+<body>
+<iframe id="mw" name="uas-embed" title="The Milky Way and beyond" src="about:blank"></iframe>
+<iframe id="ss" name="uas-embed" title="The Solar System" src="about:blank"></iframe>
+<nav id="ladder" aria-label="Scale">
+  <button data-go="earth">Earth</button>
+  <button data-go="solar-system">Solar System</button>
+  <button data-go="oort-cloud">Oort cloud</button>
+  <button data-go="nearest-stars">Nearest stars</button>
+  <button data-go="milky-way">Milky Way</button>
+  <button data-go="local-group">Local Group</button>
+  <button data-go="laniakea">Laniakea</button>
+  <button data-go="observable-universe">Observable universe</button>
+</nav>
+<script>
+(() => {
+'use strict';
+// Two maps share this page: the Solar System (a 3D view you fly through) on top, the Milky Way map underneath. They agree on one
+// frame of reference, so where they meet — a few light-years from the Sun — one fades into the other at the same scale and angle.
+const ssEl = document.getElementById('ss'), mwEl = document.getElementById('mw');
+const dbg = /[?&]debug=1/.test(location.search) ? '?debug=1' : '';
+// each stop: which map shows it, what to tell that map, and how wide the view is there (log10 of light-years) for the "you are here" marker
+const STOPS = {
+  'earth':               { map: 'ss', cmd: { cmd: 'fly', key: 'earth' }, log: -8.5 },
+  'solar-system':        { map: 'ss', cmd: { cmd: 'fly', key: 'all' }, log: -3.0 },
+  'oort-cloud':          { map: 'ss', cmd: { cmd: 'fly', key: 'far', span: 3 }, log: 0.48 },
+  'nearest-stars':       { map: 'mw', cmd: { cmd: 'go', key: 'stars' }, log: 1.78 },
+  'milky-way':           { map: 'mw', cmd: { cmd: 'go', key: 'milkyway' }, log: 5.07 },
+  'local-group':         { map: 'mw', cmd: { cmd: 'go', key: 'lg' }, log: 6.56 },
+  'laniakea':            { map: 'mw', cmd: { cmd: 'go', key: 'lan' }, log: 8.85 },
+  'observable-universe': { map: 'mw', cmd: { cmd: 'go', key: 'obs' }, log: 11 },
+};
+const PLANETS = ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'ceres', 'pluto', 'haumea', 'makemake', 'eris'];
+for (const k of PLANETS) STOPS[k] = { map: 'ss', cmd: { cmd: 'fly', key: k }, log: -6 };
+const hash = () => { const h = location.hash.slice(1); return STOPS[h] ? h : 'earth'; };
+const start = hash();
+const st = { driver: STOPS[start].map, ssReady: false, mwReady: false, pending: null, started: false };
+const post = (el, m) => { try { el.contentWindow.postMessage(m, '*'); } catch (e) {} };
+const toSS = m => post(ssEl, { to: 'uas-ss', ...m }), toMW = m => post(mwEl, { to: 'uas-mw', ...m });
+
+function show() {   // which map is on top and takes the mouse
+  const ss = st.driver === 'ss';
+  ssEl.style.visibility = ss ? 'visible' : 'hidden'; ssEl.style.pointerEvents = ss ? 'auto' : 'none'; if (!ss) ssEl.style.opacity = 0;
+}
+function runPending() { const p = st.pending; if (!p || p.map !== st.driver) return; st.pending = null; (p.map === 'ss' ? toSS : toMW)(p.cmd); }
+function toMap() { st.driver = 'mw'; show(); toSS({ cmd: 'pause' }); toMW({ cmd: 'release' }); runPending(); }
+function toSolar(m) { st.driver = 'ss'; ssEl.style.opacity = 0; show(); toSS({ cmd: 'enter', s: m.s, yaw: m.yaw, tilt: m.tilt }); setTimeout(runPending, 60); }
+
+function go(key) {
+  const s = STOPS[key]; if (!s) return;
+  try { history.replaceState(null, '', '#' + key); } catch (e) {}
+  if (s.map === st.driver) { st.pending = null; (s.map === 'ss' ? toSS : toMW)(s.cmd); return; }
+  st.pending = s;
+  if (s.map === 'ss') { if (st.ssReady) toMW({ cmd: 'dive' }); }           // fly to the Sun on the galaxy map, hand over, then carry on in
+  else toSS({ cmd: 'fly', key: 'far', span: 6.15 });                         // pull back until the galaxy map takes over, then carry on out
+}
+const buttons = [...document.querySelectorAll('#ladder button')];
+buttons.forEach(b => b.onclick = () => go(b.dataset.go));
+function mark(spanLy) {   // light up the stop nearest the current scale
+  const l = Math.log10(Math.max(spanLy, 1e-12)); let best = null, bd = 1e9;
+  for (const b of buttons) { const d = Math.abs(STOPS[b.dataset.go].log - l); if (d < bd) { bd = d; best = b; } }
+  for (const b of buttons) b.classList.toggle('on', b === best);
+}
+
+addEventListener('message', e => {
+  const m = e.data; if (!m || typeof m !== 'object') return;
+  if (m.src === 'uas-ss' && e.source === ssEl.contentWindow) {
+    if (m.ready) {
+      st.ssReady = true; toMW({ cmd: 'ssready' });
+      if (st.driver === 'ss') { if (!st.started) { st.started = true; if (start !== 'solar-system') toSS(STOPS[start].cmd); } }
+      else if (st.pending && st.pending.map === 'ss') toMW({ cmd: 'dive' });
+      else toSS({ cmd: 'pause' });
+      return;
+    }
+    if (m.opt) { toMW({ cmd: 'opt', k: m.opt, on: m.on }); return; }
+    if (st.driver !== 'ss' || m.s === undefined) return;
+    ssEl.style.opacity = (1 - m.q).toFixed(3);
+    if (m.q > 0) toMW({ cmd: 'follow', s: m.s, yaw: m.yaw, tilt: m.tilt });   // keep the galaxy map lined up underneath while one fades into the other
+    mark(m.span);
+    if (m.q >= 0.999) toMap();
+  } else if (m.src === 'uas-mw' && e.source === mwEl.contentWindow) {
+    if (m.ready) { st.mwReady = true; if (st.ssReady) toMW({ cmd: 'ssready' }); if (st.driver === 'mw' && !st.started) { st.started = true; toMW(STOPS[start].cmd); } return; }
+    if (m.opt) { toSS({ cmd: 'opt', k: m.opt, on: m.on }); return; }
+    if (m.dive) { if (st.ssReady && st.driver === 'mw') toSolar(m); return; }
+    if (m.span !== undefined && st.driver === 'mw') mark(m.span);
+  }
+});
+addEventListener('hashchange', () => go(hash()));
+show(); mark(Math.pow(10, STOPS[start].log));
+mwEl.src = '../milky-way/index.html' + dbg;
+ssEl.src = '../solar-system/index.html' + dbg;
+})();
+</script>
+</body>
+</html>

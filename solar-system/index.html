@@ -766,7 +766,7 @@ const eqToScene = v => new THREE.Vector3(v.x, -v.y * Math.sin(EPS) + v.z * Math.
 // ===================================================================
 //  deep space: the galaxy map's frame, and where this view hands over to it
 // ===================================================================
-const EMBED = /[?&]embed=1/.test(location.search);
+const EMBED = window.name === 'uas-embed' || /[?&]embed=1/.test(location.search);   // layered with the galaxy map in the joined page
 const LYKM = 9460730472580.8, LY = LYKM * U, TAN20 = Math.tan(20 * DEG);   // a light-year (Julian year × c) in km and in scene units
 // heliocentric galactic axes (IAU galactic frame, ICRS J2000) in scene coordinates
 const GXs = eqToScene(GAL.x), GYs = eqToScene(GAL.y), GZs = eqToScene(GAL.z);
@@ -1745,7 +1745,7 @@ function frame(t) {
   }
   { const la = Math.log(camD / AUS);   // the icy outskirts fade in as you pull back
     KUIPER.material.opacity = 0.3 * sstep(la, Math.log(6), Math.log(30)) * (1 - sstep(la, Math.log(4000), Math.log(30000)));
-    OORT.material.opacity = 0.5 * sstep(la, Math.log(300), Math.log(4000));
+    OORT.material.opacity = 0.5 * sstep(la, Math.log(300), Math.log(4000)) * (1 - 0.7 * sstep(la, Math.log(15000), Math.log(200000)));
     KUIPER.visible = KUIPER.material.opacity > 0.004; OORT.visible = OORT.material.opacity > 0.004; }
 
   // the camera the picture is actually drawn with (the controls keep working with the plain 40° one)
