@@ -1299,7 +1299,7 @@ function setFocus(o) {
 //  camera moves
 // ===================================================================
 function defaultDist(o) {
-  if (o.kind === 'giant') return o.R * (o.key === 'saturn' ? 7.5 : 6); // close enough that the backlit crescent fills the frame
+  if (o.kind === 'giant') return o.cf.start.dist;
   if (o.isSun) return 9000;
   if (o.kind === 'dwarf') return o.R * 8;
   if (o.kind === 'planet') return o.key === 'earth' ? 45 : o.key === 'mars' ? 30 : o.R * 8;
@@ -1310,6 +1310,9 @@ function flyTo(o, dist, dir, dur) {
   const cur = camera.position.clone().sub(controls.target).normalize();
   if (!dir) {
     if (o.isSun) dir = cur;
+    else if (o.kind === 'giant') { // the giants keep their raised, sunlit overview of the whole system
+      dir = o.sunDir.clone().multiplyScalar(0.75).add(cur.multiplyScalar(0.35)).add(o.pole.clone().multiplyScalar(0.3)).normalize();
+    }
     else { // arrive backlit: from the night side, with the Sun peeking just past the limb and a thin crescent of light round the edge
       const host = o.kind === 'moon' ? o.parent : o, sd = host.sunDir, Y = new THREE.Vector3(0, 1, 0);
       const D = dist || defaultDist(o), th = THREE.MathUtils.clamp(1.35 * Math.asin(Math.min(1, radiusOf(o) / D)), 4 * DEG, 13 * DEG);
