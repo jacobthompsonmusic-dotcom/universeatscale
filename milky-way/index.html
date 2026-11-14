@@ -61,7 +61,7 @@
   #info dd.src { color: #a9b0c6; font-size: 12px; }
   #info .blurb { margin: 0; color: #c9cee0; font-size: 13.5px; }
   #info .go { display: none; margin-top: 14px; padding: 7px 12px; border-radius: 999px; border: 1px solid rgba(255,207,110,0.45); background: rgba(255,207,110,0.14); color: var(--text); font: 500 12.5px Inter, sans-serif; cursor: pointer; }
-  .embed-only { display: none; } body.embed .embed-only { display: inline; }
+  .embed-only { display: none; } body.embed .embed-only { display: inline; } body.embed .solo { display: none; }
 
   #legend { bottom: 16px; left: 16px; padding: 12px 14px; font-size: 12.5px; }
   #legend .row { display: flex; align-items: center; gap: 8px; margin: 3px 0; color: #c9cee0; }
@@ -114,7 +114,7 @@
 <div id="top" class="panel">
   <a class="homelink" href="../index.html">← All maps · Universe at Scale</a>
   <h1>The Milky Way in 3D</h1>
-  <p>Every star sits where its measured parallax puts it. <b>Drag</b> to move, <b>scroll or pinch</b> to zoom, <b>right-drag or Shift-drag</b> (two fingers on touch) to tilt and spin — all the way round, even underneath. Press <b>3D</b> to flip between overhead and side-on. Click anything, then zoom, to dive straight into it. Keep zooming out — or tap LG, LAN and OBS — to reach the edge of the observable universe.<span class="embed-only"> Zoom in on the <b>Sun</b> and you drop straight into the Solar System.</span></p>
+  <p>Every star sits where its measured parallax puts it. <b>Drag</b> to move, <b>scroll or pinch</b> to zoom, <b>right-drag or Shift-drag</b> (two fingers on touch) to tilt and spin — all the way round, even underneath. Press <b>3D</b> to flip between overhead and side-on. Click anything, then zoom, to dive straight into it. Keep zooming out — or tap LG, LAN and OBS — to reach the edge of the observable universe.<span class="embed-only"> Zoom in on the <b>Sun</b> and you drop straight into the Solar System.</span><span class="solo"> Or take the <a href="../universe/index.html" style="color:#ffcf6e">whole journey</a>, starting at Earth.</span></p>
   <div class="searchrow">
     <input id="search" type="text" placeholder="Search — try “Orion”, “Vega” or “black hole”" autocomplete="off" spellcheck="false">
     <button id="about" aria-label="Hide intro">×</button>

@@ -59,6 +59,7 @@
   .lab.big { font-weight:600; font-size:13px; color:#fff6e6; }
   .lab.mark { color:rgba(190,206,236,0.72); font-size:10.5px; letter-spacing:0.09em; text-transform:uppercase; pointer-events:none; cursor:default; }
   .lab.mark::before { display:none; }
+  body.embed .solo { display:none; }
   .lab.sel { background:rgba(240,181,106,0.22); }
   .lab.sun { color:#ffe9a8; font-weight:600; font-size:13px; letter-spacing:0.02em; }
   .lab.sun.edge { background:rgba(20,18,12,0.7); border:1px solid rgba(255,226,140,0.45); border-radius:999px; padding:3px 10px 3px 8px; }
@@ -125,7 +126,7 @@
     <button data-go="eris">Eris</button>
   </div>
   <h1>The Solar System</h1>
-  <p>The Sun, the planets, the dwarf planets and their moons where they really are right now, calculated from NASA JPL orbital data. Everything is drawn to true size and distance, so from out here the planets are far too small to see: the dots show where they are. <b>Drag</b> to turn, <b>scroll</b> over a planet to dive into its rings and moons, <b>right-drag</b> to pan. Keep scrolling <b>out</b> past Neptune for the Kuiper belt, the Oort cloud and the way to the stars.</p>
+  <p>The Sun, the planets, the dwarf planets and their moons where they really are right now, calculated from NASA JPL orbital data. Everything is drawn to true size and distance, so from out here the planets are far too small to see: the dots show where they are. <b>Drag</b> to turn, <b>scroll</b> over a planet to dive into its rings and moons, <b>right-drag</b> to pan. Keep scrolling <b>out</b> past Neptune for the Kuiper belt, the Oort cloud and the way to the stars.<span class="solo"> Or take the <a href="../universe/index.html" style="color:#ffcf6e">whole journey</a>, from Earth out to the edge of the universe.</span></p>
   <div class="searchrow">
     <input id="search" type="text" placeholder="Search — try “Saturn” or “Titan”" autocomplete="off" spellcheck="false">
     <button id="about" aria-label="Hide intro">×</button>
