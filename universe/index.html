@@ -18,30 +18,27 @@
   html, body { margin: 0; height: 100%; background: #020205; overflow: hidden; font: 12px/1.3 Inter, system-ui, sans-serif; color: #e9ecf5; }
   iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #020205; }
   #mw { z-index: 1; } #ss { z-index: 2; }
-  /* the scale ladder: where you are between Earth and the edge of the observable universe */
-  #ladder { position: fixed; z-index: 3; top: 16px; left: 50%; transform: translateX(-50%); display: flex; align-items: stretch; gap: 0; padding: 5px 6px;
-    background: rgba(12, 13, 20, 0.78); border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 999px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-  #ladder button { position: relative; border: 0; background: none; color: #8d93a8; font: 500 11.5px Inter, system-ui, sans-serif; padding: 6px 11px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+  /* the scale ladder: where you are between Earth and the edge of the observable universe (outermost at the top) */
+  #ladder { position: fixed; z-index: 3; top: 16px; right: 16px; width: 116px; display: flex; flex-direction: column; gap: 1px; padding: 6px;
+    background: rgba(12, 13, 20, 0.78); border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 14px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  #ladder button { border: 0; background: none; color: #8d93a8; font: 500 11.5px Inter, system-ui, sans-serif; padding: 6px 9px; border-radius: 8px; cursor: pointer; white-space: nowrap; text-align: left; }
   #ladder button:hover, #ladder button:focus-visible { color: #e9ecf5; background: rgba(255, 255, 255, 0.06); outline: none; }
   #ladder button.on { color: #14110a; background: #ffcf6e; }
-  #ladder button + button::before { content: ""; position: absolute; left: -1px; top: 50%; width: 2px; height: 2px; border-radius: 50%; background: rgba(255, 255, 255, 0.25); }
-  #ladder button.on::before, #ladder button.on + button::before { display: none; }
-  @media (max-width: 1180px) { #ladder { top: auto; bottom: 16px; max-width: calc(100% - 32px); overflow-x: auto; scrollbar-width: none; } #ladder::-webkit-scrollbar { display: none; } }
-  @media (max-width: 760px) { #ladder { display: none; } }
+  @media (max-width: 760px), (max-height: 620px) { #ladder { display: none; } }
 </style>
 </head>
 <body>
 <iframe id="mw" name="uas-embed" title="The Milky Way and beyond" src="about:blank"></iframe>
 <iframe id="ss" name="uas-embed" title="The Solar System" src="about:blank"></iframe>
-<nav id="ladder" aria-label="Scale">
-  <button data-go="earth">Earth</button>
-  <button data-go="solar-system">Solar System</button>
-  <button data-go="oort-cloud">Oort cloud</button>
-  <button data-go="nearest-stars">Nearest stars</button>
+<nav id="ladder" aria-label="Scale: jump to a level">
+  <button data-go="observable-universe" title="The observable universe">Universe</button>
+  <button data-go="laniakea" title="Laniakea, our supercluster">Laniakea</button>
+  <button data-go="local-group" title="The Local Group of galaxies">Local Group</button>
   <button data-go="milky-way">Milky Way</button>
-  <button data-go="local-group">Local Group</button>
-  <button data-go="laniakea">Laniakea</button>
-  <button data-go="observable-universe">Observable universe</button>
+  <button data-go="nearest-stars">Nearest stars</button>
+  <button data-go="oort-cloud">Oort cloud</button>
+  <button data-go="solar-system">Solar System</button>
+  <button data-go="earth">Earth</button>
 </nav>
 <script>
 (() => {

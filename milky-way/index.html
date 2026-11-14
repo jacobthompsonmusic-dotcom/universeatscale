@@ -96,6 +96,7 @@
   #about:hover { color:var(--text); background:rgba(255,255,255,0.1); }
   #top.collapsed { padding:8px; }
   #top.collapsed h1, #top.collapsed p { display:none; }
+  @media (min-width: 761px) { body.embed #info { right: 140px; } }
   @media (max-width: 760px) {
     #top { width: calc(100% - 32px); }
     #info { top: auto; bottom: 16px; left: 16px; right: 84px; width: auto; max-height: 50vh; overflow-y: auto; z-index: 5; }
@@ -1424,6 +1425,7 @@ if (EMBED) {
   });
   parent.postMessage({ src: 'uas-mw', ready: true }, '*');
 }
+if (/[?&]debug=1/.test(location.search)) window.__mw = { view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, get following() { return following; }, get ssReady() { return ssReady; } };
 
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;

@@ -85,6 +85,7 @@
   #scale .bar { height:6px; border:1.5px solid rgba(255,255,255,0.55); border-top:0; margin:0 auto 3px; }
   #loading { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:13px; z-index:5; background:#020205; transition:opacity .6s; }
 
+  @media (min-width: 761px) { body.embed #info { right:140px; } body.embed #controls { z-index:2; } }
   @media (max-width: 760px) {
     #top { width:calc(100% - 32px); }
     #info { top:auto; bottom:136px; left:16px; right:98px; width:auto; max-height:45vh; z-index:5; }
@@ -919,14 +920,14 @@ const KUIPER = farCloud(3600, 71, r => {
   const a = r() < 0.8 ? 39.4 + r() * 8.3 : 34 + r() * 30, inc = Math.abs(gaussR(r)) * (r() < 0.5 ? 2.6 : 15) * DEG, u = r() * TAU, O = r() * TAU;
   return [a * (Math.cos(u) * Math.cos(O) - Math.sin(u) * Math.sin(O) * Math.cos(inc)), a * (Math.cos(u) * Math.sin(O) + Math.sin(u) * Math.cos(O) * Math.cos(inc)), a * Math.sin(u) * Math.sin(inc)];
 }, 0x9fb4d0, 1.2);
-// Oort cloud (predicted, never seen directly): a flattened inner cloud from ~2,000 AU merging into a round outer shell that
-// thins out toward ~100,000 AU; density falling roughly as r^-3.5 (Duncan, Quinn & Tremaine 1987)
-const OORT = farCloud(34000, 72, r => {
-  const a0 = Math.pow(2000, -0.5), a1 = Math.pow(100000, -0.5), d = Math.pow(a0 + r() * (a1 - a0), -2);
-  const flat = THREE.MathUtils.clamp((Math.log(d) - Math.log(3000)) / (Math.log(20000) - Math.log(3000)), 0, 1);
-  const sinb = flat >= 1 ? r() * 2 - 1 : THREE.MathUtils.clamp((1 - flat) * Math.sin(gaussR(r) * 22 * DEG) + flat * (r() * 2 - 1), -1, 1), cb = Math.sqrt(1 - sinb * sinb), l = r() * TAU;
+// Oort cloud (predicted from the orbits of long-period comets; never seen directly): from roughly 2,000 AU, slightly flattened
+// toward the planets' plane on the inside, becoming a round shell that thins out near 100,000 AU. The dots are illustrative.
+const OORT = farCloud(30000, 72, r => {
+  const d = Math.exp(Math.log(2000) + Math.pow(r(), 0.8) * (Math.log(100000) - Math.log(2000)));
+  const flat = THREE.MathUtils.clamp((Math.log(d) - Math.log(2500)) / (Math.log(15000) - Math.log(2500)), 0, 1);
+  const sinb = THREE.MathUtils.clamp((1 - flat) * Math.sin(gaussR(r) * 38 * DEG) + flat * (r() * 2 - 1), -1, 1), cb = Math.sqrt(1 - sinb * sinb), l = r() * TAU;
   return [d * cb * Math.cos(l), d * cb * Math.sin(l), d * sinb];
-}, 0xa9c4e6, 1.25);
+}, 0xa9c4e6, 1.2);
 // landmarks: [name, radius in AU, draw a ring in the plane of Earth's orbit?, angle of the label around the ring]
 const MARKS = [
   ['Kuiper belt', 44, false, 200], ['Heliopause · 120 AU', 120, true, 320], ['1,000 AU', 1000, true, 300],
@@ -1702,7 +1703,7 @@ function frame(t) {
   if (simMs > TMAX || simMs < TMIN) { simMs = Math.min(TMAX, Math.max(TMIN, simMs)); playing = false; playBtn.textContent = '▶'; }
   // far from the Sun: stay centred on it, and turn the scene from the frame of Earth's orbit to the galaxy's
   { const r0 = camera.position.distanceTo(controls.target) / AUS;
-    if (r0 > 1500 && !fly) { if (focus !== SUN) setFocus(SUN); if (controls.target.lengthSq() > 0) { _v1.copy(controls.target).multiplyScalar(0.2); controls.target.sub(_v1); camera.position.sub(_v1); } }
+    if (r0 > 1500 && !fly) { if (focus !== SUN) setFocus(SUN); if (selected && !selected.isSun && r0 > 4000) select(null); if (controls.target.lengthSq() > 0) { _v1.copy(controls.target).multiplyScalar(0.2); controls.target.sub(_v1); camera.position.sub(_v1); } }
     deep.t = sstep(Math.log(r0), Math.log(3000), Math.log(60000));
     scene.quaternion.copy(Q_ID).slerp(Q_GAL, deep.t); skyRoot.quaternion.copy(scene.quaternion); }
   updateWorld();
@@ -1745,7 +1746,7 @@ function frame(t) {
   }
   { const la = Math.log(camD / AUS);   // the icy outskirts fade in as you pull back
     KUIPER.material.opacity = 0.3 * sstep(la, Math.log(6), Math.log(30)) * (1 - sstep(la, Math.log(4000), Math.log(30000)));
-    OORT.material.opacity = 0.5 * sstep(la, Math.log(300), Math.log(4000)) * (1 - 0.7 * sstep(la, Math.log(15000), Math.log(200000)));
+    OORT.material.opacity = 0.42 * sstep(la, Math.log(300), Math.log(4000)) * (1 - 0.55 * sstep(la, Math.log(15000), Math.log(200000)));
     KUIPER.visible = KUIPER.material.opacity > 0.004; OORT.visible = OORT.material.opacity > 0.004; }
 
   // the camera the picture is actually drawn with (the controls keep working with the plain 40° one)
@@ -1808,8 +1809,8 @@ function init() {
   updateWorld();
   const h = location.hash.slice(1); if (byKey(h) && byKey(h).isPlanet) setTimeout(() => flyTo(byKey(h)), 400);
   requestAnimationFrame(frame);
-  if (/[?&]debug=1/.test(location.search)) window.__ss = { camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, get focus() { return focus; }, get simMs() { return simMs; } };
-  if (EMBED) { parent.postMessage({ src: 'uas-ss', ready: true }, '*'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); }
+  if (/[?&]debug=1/.test(location.search)) window.__ss = { camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
+  if (EMBED) { parent.postMessage({ src: 'uas-ss', ready: true }, '*'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); document.body.classList.add('embed'); }
   setTimeout(() => { const l = document.getElementById('loading'); l.style.opacity = 0; setTimeout(() => l.remove(), 700); }, 200);
 }
 setTimeout(init, 30);
