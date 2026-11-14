@@ -27,7 +27,7 @@
     '.uas-mu-corner{right:18px;bottom:18px}',
     '.uas-mu-header{border:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0 0 0 10px;font-size:12px}',
     '.uas-mu-header:hover,.uas-mu-header.open{border:0}',
-    '.uas-mu-pop{position:fixed;z-index:31;width:300px;max-width:calc(100vw - 24px);padding:6px;box-sizing:border-box;',
+    '.uas-mu-pop{position:fixed;z-index:31;width:340px;max-width:calc(100vw - 24px);padding:6px;box-sizing:border-box;',
     ' background:rgba(12,13,20,.94);border:1px solid rgba(255,255,255,.1);border-radius:14px;color:#c9cede;',
     ' font:12.5px/1.45 Inter,system-ui,sans-serif;box-shadow:0 18px 50px rgba(0,0,0,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}',
     '.uas-mu-pop[hidden]{display:block!important;visibility:hidden;pointer-events:none}',   /* hidden, not removed: the music keeps playing */
@@ -41,8 +41,7 @@
     '.uas-mu-pop .frame.off{height:auto;padding:12px 10px;text-align:center;display:flex;flex-direction:column;gap:6px}',
     '.uas-mu-pop .frame.off a{font-weight:600;font-size:13.5px}.uas-mu-pop .frame.off span{color:#8d93a8;font-size:11.5px}',
     '.uas-mu-pop .links{margin:5px 6px 1px;display:flex;justify-content:space-between;font-size:11px}',
-    '@media (max-width:760px),(max-height:620px){.uas-mu-ladder{top:auto;bottom:14px;right:auto;left:50%;transform:translateX(-50%);width:auto}',
-    ' .uas-mu-pop{width:280px}}'
+    '@media (max-width:760px),(max-height:620px){.uas-mu-ladder{top:auto;bottom:14px;right:auto;left:50%;transform:translateX(-50%);width:auto}}'
   ].join('\n');
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
