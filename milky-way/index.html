@@ -172,11 +172,12 @@ void main() {
   vec3 I = vec3(0.0), T = vec3(1.0);
   float t = t0, jit = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);   // per-pixel offset: turns banding into fine grain
   bool first = true;
-  for (int i = 0; i < 260; i++) {
+  for (int i = 0; i < 360; i++) {
     if (t >= t1) break;
     vec3 q = ro + rd * t;
     float dt = clamp(0.14 * max(abs(q.z), 100.0) / max(abs(rd.z), 0.03), 6.0, 2000.0);
     if (uOrtho < 0.5) dt = min(dt, max(0.1 * t, 6.0));                      // fine steps close to the camera when we're inside
+    dt = min(dt, max(0.1 * length(q), 20.0));                                 // and through the bright core, where coarse steps show as crawling grain
     if (first) { dt *= jit; first = false; }
     dt = min(dt, t1 - t);
     vec3 m = ro + rd * (t + 0.5 * dt);
@@ -904,7 +905,7 @@ const TAN20 = Math.tan(20 * Math.PI / 180), sstep = (x, a, b) => { const k = Mat
 const setupView = () => {
   CY = Math.cos(view.yaw); SY = Math.sin(view.yaw); CT = Math.cos(view.tilt); ST = Math.sin(view.tilt);
   const span = Math.min(Wd, Ht) / view.s, dGC = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z);
-  PT = TAN20 * (1 - sstep(Math.log(span), Math.log(25000), Math.log(400000))) * sstep(Math.log(Math.max(dGC, 1e-9)), Math.log(20), Math.log(200));
+  PT = TAN20 * (1 - sstep(Math.log(span), Math.log(25000), Math.log(400000))) * sstep(Math.log(Math.max(dGC, 0.2 * span, 1e-9)), Math.log(30), Math.log(600));   // flattens gradually as you close in on Sgr A*
   PD = PT > 1e-4 ? (Ht / 2 / view.s) / PT : Infinity;
 };
 // tilt wraps all the way round: 0 = overhead, 90° = side-on, 180° = from below the galaxy
@@ -1033,7 +1034,8 @@ function drawGalaxy3D() {
   if (key !== GX.key) {
     const now = performance.now(), ft = now - GX.last; GX.last = now;   // too slow? draw it a little coarser
     if (ft > 50 && ft < 400) GX.q = Math.max(0.35, GX.q * 0.9); else if (ft < 24) GX.q = Math.min(1, GX.q * 1.03);
-    const q = Math.min(1, 1100 / Math.max(Wd, Ht)) * Math.min(dpr, 1.25) * GX.q, w = Math.max(2, Math.round(Wd * q)), h = Math.max(2, Math.round(Ht * q));
+    const qq = GX.q > 0.86 ? 1 : GX.q > 0.64 ? 0.75 : GX.q > 0.47 ? 0.55 : 0.4;   // a few fixed steps, so the resolution doesn't change every frame
+    const q = Math.min(1, 1100 / Math.max(Wd, Ht)) * Math.min(dpr, 1.25) * qq, w = Math.max(2, Math.round(Wd * q)), h = Math.max(2, Math.round(Ht * q));
     if (GX.cv.width !== w || GX.cv.height !== h) { GX.cv.width = w; GX.cv.height = h; }
     const gl = GX.gl, U = GX.u, F = [SY * ST, CY * ST, CT];
     gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
@@ -1660,22 +1662,22 @@ function drawGCNear() {
     [[0, 1], [0.08, 0.72], [0.25, 0.42], [0.5, 0.24], [1, 0.11], [1.6, 0.05], [2.5, 0.018], [4, 0]].forEach(([x, v]) => gr.addColorStop(x / 4, `rgba(255,222,184,${(v * 0.42 * aN).toFixed(4)})`));
     ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, 4, 0, 7); ctx.fill();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalCompositeOperation = 'source-over';
-    const la = fadeWin(span, 12, 260, 2, 2);
+    const la = fadeWin(span, 10, 120, 2, 2);
     nearLabel('Nuclear star cluster', Math.min(Wd - 360, gx + l1 * 0.8), Math.max(40, gy - l2 * 0.9), la, '~25 million stars, mostly old · half its light within 14 ly');
     credit = Math.max(credit, la);
   }
   // circumnuclear disc
-  const aC = fadeWin(span, 1.2, 160, 3, 2);
+  const aC = fadeWin(span, 1.2, 110, 2.5, 2);
   if (aC > 0.01) {
     ctx.globalCompositeOperation = 'lighter';
     for (const c of CND.pts) { const [X, Y] = P(c.p); if (!isFinite(X)) continue; const r = Math.min(60, Math.max(1.2, c.s * PC_LY * S * 1.6));
       if (X < -r || X > Wd + r || Y < -r || Y > Ht + r) continue; ctx.globalAlpha = Math.min(1, 0.09 * c.w * aC * Math.min(1, 8 / r + 0.4)); ctx.drawImage(NSPR.mol, X - r, Y - r, 2 * r, 2 * r); }
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-    const [X, Y] = P(CND.lab); nearLabel('Circumnuclear disc', X, Y, fadeWin(span, 5, 120, 2, 2), 'a ring of dense molecular gas, 1.5–4 pc out');
-    credit = Math.max(credit, fadeWin(span, 5, 120, 2, 2));
+    const [X, Y] = P(CND.lab); nearLabel('Circumnuclear disc', X, Y, fadeWin(span, 4, 60, 2, 2), 'a ring of dense molecular gas, 1.5–4 pc out');
+    credit = Math.max(credit, fadeWin(span, 4, 60, 2, 2));
   }
   // the minispiral
-  const aM = fadeWin(span, 0.25, 60, 3, 2);
+  const aM = fadeWin(span, 0.25, 40, 2.5, 2);
   if (aM > 0.01) {
     ctx.globalCompositeOperation = 'lighter';
     for (const s of MINI) {
@@ -1692,22 +1694,22 @@ function drawGCNear() {
       ctx.globalAlpha = 1;
     }
     ctx.globalCompositeOperation = 'source-over';
-    const la = fadeWin(span, 0.8, 40, 2, 2);
+    const la = fadeWin(span, 0.8, 16, 2, 2);
     for (const s of MINI) { const [X, Y] = P(s.at(s.lab)); nearLabel(s.name, X, Y, la, s === MINI[2] ? 'the minispiral: streams of ionized gas orbiting Sgr A*' : ''); }
     credit = Math.max(credit, la);
   }
   // the clockwise disc of young stars, moving
   const yr = GCT.yr;
-  const aD = fadeWin(span, 0.02, 12, 3, 2.5);
+  const aD = fadeWin(span, 0.02, 6, 2.5, 2.5);
   if (aD > 0.01) {
     ctx.globalCompositeOperation = 'lighter'; let lx = 0, ly = 0, ln = 0;
     for (const o of CWDISC) { const [X, Y] = P(kepWorld(o, yr)); if (!isFinite(X)) continue; ctx.globalAlpha = 0.9 * aD; ctx.drawImage(NSPR.blue, X - 5, Y - 5, 10, 10); if (o.a > 4 * AS_AU && o.a < 7 * AS_AU && ln < 1) { lx = X; ly = Y; ln++; } }
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-    const la = fadeWin(span, 0.12, 6, 2, 2); if (ln) nearLabel('Disc of young stars', lx, ly, la, 'massive stars born here only a few million years ago, all circling clockwise');
+    const la = fadeWin(span, 0.12, 3, 2, 2); if (ln) nearLabel('Disc of young stars', lx, ly, la, 'massive stars born here only a few million years ago, all circling clockwise');
     moving = 1; credit = Math.max(credit, la);
   }
   // the S-stars, on their measured orbits
-  const aS = fadeWin(span, 3e-4, 3, 3, 3);
+  const aS = fadeWin(span, 3e-4, 1.2, 2.5, 3);
   if (aS > 0.01) {
     ctx.lineWidth = 0.8;
     for (const o of SSTARS) {
@@ -1720,7 +1722,7 @@ function drawGCNear() {
       if (opts.labels && rpx > 45) { ctx.font = '500 11px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = `rgba(214,222,240,${0.75 * ao})`; ctx.fillText(o.name, X + 7, Y - 4); }
     }
     moving = 1; credit = Math.max(credit, aS * fadeWin(span, 1e-3, 3, 2, 2));
-    const la = fadeWin(span, 0.02, 1.5, 2, 2); if (la > 0.05) nearLabel('The S-stars', gx + 0.55 * AS_AU / AU_PER_LY * S, gy + 0.5 * AS_AU / AU_PER_LY * S, la, 'each one\'s orbit measured over 25 years · blue: young · gold: old');
+    const la = fadeWin(span, 0.02, 0.6, 2, 2); if (la > 0.05) nearLabel('The S-stars', gx + 0.55 * AS_AU / AU_PER_LY * S, gy + 0.5 * AS_AU / AU_PER_LY * S, la, 'each one\'s orbit measured over 25 years · blue: young · gold: old');
   }
   if (credit > 0.05 && Wd >= 900) {   // too long for a phone screen
     ctx.font = '400 10.5px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(190,196,212,${0.6 * credit})`;
@@ -2044,7 +2046,7 @@ if (EMBED) {
   });
   parent.postMessage({ src: 'uas-mw', ready: true }, '*');
 }
-if (/[?&]debug=1/.test(location.search)) window.__mw = { gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, get following() { return following; }, get ssReady() { return ssReady; } };
+if (/[?&]debug=1/.test(location.search)) window.__mw = { GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, get following() { return following; }, get ssReady() { return ssReady; } };
 
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
