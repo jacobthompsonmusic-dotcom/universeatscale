@@ -85,8 +85,6 @@ def graph(f, p):
              'homeLocation': {'@type': 'Place', 'name': 'Ontario, Canada'}},
             {'@type': 'ItemList', 'name': 'Interactive maps', 'itemListElement': [
                 {'@type': 'ListItem', 'position': i + 1, 'url': SITE + '/' + u, 'name': n} for i, (u, n) in enumerate(MAPS)]},
-            {'@type': 'FAQPage', 'mainEntity': [
-                {'@type': 'Question', 'name': q, 'acceptedAnswer': {'@type': 'Answer', 'text': a}} for q, a in FAQ]},
         ]}
     return {'@context': 'https://schema.org', '@graph': [
         {'@type': 'WebApplication', '@id': url + '#app', 'name': p['crumb'], 'url': url, 'description': p['desc'],
