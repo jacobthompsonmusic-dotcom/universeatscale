@@ -142,6 +142,7 @@
     <button class="tg on" data-k="dots">Planet dots</button>
     <button class="tg on" data-k="faint">Faint rings</button>
     <button class="tg on" data-k="milky">Milky Way</button>
+    <button class="tg" data-k="zodiac">Zodiac</button>
   </div>
   <div class="hint">Planets, moons, the Sun and every distance are to true scale. Double-click a name to fly there; click empty space to close a card.</div>
 </div>
@@ -152,6 +153,7 @@
   <button class="txt" id="p-all" title="The whole solar system">ALL</button>
   <button class="txt" id="p-top" title="Look straight down on the planets' orbits">TOP</button>
   <button class="txt" id="p-edge" title="Look along the plane of Earth's orbit">EDGE</button>
+  <button class="txt" id="p-back" title="Backlit view: swing round to the night side, with the Sun just past the edge" style="font-size:9.5px;letter-spacing:0.02em">BACKLIT</button>
 </div>
 
 <div id="scale"><div class="bar" id="scale-bar"></div><span id="scale-txt"></span></div>
@@ -782,6 +784,27 @@ scene.add(new THREE.AmbientLight(0x8890a0, 0.03));
   skyScene.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 1.4, sizeAttenuation: false, vertexColors: true })));
 }
 const milky = new THREE.Group(); skyScene.add(milky);
+// the 12 zodiac constellations (stick figures from d3-celestial, star positions J2000), drawn on the sky behind everything
+const ZODIAC = [{"n":"Aries","l":[39.5412,20.7923],"p":[[[42.5,27.26],[31.79,23.46],[28.66,20.81],[28.38,19.29]]],"s":[[42.5,27.26,3.6],[31.79,23.46,2.0],[28.66,20.81,2.6],[28.38,19.29,3.9]]},{"n":"Taurus","l":[70,15],"p":[[[84.41,21.14],[68.98,16.51],[67.17,15.87],[64.95,15.63],[65.73,17.54],[67.15,19.18],[81.57,28.61]],[[64.95,15.63],[60.17,12.49],[51.79,9.73],[60.79,5.99]],[[51.79,9.73],[51.2,9.03],[54.22,0.4]]],"s":[[84.41,21.14,3.0],[68.98,16.51,0.9],[67.17,15.87,3.4],[64.95,15.63,3.6],[65.73,17.54,3.8],[67.15,19.18,3.5],[81.57,28.61,1.6],[60.17,12.49,3.4],[51.79,9.73,3.7],[60.79,5.99,3.9],[51.2,9.03,3.6],[54.22,0.4,4.3]]},{"n":"Gemini","l":[106.0592,22.6002],"p":[[[93.72,22.51],[95.74,22.51],[100.98,25.13],[107.78,30.25],[113.65,31.89],[116.33,28.03],[113.98,26.9],[110.03,21.98],[106.03,20.57],[99.43,16.4],[101.32,12.9]],[[110.03,21.98],[109.52,16.54]]],"s":[[93.72,22.51,3.3],[95.74,22.51,2.9],[100.98,25.13,3.1],[107.78,30.25,4.4],[113.65,31.89,1.6],[116.33,28.03,1.2],[113.98,26.9,4.1],[110.03,21.98,3.5],[106.03,20.57,4.0],[99.43,16.4,1.9],[101.32,12.9,3.4],[109.52,16.54,3.6]]},{"n":"Cancer","l":[129.7392,19.8058],"p":[[[134.62,11.86],[131.17,18.15],[130.82,21.47],[131.67,28.77]],[[131.17,18.15],[124.13,9.19]]],"s":[[134.62,11.86,4.3],[131.17,18.15,3.9],[130.82,21.47,4.7],[131.67,28.77,4.0],[124.13,9.19,3.5]]},{"n":"Leo","l":[160,13],"p":[[[152.09,11.97],[151.83,16.76],[154.99,19.84],[168.53,20.52],[177.26,14.57],[168.56,15.43],[152.09,11.97]],[[154.99,19.84],[154.17,23.42],[148.19,26.01],[146.46,23.77]]],"s":[[152.09,11.97,1.4],[151.83,16.76,3.5],[154.99,19.84,2.0],[168.53,20.52,2.6],[177.26,14.57,2.1],[168.56,15.43,3.3],[154.17,23.42,3.4],[148.19,26.01,3.9],[146.46,23.77,3.0]]},{"n":"Virgo","l":[-158,-4],"p":[[[176.46,6.53],[177.67,1.76],[-175.02,-0.67],[-169.58,-1.45],[-162.51,-5.54],[-158.7,-11.16],[-146.0,-6.0],[-139.23,-5.66]],[[-164.46,10.96],[-166.1,3.4],[-169.58,-1.45]],[[-162.51,-5.54],[-156.33,-0.6],[-149.59,1.54],[-138.44,1.89]]],"s":[[176.46,6.53,4.0],[177.67,1.76,3.6],[-175.02,-0.67,3.9],[-169.58,-1.45,2.7],[-162.51,-5.54,4.4],[-158.7,-11.16,1.0],[-146.0,-6.0,4.1],[-139.23,-5.66,3.9],[-164.46,10.96,2.9],[-166.1,3.4,3.4],[-156.33,-0.6,3.4],[-149.59,1.54,4.2],[-138.44,1.89,3.7]]},{"n":"Libra","l":[-132.0099,-15.2346],"p":[[[-133.98,-25.28],[-137.28,-16.04],[-130.75,-9.38],[-126.12,-14.79],[-125.74,-28.14],[-125.34,-29.78]],[[-137.28,-16.04],[-126.12,-14.79]]],"s":[[-133.98,-25.28,3.2],[-137.28,-16.04,2.8],[-130.75,-9.38,2.6],[-126.12,-14.79,3.9],[-125.74,-28.14,3.6],[-125.34,-29.78,3.7]]},{"n":"Scorpius","l":[-106,-32],"p":[[[-120.29,-26.11],[-119.92,-22.62],[-118.64,-19.81]],[[-119.92,-22.62],[-114.7,-25.59],[-112.65,-26.43],[-111.03,-28.22],[-107.46,-34.29],[-107.03,-38.05],[-106.35,-42.36],[-101.96,-43.24],[-95.67,-43.0],[-93.1,-40.13],[-94.38,-39.03],[-96.6,-37.1]]],"s":[[-120.29,-26.11,2.9],[-119.92,-22.62,2.3],[-118.64,-19.81,2.6],[-114.7,-25.59,2.9],[-112.65,-26.43,1.1],[-111.03,-28.22,2.8],[-107.46,-34.29,2.3],[-107.03,-38.05,3],[-106.35,-42.36,3.6],[-101.96,-43.24,3.3],[-95.67,-43.0,1.9],[-93.1,-40.13,3.0],[-94.38,-39.03,2.4],[-96.6,-37.1,1.6]]},{"n":"Sagittarius","l":[-73.5153,-28.4769],"p":[[[-85.59,-36.76],[-83.96,-34.38],[-84.75,-29.83],[-83.01,-25.42],[-86.56,-21.06]],[[-69.34,-44.46],[-69.03,-40.62],[-74.35,-29.88],[-78.59,-26.99],[-83.01,-25.42]],[[-61.18,-41.87],[-60.07,-35.28],[-61.04,-26.3],[-65.82,-24.88],[-68.68,-24.51],[-71.11,-25.26],[-76.18,-26.3],[-78.59,-26.99],[-84.75,-29.83],[-88.55,-30.42],[-83.96,-34.38],[-74.35,-29.88],[-73.27,-27.67],[-76.18,-26.3],[-73.83,-21.74],[-72.56,-21.02],[-70.59,-18.95],[-69.58,-17.85],[-69.57,-15.96]],[[-73.83,-21.74],[-75.57,-21.11],[-76.46,-22.74],[-76.18,-26.3]]],"s":[[-85.59,-36.76,3.1],[-83.96,-34.38,1.8],[-84.75,-29.83,2.7],[-83.01,-25.42,2.8],[-86.56,-21.06,3.8],[-69.34,-44.46,4.0],[-69.03,-40.62,4.0],[-74.35,-29.88,2.6],[-78.59,-26.99,3.2],[-61.18,-41.87,4.1],[-60.07,-35.28,4.4],[-61.04,-26.3,4.7],[-65.82,-24.88,4.6],[-68.68,-24.51,5.0],[-71.11,-25.26,4.9],[-76.18,-26.3,2.0],[-88.55,-30.42,3.0],[-73.27,-27.67,3.3],[-73.83,-21.74,3.8],[-72.56,-21.02,2.9],[-70.59,-18.95,4.9],[-69.58,-17.85,3.9],[-69.57,-15.96,4.5],[-75.57,-21.11,3.5],[-76.46,-22.74,4.9]]},{"n":"Capricornus","l":[-44.268,-18.0232],"p":[[[-55.59,-12.51],[-54.75,-14.78],[-52.78,-17.81],[-48.48,-25.27],[-47.04,-26.92],[-38.33,-22.41],[-33.24,-16.13],[-34.98,-16.66],[-39.44,-16.83],[-43.51,-17.23],[-55.59,-12.51]]],"s":[[-55.59,-12.51,4.3],[-54.75,-14.78,3.0],[-52.78,-17.81,4.8],[-48.48,-25.27,4.1],[-47.04,-26.92,4.1],[-38.33,-22.41,3.8],[-33.24,-16.13,2.9],[-34.98,-16.66,3.7],[-39.44,-16.83,4.3],[-43.51,-17.23,4.1]]},{"n":"Aquarius","l":[-25,-11],"p":[[[-48.08,-9.5],[-46.84,-8.98],[-37.11,-5.57],[-28.55,-0.32],[-24.59,-1.39],[-22.79,-0.02],[-21.16,-0.12],[-16.85,-7.58],[-10.52,-9.18],[-12.64,-21.17]],[[-37.11,-5.57],[-28.39,-13.87]],[[-28.55,-0.32],[-25.79,-7.78]],[[-22.79,-0.02],[-23.68,1.38]],[[-9.26,-20.1],[-10.52,-9.18],[-4.56,-17.82]]],"s":[[-48.08,-9.5,3.8],[-46.84,-8.98,4.7],[-37.11,-5.57,2.9],[-28.55,-0.32,3.0],[-24.59,-1.39,3.9],[-22.79,-0.02,3.6],[-21.16,-0.12,4.0],[-16.85,-7.58,3.7],[-10.52,-9.18,4.4],[-12.64,-21.17,3.7],[-28.39,-13.87,4.3],[-25.79,-7.78,4.2],[-23.68,1.38,4.8],[-9.26,-20.1,4.0],[-4.56,-17.82,4.8]]},{"n":"Pisces","l":[-353,14],"p":[[[18.44,24.58],[17.92,30.09],[19.87,27.26],[18.44,24.58],[17.86,21.03],[22.87,15.35],[26.35,9.16],[30.51,2.76],[28.39,3.19],[25.36,5.49],[22.55,6.14],[18.43,7.58],[15.74,7.89],[12.17,7.59],[-0.17,6.86],[-5.01,5.63],[-8.01,6.38],[-9.91,5.38],[-10.71,3.28],[-8.27,1.26],[-4.49,1.78],[-3.4,3.49],[-5.01,5.63]],[[-10.71,3.28],[-14.03,3.82]]],"s":[[18.44,24.58,4.7],[17.92,30.09,4.5],[19.87,27.26,4.7],[17.86,21.03,4.7],[22.87,15.35,3.6],[26.35,9.16,4.3],[30.51,2.76,3.8],[28.39,3.19,4.6],[25.36,5.49,4.5],[22.55,6.14,4.8],[18.43,7.58,5.2],[15.74,7.89,4.3],[12.17,7.59,4.4],[-0.17,6.86,4.0],[-5.01,5.63,4.1],[-8.01,6.38,4.3],[-9.91,5.38,5.0],[-10.71,3.28,3.7],[-8.27,1.26,5.0],[-4.49,1.78,4.5],[-3.4,3.49,5.0],[-14.03,3.82,4.5]]}];
+const zodiac = new THREE.Group(); zodiac.visible = false; skyScene.add(zodiac);
+{
+  const RZ = 1.42e6, P = (ra, de) => eqToScene(vec(ra, de)).multiplyScalar(RZ), seg = [], buckets = [[], [], []];
+  for (const c of ZODIAC) {
+    for (const l of c.p) for (let i = 1; i < l.length; i++) seg.push(...P(...l[i - 1]).toArray(), ...P(...l[i]).toArray());
+    for (const [ra, de, m] of c.s) buckets[m < 1.6 ? 0 : m < 3 ? 1 : 2].push(...P(ra, de).toArray());
+  }
+  const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(seg, 3));
+  zodiac.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0x9fbcff, transparent: true, opacity: 0.32, depthTest: false, depthWrite: false })));
+  [4.2, 3, 2.1].forEach((sz, i) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(buckets[i], 3));
+    zodiac.add(new THREE.Points(g, new THREE.PointsMaterial({ size: sz, sizeAttenuation: false, color: 0xeef3ff, transparent: true, depthTest: false, depthWrite: false }))); });
+  for (const c of ZODIAC) { // name labels, sized to a fixed patch of sky
+    const cv = document.createElement('canvas'), x = cv.getContext('2d'); cv.width = 512; cv.height = 96;
+    x.font = '500 46px Inter, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = 'rgba(170,195,255,0.62)';
+    x.fillText(c.n.toUpperCase().split('').join(String.fromCharCode(8202)), 256, 48);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false, depthWrite: false }));
+    sp.position.copy(P(c.l[0], c.l[1])); sp.scale.set(RZ * 0.13, RZ * 0.13 * 96 / 512, 1); zodiac.add(sp);
+  }
+}
 {
   const glow = new THREE.Mesh(new THREE.SphereGeometry(1.4e6, 96, 48), new THREE.MeshBasicMaterial({ map: milkyWayTexture(), side: THREE.BackSide, transparent: true, opacity: 0.38, blending: THREE.AdditiveBlending, depthWrite: false }));
   glow.renderOrder = -1; milky.add(glow);
@@ -1301,9 +1324,16 @@ function setFocus(o) {
 function defaultDist(o) {
   if (o.kind === 'giant') return o.cf.start.dist;
   if (o.isSun) return 9000;
-  if (o.kind === 'dwarf') return o.R * 8;
+  if (o.kind === 'dwarf') return o.key === 'pluto' || o.key === 'eris' ? o.defDist : o.key === 'haumea' ? 10 : o.R * 8; // Pluto & Eris framed with their big moon; Haumea close enough for its shape and ring
   if (o.kind === 'planet') return o.key === 'earth' ? 45 : o.key === 'mars' ? 30 : o.R * 8;
   return Math.max(radiusOf(o) * 7, 0.05);
+}
+function backlitDir(o, D) { // night side, with the Sun peeking just past the limb (screen-left, clear of the info card)
+  const host = o.kind === 'moon' ? o.parent : o, sd = host.sunDir, Y = new THREE.Vector3(0, 1, 0);
+  const th = THREE.MathUtils.clamp(1.35 * Math.asin(Math.min(1, radiusOf(o) / D)), 4 * DEG, 13 * DEG);
+  let side = new THREE.Vector3().crossVectors(Y, sd); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize();
+  const lift = Y.clone().addScaledVector(sd, -Y.dot(sd)).normalize(), off = side.multiplyScalar(0.94).addScaledVector(lift, 0.3).normalize();
+  return sd.clone().negate().multiplyScalar(Math.cos(th)).addScaledVector(off, Math.sin(th)).normalize();
 }
 function flyTo(o, dist, dir, dur) {
   setFocus(o);
@@ -1313,13 +1343,15 @@ function flyTo(o, dist, dir, dur) {
     else if (o.kind === 'giant') { // the giants keep their raised, sunlit overview of the whole system
       dir = o.sunDir.clone().multiplyScalar(0.75).add(cur.multiplyScalar(0.35)).add(o.pole.clone().multiplyScalar(0.3)).normalize();
     }
-    else { // arrive backlit: from the night side, with the Sun peeking just past the limb and a thin crescent of light round the edge
-      const host = o.kind === 'moon' ? o.parent : o, sd = host.sunDir, Y = new THREE.Vector3(0, 1, 0);
-      const D = dist || defaultDist(o), th = THREE.MathUtils.clamp(1.35 * Math.asin(Math.min(1, radiusOf(o) / D)), 4 * DEG, 13 * DEG);
-      // the Sun lands on the left of the screen (clear of the info card), a touch above the planet
-      let side = new THREE.Vector3().crossVectors(Y, sd); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize();
-      const lift = Y.clone().addScaledVector(sd, -Y.dot(sd)).normalize(), off = side.multiplyScalar(0.94).addScaledVector(lift, 0.3).normalize();
-      dir = sd.clone().negate().multiplyScalar(Math.cos(th)).addScaledVector(off, Math.sin(th)).normalize();
+    else if (o === EARTH) { // side-on to the Sun: day on one half, city lights on the other
+      const sd = o.sunDir, up = new THREE.Vector3(0, 1, 0);
+      dir = sd.clone().multiplyScalar(-0.15).add(new THREE.Vector3().crossVectors(sd, up).normalize()).add(up.multiplyScalar(0.35)).normalize();
+    }
+    else { // three-quarter lit: the Sun off to the side, about two-thirds of the disc in daylight so the surface reads
+      const host = o.kind === 'moon' ? o.parent : o, sd = host.sunDir, Y = new THREE.Vector3(0, 1, 0), A = (o.key === 'haumea' ? 35 : 65) * DEG;
+      let side = new THREE.Vector3().crossVectors(sd, Y); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize();
+      dir = sd.clone().multiplyScalar(Math.cos(A)).addScaledVector(side, Math.sin(A)).addScaledVector(Y, 0.25).normalize();
+      if (o.key === 'haumea') { const pl = o.pole.clone(); if (pl.y < 0) pl.negate(); dir.addScaledVector(pl, 0.4).normalize(); } // look down on the ring a little
     }
   }
   const travel = controls.target.length();
@@ -1354,6 +1386,11 @@ const aimAt = () => selected && !selected.in && selected !== focus && !(fly && f
 document.getElementById('zin').onclick = () => { const a = aimAt(); if (a) approach(a); else dolly(0.6); };
 document.getElementById('zout').onclick = () => dolly(1.7);
 document.getElementById('p-all').onclick = () => flyTo(SUN, 1.35e7, new THREE.Vector3(0.45, 0.62, 0.64));
+document.getElementById('p-back').onclick = () => { // a giant gets a closer framing so its crescent fills the view
+  const o = focus.isSun ? (selected && !selected.in && !selected.isSun ? selected : null) : focus; if (!o) return;
+  const D = o.kind === 'giant' ? o.R * (o.key === 'saturn' ? 7.5 : 6) : Math.min(camera.position.distanceTo(controls.target), defaultDist(o));
+  if (o === focus) preset(backlitDir(o, D), D); else flyTo(o, D, backlitDir(o, D));
+};
 document.getElementById('p-top').onclick = () => preset(new THREE.Vector3(0.0001, 1, 0.0002));
 document.getElementById('p-edge').onclick = () => { const d = camera.position.clone().sub(controls.target); d.y = Math.max(Math.abs(d.x), Math.abs(d.z), 1) * 0.015; preset(d); };
 
@@ -1503,8 +1540,8 @@ addEventListener('wheel', e => {
 // ===================================================================
 //  UI
 // ===================================================================
-const opts = { orbits: true, labels: true, dots: true, faint: true, milky: true };
-document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); for (const g of GIANTS) g.faint.visible = opts.faint; milky.visible = opts.milky; });
+const opts = { orbits: true, labels: true, dots: true, faint: true, milky: true, zodiac: false };
+document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); for (const g of GIANTS) g.faint.visible = opts.faint; milky.visible = opts.milky; zodiac.visible = opts.zodiac; });
 const playBtn = document.getElementById('play'), speedIn = document.getElementById('speed');
 playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶'; };
 speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
