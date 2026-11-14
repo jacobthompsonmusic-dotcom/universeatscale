@@ -31,10 +31,10 @@ void main() {
   vec3 I = vec3(0.0), T = vec3(1.0);
   float t = t0, jit = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);   // per-pixel offset: turns banding into fine grain
   bool first = true;
-  for (int i = 0; i < 200; i++) {
+  for (int i = 0; i < 260; i++) {
     if (t >= t1) break;
     vec3 q = ro + rd * t;
-    float dt = clamp(0.3 * max(abs(q.z), 150.0) / max(abs(rd.z), 0.03), 6.0, 3000.0);
+    float dt = clamp(0.16 * max(abs(q.z), 150.0) / max(abs(rd.z), 0.03), 6.0, 2000.0);
     if (uOrtho < 0.5) dt = min(dt, max(0.1 * t, 6.0));                      // fine steps close to the camera when we're inside
     if (first) { dt *= jit; first = false; }
     dt = min(dt, t1 - t);
