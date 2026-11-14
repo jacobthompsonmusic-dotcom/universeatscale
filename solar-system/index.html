@@ -1299,9 +1299,9 @@ function setFocus(o) {
 //  camera moves
 // ===================================================================
 function defaultDist(o) {
-  if (o.kind === 'giant') return o.cf.start.dist;
+  if (o.kind === 'giant') return o.R * (o.key === 'saturn' ? 7.5 : 6); // close enough that the backlit crescent fills the frame
   if (o.isSun) return 9000;
-  if (o.kind === 'dwarf') return o.defDist;
+  if (o.kind === 'dwarf') return o.R * 8;
   if (o.kind === 'planet') return o.key === 'earth' ? 45 : o.key === 'mars' ? 30 : o.R * 8;
   return Math.max(radiusOf(o) * 7, 0.05);
 }
@@ -1310,10 +1310,13 @@ function flyTo(o, dist, dir, dur) {
   const cur = camera.position.clone().sub(controls.target).normalize();
   if (!dir) {
     if (o.isSun) dir = cur;
-    else { // arrive on the sunlit side, a little above the planet's equator
-      const sd = (o.kind === 'moon' ? o.parent : o).sunDir, up = o.kind === 'planet' ? new THREE.Vector3(0, 1, 0) : (o.kind === 'moon' ? o.parent : o).pole;
-      dir = sd.clone().multiplyScalar(0.75).add(cur.multiplyScalar(0.35)).add(up.clone().multiplyScalar(0.3)).normalize();
-      if (o === EARTH) dir = sd.clone().multiplyScalar(-0.15).add(new THREE.Vector3().crossVectors(sd, up).normalize()).add(up.clone().multiplyScalar(0.35)).normalize(); // side-on to the Sun: day on one half, city lights on the other
+    else { // arrive backlit: from the night side, with the Sun peeking just past the limb and a thin crescent of light round the edge
+      const host = o.kind === 'moon' ? o.parent : o, sd = host.sunDir, Y = new THREE.Vector3(0, 1, 0);
+      const D = dist || defaultDist(o), th = THREE.MathUtils.clamp(1.35 * Math.asin(Math.min(1, radiusOf(o) / D)), 4 * DEG, 13 * DEG);
+      // the Sun lands on the left of the screen (clear of the info card), a touch above the planet
+      let side = new THREE.Vector3().crossVectors(Y, sd); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize();
+      const lift = Y.clone().addScaledVector(sd, -Y.dot(sd)).normalize(), off = side.multiplyScalar(0.94).addScaledVector(lift, 0.3).normalize();
+      dir = sd.clone().negate().multiplyScalar(Math.cos(th)).addScaledVector(off, Math.sin(th)).normalize();
     }
   }
   const travel = controls.target.length();
