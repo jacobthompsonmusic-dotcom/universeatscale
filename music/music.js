@@ -38,6 +38,8 @@
     '.uas-mu-pop .x:hover{color:#e9ecf5}',
     '.uas-mu-pop .frame{border-radius:12px;overflow:hidden;background:#181818;height:352px}',
     '.uas-mu-pop iframe{display:block;position:static;inset:auto;width:100%;height:352px;border:0;background:none}',
+    '.uas-mu-pop .frame.off{height:auto;padding:22px 14px;text-align:center;display:flex;flex-direction:column;gap:6px}',
+    '.uas-mu-pop .frame.off a{font-weight:600;font-size:13.5px}.uas-mu-pop .frame.off span{color:#8d93a8;font-size:11.5px}',
     '.uas-mu-pop .links{margin-top:10px;display:flex;justify-content:space-between;font-size:12px}',
     '@media (max-width:760px),(max-height:620px){.uas-mu-ladder{top:auto;bottom:14px;right:auto;left:50%;transform:translateX(-50%);width:auto}',
     ' .uas-mu-pop .frame,.uas-mu-pop iframe{height:152px}}'
@@ -95,6 +97,12 @@
   function open() {
     if (!loaded) {
       loaded = true;
+      // Spotify's player only runs on the real site; previews (e.g. the Claude artifact) block outside players, so show a link there
+      if (!/(^|\.)universeatscale\.com$|\.github\.io$|^localhost$|^127\.0\.0\.1$/.test(location.hostname)) {
+        var fr = pop.querySelector('.frame'); fr.classList.add('off');
+        fr.innerHTML = '<a href="' + SPOTIFY + '" target="_blank" rel="noopener">▶ Listen on Spotify</a><span>The built-in player appears on universeatscale.com</span>';
+        pop.hidden = false; btn.classList.add('open'); position(); return;
+      }
       var f = document.createElement('iframe');
       f.src = EMBED_SRC; f.title = 'First Time Again by Jacob Thompson on Spotify';
       f.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'; f.loading = 'eager';
