@@ -780,7 +780,7 @@ const Q_GAL = new THREE.Quaternion().setFromUnitVectors(MW_Z, new THREE.Vector3(
 const MW_AZ = (() => { const v = MW_Y.clone().applyQuaternion(Q_GAL); return Math.atan2(v.x, v.z); })();   // the map's yaw 0, as an azimuth here
 const sstep = (x, a, b) => { const k = THREE.MathUtils.clamp((x - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
 // t: how far the scene has turned to the galaxy's frame · p: how far the lens has flattened into the map's straight-down projection · q: cross-fade into the galaxy map
-const deep = { t: 0, p: 0, q: 0, fov: 40 }, SPAN_MAX = 6.2, TAN_FLAT = Math.tan(0.6 * DEG);
+const deep = { t: 0, p: 0, q: 0, fov: 40 }, SPAN_MAX = 6.2, TAN_FLAT = Math.tan(0.2 * DEG);
 
 // ===================================================================
 //  renderer, camera, lights, sky
@@ -923,9 +923,9 @@ const KUIPER = farCloud(3600, 71, r => {
 // Oort cloud (predicted from the orbits of long-period comets; never seen directly): from roughly 2,000 AU, slightly flattened
 // toward the planets' plane on the inside, becoming a round shell that thins out near 100,000 AU. The dots are illustrative.
 const OORT = farCloud(30000, 72, r => {
-  const d = Math.exp(Math.log(2000) + Math.pow(r(), 0.8) * (Math.log(100000) - Math.log(2000)));
+  const d = Math.exp(Math.log(2000) + Math.pow(r(), 0.62) * (Math.log(100000) - Math.log(2000)));
   const flat = THREE.MathUtils.clamp((Math.log(d) - Math.log(2500)) / (Math.log(15000) - Math.log(2500)), 0, 1);
-  const sinb = THREE.MathUtils.clamp((1 - flat) * Math.sin(gaussR(r) * 38 * DEG) + flat * (r() * 2 - 1), -1, 1), cb = Math.sqrt(1 - sinb * sinb), l = r() * TAU;
+  const sinb = THREE.MathUtils.clamp((1 - flat) * Math.sin(gaussR(r) * 48 * DEG) + flat * (r() * 2 - 1), -1, 1), cb = Math.sqrt(1 - sinb * sinb), l = r() * TAU;
   return [d * cb * Math.cos(l), d * cb * Math.sin(l), d * sinb];
 }, 0xa9c4e6, 1.2);
 // landmarks: [name, radius in AU, draw a ring in the plane of Earth's orbit?, angle of the label around the ring]
@@ -1642,7 +1642,7 @@ addEventListener('wheel', e => {
   const now = performance.now();
   if (now - lastWheel > 280) gestureHover = LIST.find(o => o.el === e.target) || bodyUnder(e.clientX, e.clientY);
   lastWheel = now;
-  const hover = gestureHover;
+  const hover = gestureHover && gestureHover.isPlanet && camera.position.distanceTo(controls.target) > 300 * AUS ? null : gestureHover;   // from far out the planets are a huddle: just head for the Sun
   // scrolling in over something new: glide over and centre on it, so you can never get lost on the way in
   if (hover && f < 1 && hover !== focus && !(fly && fly.o === hover)) { approach(hover); return; }
   // nothing under the cursor but something selected: scrolling in leads toward the selection
