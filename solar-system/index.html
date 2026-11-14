@@ -164,7 +164,7 @@
 
 <div id="time" class="panel">
   <button id="play" aria-label="Pause">❚❚</button>
-  <input id="speed" type="range" min="0" max="1000" step="1" value="581" aria-label="Speed">
+  <input id="speed" type="range" min="0" max="1000" step="1" value="418" aria-label="Speed">
   <span class="spd" id="spd"></span>
   <span class="date" id="date"></span>
   <button id="now">Now</button>
@@ -1281,7 +1281,7 @@ function placeMoons(g) {
 //  time
 // ===================================================================
 const MAXLOG = Math.log10(10 * 31557600), TMIN = Date.UTC(1800, 0, 1), TMAX = Date.UTC(2050, 11, 31);
-let simMs = Date.now(), playing = true, lastT = 0, logTarget = 0.581 * MAXLOG, logCur = logTarget;
+let simMs = Date.now(), playing = true, lastT = 0, logTarget = Math.log10(3600), logCur = logTarget; // opens at 1 hour per second
 function speedLabel(sp) { if (sp < 1.5) return 'Real time'; for (const [u, n] of [[31557600, 'yr'], [2629800, 'mo'], [604800, 'wk'], [86400, 'day'], [3600, 'hr'], [60, 'min'], [1, 'sec']]) if (sp >= u * 0.95) { const v = sp / u; return `${v < 10 ? +v.toFixed(1) : Math.round(v)} ${n}/s`; } }
 
 // ===================================================================
