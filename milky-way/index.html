@@ -177,7 +177,7 @@ void main() {
     vec3 q = ro + rd * t;
     float dt = clamp(0.14 * max(abs(q.z), 100.0) / max(abs(rd.z), 0.03), 6.0, 2000.0);
     if (uOrtho < 0.5) dt = min(dt, max(0.1 * t, 6.0));                      // fine steps close to the camera when we're inside
-    dt = min(dt, max(0.1 * length(q), 20.0));                                 // and through the bright core, where coarse steps show as crawling grain
+    dt = min(dt, max(0.15 * length(q), 30.0));                                 // and through the bright core, where coarse steps show as crawling grain
     if (first) { dt *= jit; first = false; }
     dt = min(dt, t1 - t);
     vec3 m = ro + rd * (t + 0.5 * dt);
@@ -1033,7 +1033,8 @@ function drawGalaxy3D() {
   const key = [view.x, view.y, view.z, view.s, view.yaw, view.tilt, Wd, Ht, PT, dpr].join();
   if (key !== GX.key) {
     const now = performance.now(), ft = now - GX.last; GX.last = now;   // too slow? draw it a little coarser
-    if (ft > 50 && ft < 400) GX.q = Math.max(0.35, GX.q * 0.9); else if (ft < 24) GX.q = Math.min(1, GX.q * 1.03);
+    const settle = GX.settle; GX.settle = false;   // the one full-quality redraw after moving: don't let it adjust quality or schedule another
+    if (!settle) { if (ft > 50 && ft < 400) GX.q = Math.max(0.35, GX.q * 0.9); else if (ft < 24) GX.q = Math.min(1, GX.q * 1.03); }
     const qq = GX.q > 0.86 ? 1 : GX.q > 0.64 ? 0.75 : GX.q > 0.47 ? 0.55 : 0.4;   // a few fixed steps, so the resolution doesn't change every frame
     const q = Math.min(1, 1100 / Math.max(Wd, Ht)) * Math.min(dpr, 1.25) * qq, w = Math.max(2, Math.round(Wd * q)), h = Math.max(2, Math.round(Ht * q));
     if (GX.cv.width !== w || GX.cv.height !== h) { GX.cv.width = w; GX.cv.height = h; }
@@ -1048,7 +1049,8 @@ function drawGalaxy3D() {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     GX.key = key;
     // drawn coarser to keep up with movement? once you stop, draw it again at full quality
-    clearTimeout(GX.tq); if (GX.q < 0.99) GX.tq = setTimeout(() => { GX.q = 1; GX.key = null; GX.last = 0; draw(); }, 350);
+    clearTimeout(GX.tq); if (!settle && qq < 1) GX.tq = setTimeout(() => { GX.settleQ = GX.q; GX.q = 1; GX.settle = true; GX.key = null; draw(); }, 350);
+    if (settle && GX.settleQ) { GX.q = GX.settleQ; GX.settleQ = 0; }   // carry on at the moving quality next time you move
   } else GX.last = performance.now();
   // deep in the Galaxy's core the whole screen is bulge light; dim it as you zoom in there, so the stars and gas around Sgr A* stand out
   const span = viewSpan(), dG = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), coreDim = 1 - 0.85 * (1 - sstep(Math.log(Math.max(dG, 1e-6)), Math.log(600), Math.log(8000))) * (1 - sstep(Math.log(span), Math.log(300), Math.log(12000)));
