@@ -20,6 +20,11 @@
     ' border-radius:999px;padding:6px 11px;cursor:pointer;white-space:nowrap;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:color .15s,border-color .15s}',
     '.uas-mu-btn:hover,.uas-mu-btn:focus-visible,.uas-mu-btn.open{color:#e9ecf5;border-color:rgba(255,207,110,.45);outline:none}',
     '.uas-mu-btn .n{color:#ffcf6e;margin-right:5px}',
+    /* invitation: a soft gold glow that breathes on arrival, until the note is first opened (or after ~40 s) */
+    '.uas-mu-btn.invite{color:#f3e6c8;border-color:rgba(255,207,110,.55);animation:uasglow 2.8s ease-in-out infinite}',
+    '.uas-mu-btn.invite .n{text-shadow:0 0 8px rgba(255,207,110,.9)}',
+    '@keyframes uasglow{0%,100%{box-shadow:0 0 0 0 rgba(255,207,110,0),0 0 6px rgba(255,207,110,.18)}50%{box-shadow:0 0 0 3px rgba(255,207,110,.14),0 0 22px rgba(255,207,110,.5)}}',
+    '@media (prefers-reduced-motion:reduce){.uas-mu-btn.invite{animation:none;box-shadow:0 0 14px rgba(255,207,110,.35)}}',
     '.uas-mu-btn.playing .n{animation:uasmu 1.6s ease-in-out infinite}',
     '@keyframes uasmu{50%{opacity:.35}}',
     '.uas-mu-fixed{position:fixed;z-index:30}',
@@ -78,6 +83,8 @@
       document.body.appendChild(btn);
     }
     document.body.appendChild(pop);
+    var seen = false; try { seen = localStorage.getItem('uas-soundtrack-opened') === '1'; } catch (_) {}
+    if (!seen) { btn.classList.add('invite'); setTimeout(function () { btn.classList.remove('invite'); }, 40000); }
   }
 
   function position() {
@@ -91,6 +98,7 @@
 
   var loaded = false;
   function open() {
+    btn.classList.remove('invite'); try { localStorage.setItem('uas-soundtrack-opened', '1'); } catch (_) {}
     if (!loaded) {
       loaded = true;
       // Spotify's player only runs on the real site; previews (e.g. the Claude artifact) block outside players, so show a link there
