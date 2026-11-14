@@ -897,7 +897,7 @@ uniform vec3 uCam, uRight, uUp, uFwd;
 uniform vec2 uRes;
 uniform float uTanH, uOrtho, uHalfH, uExpo, uAlpha;
 const float GW = 62000.0, ZM = 9000.0, RSUN = 26989.0;
-const float HY = 330.0, H1 = 978.0, H2 = 2935.0, HB = 1630.0, HD = 437.0, RD = 7557.0, K0 = 2.83e-4;
+const float HY = 330.0, H1 = 978.0, H2 = 2935.0, HB = 1630.0, HD = 437.0, RD = 7557.0, K0 = 1.7e-4;
 vec2 slab(vec3 ro, vec3 rd) {
   if (abs(rd.z) < 1e-7) return abs(ro.z) < ZM ? vec2(-1e12, 1e12) : vec2(1.0, -1.0);
   float a = (-ZM - ro.z) / rd.z, b = (ZM - ro.z) / rd.z; return vec2(min(a, b), max(a, b));
@@ -917,7 +917,7 @@ void main() {
   float t0 = max(max(s1.x, s2.x), 0.0), t1 = min(s1.y, s2.y);
   if (t1 <= t0) { gl_FragColor = vec4(0.0); return; }
   vec3 I = vec3(0.0), T = vec3(1.0);
-  float t = t0, jit = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);   // per-pixel offset: turns banding into fine grain
+  float t = t0, jit = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));   // interleaved-gradient dither: even, fine-grained, no clumps   // per-pixel offset: turns banding into fine grain
   bool first = true;
   for (int i = 0; i < 260; i++) {
     if (t >= t1) break;
