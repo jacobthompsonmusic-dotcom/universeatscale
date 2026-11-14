@@ -81,7 +81,7 @@ const STOPS = {
 };
 const PLANETS = ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'ceres', 'pluto', 'haumea', 'makemake', 'eris'];
 for (const k of PLANETS) STOPS[k] = { map: 'ss', cmd: { cmd: 'fly', key: k }, log: -6 };
-const hash = () => { const h = location.hash.slice(1); return STOPS[h] ? h : 'earth'; };
+const hash = () => { const h = location.hash.slice(1); return STOPS[h] ? h : 'solar-system'; };   // a fresh visit opens on the whole Solar System
 const start = hash();
 const st = { driver: STOPS[start].map, ssReady: false, mwReady: false, pending: null, started: false };
 const post = (el, m) => { try { el.contentWindow.postMessage(m, '*'); } catch (e) {} };
@@ -97,7 +97,6 @@ function toSolar(m) { st.driver = 'ss'; ssEl.style.opacity = 0; show(); toSS({ c
 
 function go(key) {
   const s = STOPS[key]; if (!s) return;
-  try { history.replaceState(null, '', '#' + key); } catch (e) {}
   if (s.map === st.driver) { st.pending = null; (s.map === 'ss' ? toSS : toMW)(s.cmd); return; }
   st.pending = s;
   if (s.map === 'ss') { if (st.ssReady) toMW({ cmd: 'dive' }); }           // fly to the Sun on the galaxy map, hand over, then carry on in

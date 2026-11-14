@@ -961,9 +961,9 @@ const MWV = { ready: false };
   // ray-marching every pixel is heavy, so the volume is drawn into a smaller picture, and only redrawn when the view changes
   MWV.scene = new THREE.Scene(); MWV.vol = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), MWV.mat); MWV.vol.frustumCulled = false; MWV.scene.add(MWV.vol);
   MWV.rt = new THREE.WebGLRenderTarget(4, 4, { depthBuffer: false });
-  MWV.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ uniforms: { map: { value: MWV.rt.texture } },
+  MWV.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ uniforms: { map: { value: MWV.rt.texture }, px: { value: new THREE.Vector2(0.25, 0.25) } },
     vertexShader: 'varying vec2 vU; void main() { vU = position.xy * 0.5 + 0.5; gl_Position = vec4(position.xy, 0.0, 1.0); }',
-    fragmentShader: 'uniform sampler2D map; varying vec2 vU; void main() { gl_FragColor = texture2D(map, vU); }',
+    fragmentShader: 'uniform sampler2D map; uniform vec2 px; varying vec2 vU; void main() { vec2 d = px * 1.6; gl_FragColor = 0.25 * texture2D(map, vU) + 0.125 * (texture2D(map, vU + vec2(d.x, 0.0)) + texture2D(map, vU - vec2(d.x, 0.0)) + texture2D(map, vU + vec2(0.0, d.y)) + texture2D(map, vU - vec2(0.0, d.y))) + 0.0625 * (texture2D(map, vU + d) + texture2D(map, vU - d) + texture2D(map, vU + vec2(d.x, -d.y)) + texture2D(map, vU + vec2(-d.x, d.y))); }',   // a soft tent filter: hides the dither when the low-res volume is stretched to the screen
     transparent: true, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, depthTest: false, depthWrite: false }));
   MWV.mesh.frustumCulled = false; MWV.mesh.renderOrder = -4; MWV.mesh.visible = false; skyScene.add(MWV.mesh);
   MWV.key = ''; MWV.still = 0;
@@ -988,7 +988,7 @@ function updateMWV() {
   MWV.still = moving ? 0 : MWV.still + 1;
   const sc = moving ? 0.34 : 0.62, w = Math.max(2, Math.round(db.x * sc)), h = Math.max(2, Math.round(db.y * sc));
   if (moving || (MWV.still === 6 && MWV.rt.width !== w) || MWV.rt.width === 4) {
-    if (MWV.rt.width !== w || MWV.rt.height !== h) MWV.rt.setSize(w, h);
+    if (MWV.rt.width !== w || MWV.rt.height !== h) { MWV.rt.setSize(w, h); MWV.mesh.material.uniforms.px.value.set(1 / w, 1 / h); }
     u.uRes.value.set(w, h); MWV.key = key;
     renderer.setRenderTarget(MWV.rt); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(MWV.scene, skyCam); renderer.setRenderTarget(null); renderer.setClearColor(0x000000, 1);
   }
@@ -1146,7 +1146,7 @@ function updateProbes(camD) {
     P.pos.set(q[0] * AUS, q[2] * AUS, -q[1] * AUS); arr.set([P.pos.x, P.pos.y, P.pos.z], k * 3);
     P.line.geometry.attributes.position.needsUpdate = true; P.line.geometry.setDrawRange(0, k + 1);
     P.dot.geometry.attributes.position.array.set([P.pos.x, P.pos.y, P.pos.z]); P.dot.geometry.attributes.position.needsUpdate = true;
-    P.line.material.opacity = 0.55 * a * (1 - 0.6 * sstep(R, 1500, 5000)); P.dot.material.opacity = a;   // fainter once the planets fill the view
+    P.line.material.opacity = 0.55 * a * (1 - 0.95 * sstep(R, 350, 1100)); P.dot.material.opacity = a;   // the paths fade away once the planets fill the view, so they don't clutter it
     if (!P.el) continue;
     _pp.copy(P.pos).sub(origin); if (deep.t > 0) _pp.applyQuaternion(scene.quaternion); _pp.project(camera);
     const vis = opts.labels && _pp.z < 1 && Math.abs(_pp.x) < 1 && Math.abs(_pp.y) < 1;
