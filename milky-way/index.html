@@ -1038,7 +1038,9 @@ function drawGalaxy3D() {
     const gl = GX.gl, U = GX.u, F = [SY * ST, CY * ST, CT];
     gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform3f(U.uRight, CY, -SY, 0); gl.uniform3f(U.uUp, -SY * CT, -CY * CT, ST); gl.uniform3f(U.uFwd, -F[0], -F[1], -F[2]);
-    gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uExpo, 1.35); gl.uniform1f(U.uAlpha, 1);
+    // inside the bulge the light piles up and would clip to a flat white disc: lower the exposure there so its shape still shows
+    const dGx = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), expo = 1.35 * (0.28 + 0.72 * sstep(Math.log(Math.max(dGx, Ht / view.s * 0.5, 1)), Math.log(3000), Math.log(30000)));
+    gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uExpo, expo); gl.uniform1f(U.uAlpha, 1);
     if (PD === Infinity) { gl.uniform1f(U.uOrtho, 1); gl.uniform3f(U.uCam, view.x, view.y, view.z); gl.uniform1f(U.uHalfH, Ht / 2 / view.s); gl.uniform1f(U.uTanH, 0); }
     else { gl.uniform1f(U.uOrtho, 0); gl.uniform3f(U.uCam, view.x + F[0] * PD, view.y + F[1] * PD, view.z + F[2] * PD); gl.uniform1f(U.uTanH, PT); gl.uniform1f(U.uHalfH, 1); }
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -1047,7 +1049,7 @@ function drawGalaxy3D() {
     clearTimeout(GX.tq); if (GX.q < 0.99) GX.tq = setTimeout(() => { GX.q = 1; GX.key = null; GX.last = 0; draw(); }, 350);
   } else GX.last = performance.now();
   // deep in the Galaxy's core the whole screen is bulge light; dim it as you zoom in there, so the stars and gas around Sgr A* stand out
-  const span = viewSpan(), dG = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), coreDim = 1 - 0.85 * (1 - sstep(Math.log(Math.max(dG, 1e-6)), Math.log(300), Math.log(4000))) * (1 - sstep(Math.log(span), Math.log(40), Math.log(4000)));
+  const span = viewSpan(), dG = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), coreDim = 1 - 0.85 * (1 - sstep(Math.log(Math.max(dG, 1e-6)), Math.log(600), Math.log(8000))) * (1 - sstep(Math.log(span), Math.log(300), Math.log(12000)));
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = coreDim; ctx.drawImage(GX.cv, 0, 0, Wd, Ht); ctx.restore();
   return true;
 }
@@ -1159,8 +1161,11 @@ function drawGalaxies() {
     if (!o.sprite) continue;
     const [X, Y, , pf] = proj(o.x, o.y, o.z), D = o.diam * view.s * pf;
     if (!isFinite(X) || D < 3 || X + D < 0 || X - D > Wd || Y + D < 0 || Y - D > Ht) continue;
+    // A galaxy far behind what you're looking at (the Sagittarius Dwarf, behind the galactic centre) would swell past the screen
+    // in the flat close-up projection: fade it out once it's bigger than the view. Dwarf galaxies are very faint: keep them dim.
+    const M = Math.max(Wd, Ht), big = 1 - sstep(D, 0.9 * M, 2.2 * M); if (big <= 0.01) continue;
     ctx.save(); ctx.translate(X, Y); ctx.rotate(o.tilt * DEG); ctx.scale(1, o.aspect);
-    ctx.globalAlpha = o.type === 'dwarf' ? 0.8 : 1;
+    ctx.globalAlpha = (o.type === 'dwarf' ? 0.8 * (1 - 0.85 * sstep(D, 80, 400)) : 1) * big;
     ctx.drawImage(SPR[o.sprite], -D / 2, -D / 2, D, D);
     ctx.restore();
   }
