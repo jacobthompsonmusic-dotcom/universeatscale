@@ -985,8 +985,8 @@ function render(t) {
   drawField();
   if (opts.zodiac) drawZodiac();
   drawObjects();
-  const s2a = drawS2(), bhOn = drawBH();
-  if ((s2a > 0 || bhOn) && !anim) draw();   // keep S2 and the flow moving
+  const nb = drawGCNear(), s2a = drawS2(), bhOn = drawBH();
+  if ((s2a > 0 || nb > 0 || bhOn) && !anim) draw();   // keep S2 and the flow moving
   updateScale();
   updateGC();
   const tb = document.getElementById('go3d'), lab = Math.abs(view.tilt) > 0.05 ? '3D' : 'TOP';
@@ -999,7 +999,7 @@ function render(t) {
 // it gives way to the full picture of the disc as you pull back (the Solar System view draws exactly the same glow)
 const GX = { cv: document.createElement('canvas'), gl: null, u: {}, failed: false, q: 1, last: 0 };
 function gxInit() {
-  const gl = GX.cv.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false });
+  const gl = GX.cv.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false, preserveDrawingBuffer: true });
   if (!gl) { GX.failed = true; return; }
   const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(o)); return null; } return o; };
   const v = sh(gl.VERTEX_SHADER, 'attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }'), f = sh(gl.FRAGMENT_SHADER, 'precision highp float;\n' + document.getElementById('galaxy-fs').textContent);
@@ -1022,18 +1022,25 @@ function gxInit() {
 function drawGalaxy3D() {
   if (GX.failed || viewSpan() > 4e6) return false;
   if (!GX.gl) { gxInit(); if (!GX.gl) return false; }
-  const now = performance.now(), ft = now - GX.last; GX.last = now;   // too slow? draw it a little coarser
-  if (ft > 50 && ft < 400) GX.q = Math.max(0.35, GX.q * 0.9); else if (ft < 24) GX.q = Math.min(1, GX.q * 1.03);
-  const q = Math.min(1, 1100 / Math.max(Wd, Ht)) * Math.min(dpr, 1.25) * GX.q, w = Math.max(2, Math.round(Wd * q)), h = Math.max(2, Math.round(Ht * q));
-  if (GX.cv.width !== w || GX.cv.height !== h) { GX.cv.width = w; GX.cv.height = h; }
-  const gl = GX.gl, U = GX.u, F = [SY * ST, CY * ST, CT];
-  gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.uniform3f(U.uRight, CY, -SY, 0); gl.uniform3f(U.uUp, -SY * CT, -CY * CT, ST); gl.uniform3f(U.uFwd, -F[0], -F[1], -F[2]);
-  gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uExpo, 1.35); gl.uniform1f(U.uAlpha, 1);
-  if (PD === Infinity) { gl.uniform1f(U.uOrtho, 1); gl.uniform3f(U.uCam, view.x, view.y, view.z); gl.uniform1f(U.uHalfH, Ht / 2 / view.s); gl.uniform1f(U.uTanH, 0); }
-  else { gl.uniform1f(U.uOrtho, 0); gl.uniform3f(U.uCam, view.x + F[0] * PD, view.y + F[1] * PD, view.z + F[2] * PD); gl.uniform1f(U.uTanH, PT); gl.uniform1f(U.uHalfH, 1); }
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(GX.cv, 0, 0, Wd, Ht); ctx.restore();
+  // the volume only changes when the view does: keep the last picture while just the stars and gas on top move
+  const key = [view.x, view.y, view.z, view.s, view.yaw, view.tilt, Wd, Ht, PT, dpr].join();
+  if (key !== GX.key) {
+    const now = performance.now(), ft = now - GX.last; GX.last = now;   // too slow? draw it a little coarser
+    if (ft > 50 && ft < 400) GX.q = Math.max(0.35, GX.q * 0.9); else if (ft < 24) GX.q = Math.min(1, GX.q * 1.03);
+    const q = Math.min(1, 1100 / Math.max(Wd, Ht)) * Math.min(dpr, 1.25) * GX.q, w = Math.max(2, Math.round(Wd * q)), h = Math.max(2, Math.round(Ht * q));
+    if (GX.cv.width !== w || GX.cv.height !== h) { GX.cv.width = w; GX.cv.height = h; }
+    const gl = GX.gl, U = GX.u, F = [SY * ST, CY * ST, CT];
+    gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniform3f(U.uRight, CY, -SY, 0); gl.uniform3f(U.uUp, -SY * CT, -CY * CT, ST); gl.uniform3f(U.uFwd, -F[0], -F[1], -F[2]);
+    gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uExpo, 1.35); gl.uniform1f(U.uAlpha, 1);
+    if (PD === Infinity) { gl.uniform1f(U.uOrtho, 1); gl.uniform3f(U.uCam, view.x, view.y, view.z); gl.uniform1f(U.uHalfH, Ht / 2 / view.s); gl.uniform1f(U.uTanH, 0); }
+    else { gl.uniform1f(U.uOrtho, 0); gl.uniform3f(U.uCam, view.x + F[0] * PD, view.y + F[1] * PD, view.z + F[2] * PD); gl.uniform1f(U.uTanH, PT); gl.uniform1f(U.uHalfH, 1); }
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    GX.key = key;
+  } else GX.last = performance.now();
+  // deep in the Galaxy's core the whole screen is bulge light; dim it as you zoom in there, so the stars and gas around Sgr A* stand out
+  const span = viewSpan(), dG = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), coreDim = 1 - 0.85 * (1 - sstep(Math.log(Math.max(dG, 1e-6)), Math.log(300), Math.log(4000))) * (1 - sstep(Math.log(span), Math.log(40), Math.log(4000)));
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = coreDim; ctx.drawImage(GX.cv, 0, 0, Wd, Ht); ctx.restore();
   return true;
 }
 function drawHaze() {
@@ -1517,6 +1524,179 @@ function drawS2() {
   ctx.font = '400 11px Inter, sans-serif'; ctx.fillStyle = `rgba(200,206,225,${0.75 * a})`;
   ctx.fillText(`${Math.floor(yr)} · ${Math.round(Math.hypot(...s) * AU_PER_LY).toLocaleString('en-CA')} AU from the black hole`, X + 10, Y + 9);
   return a;
+}
+
+// ===================================================================
+//  Sgr A*'s neighbourhood, from the measurements: the S-stars on their orbits, the disc of young stars,
+//  the minispiral of ionized gas falling inward, the circumnuclear disc of molecular gas, and the nuclear star cluster
+// ===================================================================
+const AS_AU = 8275;                       // one arcsecond at Sgr A* (8.275 kpc, GRAVITY 2021), in AU
+const PC_LY = 3.26156;
+const fadeWin = (span, lo, hi, kin = 3, kout = 3) => Math.max(0, Math.min(1, Math.log(hi / span) / Math.log(kin))) * Math.max(0, Math.min(1, Math.log(span / lo) / Math.log(kout)));
+const kepE = (M, e) => { let E = M + e * Math.sin(M); for (let k = 0; k < 10; k++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E)); return E; };
+// position on a Keplerian orbit (a in AU) at a given year, as a world offset in ly; sky elements in the astrometric convention
+function kepWorld(o, year) {
+  const M = 2 * Math.PI * ((((year - o.tp) / o.P) % 1 + 1) % 1), E = kepE(M, o.e);
+  const nu = 2 * Math.atan2(Math.sqrt(1 + o.e) * Math.sin(E / 2), Math.sqrt(1 - o.e) * Math.cos(E / 2)), r = o.a * (1 - o.e * Math.cos(E));
+  return skyToWorld(skyOffset(r, o.w + nu, o.i, o.Om)).map(v => v / AU_PER_LY);
+}
+// the S-stars (Gillessen et al. 2017, ApJ 837, 30, Table 3): name, a ["], e, i, Ω, ω [°], pericentre [yr], period [yr], early/late type.
+// S2 is drawn above, from GRAVITY's more recent orbit.
+const SSTARS = [["S1",0.595,0.556,119.14,342.04,122.3,2001.8,166,"e"],["S2",0.1255,0.8839,134.18,226.94,65.51,2002.33,16,"e"],["S4",0.357,0.3905,80.33,258.84,290.8,1957.4,77,"e"],["S6",0.6574,0.84,87.24,85.07,116.23,2108.61,192,"e"],["S8",0.4047,0.8031,74.37,315.43,346.7,1983.64,92.9,"e"],["S9",0.2724,0.644,82.41,156.6,150.6,1976.71,51.3,"e"],["S12",0.2987,0.8883,33.56,230.1,317.9,1995.59,58.9,"e"],["S13",0.2641,0.425,24.7,74.5,245.2,2004.86,49,"e"],["S14",0.2863,0.9761,100.59,226.38,334.59,2000.12,55.3,"e"],["S17",0.3559,0.397,96.83,191.62,326,1991.19,76.6,"l"],["S18",0.2379,0.471,110.67,49.11,349.46,1993.86,41.9,"e"],["S19",0.52,0.75,71.96,344.6,155.2,2005.39,135,"e"],["S21",0.219,0.764,58.8,259.64,166.4,2027.4,37,"l"],["S22",1.31,0.449,105.76,291.7,95,1996.9,540,"e"],["S23",0.253,0.56,48,249,39,2024.7,45.8,"e"],["S24",0.944,0.897,103.67,7.93,290,2024.5,331,"l"],["S29",0.428,0.728,105.8,161.96,346.5,2025.96,101,"e"],["S31",0.449,0.5497,109.03,137.16,308,2018.07,108,"e"],["S33",0.657,0.608,60.5,100.1,303.7,1928,192,"e"],["S38",0.1416,0.8201,171.1,101.06,17.99,2003.19,19.2,"l"],["S39",0.37,0.9236,89.36,159.03,23.3,2000.06,81.1,""],["S42",0.95,0.567,67.16,196.14,35.8,2008.24,335,"e"],["S54",1.2,0.893,62.2,288.35,140.8,2004.46,477,"e"],["S55",0.1078,0.7209,150.1,325.5,331.5,2009.34,12.8,""],["S60",0.3877,0.7179,126.87,170.54,29.37,2023.89,87.1,"e"],["S66",1.502,0.128,128.5,92.3,134,1771,664,"e"],["S67",1.126,0.293,136,96.5,213.5,1705,431,"e"],["S71",0.973,0.899,74,35.16,337.8,1695,346,"e"],["S83",1.49,0.365,127.2,87.7,203.6,2046.8,656,"e"],["S85",4.6,0.78,84.78,107.36,156.3,1930.2,3580,"l"],["S87",2.74,0.224,119.54,106.32,336.1,611,1640,"e"],["S89",1.081,0.639,87.61,238.99,126.4,1783,406,"l"],["S91",1.917,0.303,114.49,105.35,356.4,1108,958,"e"],["S96",1.499,0.174,126.36,115.66,233.6,1646,662,"e"],["S97",2.32,0.35,113,113.2,28,2132,1270,"e"],["S145",1.12,0.5,83.7,263.92,185,1808,426,"l"],["S175",0.414,0.9867,88.53,326.83,68.52,2009.51,96.2,"e"],["R34",1.81,0.641,136,330,57,1522,877,"e"],["R44",3.9,0.27,131,80.5,217,1963,2730,"e"]].filter(s => s[0] !== 'S2').map(([name, a, e, i, Om, w, tp, P, sp]) => {
+  const o = { name, a: a * AS_AU, e, i: i * DEG, Om: Om * DEG, w: w * DEG, tp, P, late: sp === 'l' };
+  o.path = Array.from({ length: 181 }, (_, k) => kepWorld(o, tp + P * k / 180)); return o;
+});
+// The clockwise disc of young O and Wolf-Rayet stars, 0.03–0.5 pc out, in the plane i = 130°, Ω = 96° (Yelda et al. 2014), with mean
+// eccentricity about 0.27. Its plane and spread are measured; these particular 70 stars are illustrative members.
+const CWDISC = (() => {
+  const r = mulberry32(4242), g = () => { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  return Array.from({ length: 70 }, () => {
+    const a = Math.exp(Math.log(0.8) + r() * (Math.log(12) - Math.log(0.8))) * AS_AU, P = Math.sqrt(a * a * a / 4.297e6), i = (130 + 7 * g()) * DEG;
+    return { a, e: Math.min(0.7, Math.abs(0.27 + 0.13 * g())), i, Om: (96 + 7 * g() / Math.sin(i)) * DEG, w: r() * 2 * Math.PI, tp: 2000 - r() * P, P };
+  });
+})();
+// The minispiral (Sgr A West): three streams of ionized gas on Keplerian orbits around Sgr A* (Zhao et al. 2009, ApJ 699, 186, Table 5),
+// all turning anticlockwise on the sky. Their elements are in a frame of (east, north, away from us), Ω counted from east toward north;
+// semi-major axes rescaled from their 8 kpc to 8.275 kpc. arc: the stretch of each orbit that actually glows, in true anomaly.
+const ZH = 8275 / 8000;
+const MINI = [
+  { name: 'Northern Arm', e: 0.83, a: 205e3 * ZH, Om: 64, w: 132, i: 139, arc: [-165, 60], lab: -128 },
+  { name: 'Eastern Arm', e: 0.82, a: 289e3 * ZH, Om: -42, w: -280, i: 122, arc: [-150, 15], lab: -132 },
+  { name: 'Western Arc', e: 0.20, a: 236e3 * ZH, Om: 71, w: 22, i: 117, arc: [-195, -70], lab: -150 },
+].map(s => {
+  const at = nu => {
+    const r = s.a * (1 - s.e * s.e) / (1 + s.e * Math.cos(nu * DEG)), u = (s.w + nu) * DEG, O = s.Om * DEG, I = s.i * DEG;
+    const x = r * (Math.cos(O) * Math.cos(u) - Math.sin(O) * Math.sin(u) * Math.cos(I)), y = r * (Math.sin(O) * Math.cos(u) + Math.cos(O) * Math.sin(u) * Math.cos(I)), z = r * Math.sin(u) * Math.sin(I);
+    return skyToWorld([y, x, z]).map(v => v / AU_PER_LY);
+  };
+  s.at = at; s.orbit = Array.from({ length: 241 }, (_, k) => at(-180 + k * 1.5));
+  s.glow = Array.from({ length: 121 }, (_, k) => at(s.arc[0] + (s.arc[1] - s.arc[0]) * k / 120));
+  // the gas: clumps spread evenly along the stream (by length, not by angle, so they don't pile up where it swings past Sgr A*)
+  const cum = [0]; for (let k = 1; k < s.glow.length; k++) cum.push(cum[k - 1] + Math.hypot(...s.glow[k].map((v, j) => v - s.glow[k - 1][j])));
+  const L = cum[cum.length - 1], r = mulberry32(s.name.length * 977), n = 340;
+  s.pts = Array.from({ length: n }, () => {
+    const t = r(), d = t * L; let k = 1; while (k < cum.length - 1 && cum[k] < d) k++;
+    const f = (d - cum[k - 1]) / Math.max(1e-9, cum[k] - cum[k - 1]), p = s.glow[k - 1].map((v, j) => v + (s.glow[k][j] - v) * f), sc = 0.05 * PC_LY, j = () => (r() + r() + r() - 1.5) * sc;
+    return { p: [p[0] + j(), p[1] + j(), p[2] + j()], w: Math.sin(Math.PI * t) ** 0.6 * (0.5 + r()) };
+  });
+  return s;
+});
+// The circumnuclear disc: a clumpy, lopsided ring of dense molecular gas from ~1.5 pc out to 3–5 pc, inclined ~65–70° with its long
+// axis at position angle ~25° (Jackson 1993; Christopher 2005; Lau 2013). The ionized Western Arc is its inner edge, so the ring is put
+// in that stream's plane. The clumps are illustrative.
+const CND = (() => {
+  const W = MINI[2], O = W.Om * DEG, I = W.i * DEG, r = mulberry32(1993), pts = [];
+  const g = () => { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const toW = (R, u, h) => {   // radius and angle in the plane, h along its normal (pc) → world ly
+    const x = R * (Math.cos(O) * Math.cos(u) - Math.sin(O) * Math.sin(u) * Math.cos(I)), y = R * (Math.sin(O) * Math.cos(u) + Math.cos(O) * Math.sin(u) * Math.cos(I)), z = R * Math.sin(u) * Math.sin(I);
+    const nx = Math.sin(O) * Math.sin(I), ny = -Math.cos(O) * Math.sin(I), nz = Math.cos(I);
+    return skyToWorld([(y + h * ny), (x + h * nx), (z + h * nz)]).map(v => v * PC_LY);
+  };
+  for (let c = 0; c < 100; c++) {
+    const R0 = 1.45 + Math.min(3.6, -Math.log(1 - r() * 0.97) * 0.75), u0 = r() * 2 * Math.PI, m = 0.6 + r() * (R0 < 2.3 ? 1.4 : 0.8), H = 0.12 + 0.12 * (R0 - 1.45);
+    const warp = 0.25 * Math.sin(u0 * 2 + 0.7) * (R0 - 1.4);   // the ring is warped and thickens outward
+    for (let k = 0; k < 12; k++) pts.push({ p: toW(Math.max(1.4, R0 + 0.1 * g()), u0 + 0.09 * g() / R0, warp + H * g()), w: m * (0.4 + r()), s: 0.10 + 0.08 * r() });
+  }
+  return { pts, lab: toW(3.4, -0.6, 0) };
+})();
+// the nuclear star cluster: ~25 million Suns, half the light within 4.2 pc, flattened (0.71) along the galactic plane (Schödel et al. 2014)
+const NSC = { re: 4.2 * PC_LY, q: 0.71, ax: [galDirToWorld([1, 0, 0]), galDirToWorld([0, 1, 0]), galDirToWorld([0, 0, 1])] };
+
+// soft round sprites for gas clumps and stars
+const nSprite = (rgb, n = 64) => { const c = document.createElement('canvas'); c.width = c.height = n; const g = c.getContext('2d'), gr = g.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
+  gr.addColorStop(0, `rgba(${rgb},1)`); gr.addColorStop(0.35, `rgba(${rgb},0.45)`); gr.addColorStop(1, `rgba(${rgb},0)`); g.fillStyle = gr; g.fillRect(0, 0, n, n); return c; };
+const NSPR = { ion: nSprite('255,96,84'), mol: nSprite('214,132,86'), blue: nSprite('190,212,255'), gold: nSprite('255,206,150') };
+
+function nearLabel(txt, X, Y, a, sub) {
+  if (!opts.labels || a < 0.05 || !isFinite(X)) return;
+  ctx.textAlign = 'left'; ctx.font = '600 12px Inter, sans-serif'; ctx.fillStyle = `rgba(232,226,214,${a})`; ctx.fillText(txt, X + 8, Y);
+  if (sub) { ctx.font = '400 11px Inter, sans-serif'; ctx.fillStyle = `rgba(200,200,212,${0.8 * a})`; ctx.fillText(sub, X + 8, Y + 14); }
+}
+function drawGCNear() {
+  const span = viewSpan(); if (span > 500) return 0;
+  const [gx, gy] = proj(GC.x, GC.y, GC.z); if (!isFinite(gx) || gx < -3 * Wd || gx > 4 * Wd || gy < -3 * Ht || gy > 4 * Ht) return 0;
+  const P = p => proj(GC.x + p[0], GC.y + p[1], GC.z + p[2]), S = view.s;
+  let moving = 0, credit = 0;
+  ctx.save();
+  // nuclear star cluster: the ellipsoid's outline on screen, from its three axes
+  const aN = fadeWin(span, 3, 500, 2.5, 2.5);
+  if (aN > 0.01) {
+    const ks = NSC.ax.map((v, k) => { const f = NSC.re * (k === 2 ? NSC.q : 1), [X, Y] = P(v.map(c => c * f)); return [X - gx, Y - gy]; });
+    const sxx = ks.reduce((t, k) => t + k[0] * k[0], 0), syy = ks.reduce((t, k) => t + k[1] * k[1], 0), sxy = ks.reduce((t, k) => t + k[0] * k[1], 0);
+    const tr = (sxx + syy) / 2, df = Math.sqrt(((sxx - syy) / 2) ** 2 + sxy * sxy), l1 = Math.sqrt(tr + df), l2 = Math.sqrt(Math.max(tr - df, 1e-6)), th = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+    ctx.translate(gx, gy); ctx.rotate(th); ctx.scale(l1, l2);
+    const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, 4);   // a Sérsic-like fall-off (n ≈ 3), in units of the half-light radius
+    [[0, 1], [0.08, 0.72], [0.25, 0.42], [0.5, 0.24], [1, 0.11], [1.6, 0.05], [2.5, 0.018], [4, 0]].forEach(([x, v]) => gr.addColorStop(x / 4, `rgba(255,222,184,${(v * 0.42 * aN).toFixed(4)})`));
+    ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, 4, 0, 7); ctx.fill();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalCompositeOperation = 'source-over';
+    const la = fadeWin(span, 12, 260, 2, 2);
+    nearLabel('Nuclear star cluster', Math.min(Wd - 360, gx + l1 * 0.8), Math.max(40, gy - l2 * 0.9), la, '~25 million stars, mostly old · half its light within 14 ly');
+    credit = Math.max(credit, la);
+  }
+  // circumnuclear disc
+  const aC = fadeWin(span, 1.2, 160, 3, 2);
+  if (aC > 0.01) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (const c of CND.pts) { const [X, Y] = P(c.p); if (!isFinite(X)) continue; const r = Math.min(60, Math.max(1.2, c.s * PC_LY * S * 1.6));
+      if (X < -r || X > Wd + r || Y < -r || Y > Ht + r) continue; ctx.globalAlpha = Math.min(1, 0.09 * c.w * aC * Math.min(1, 8 / r + 0.4)); ctx.drawImage(NSPR.mol, X - r, Y - r, 2 * r, 2 * r); }
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    const [X, Y] = P(CND.lab); nearLabel('Circumnuclear disc', X, Y, fadeWin(span, 5, 120, 2, 2), 'a ring of dense molecular gas, 1.5–4 pc out');
+    credit = Math.max(credit, fadeWin(span, 5, 120, 2, 2));
+  }
+  // the minispiral
+  const aM = fadeWin(span, 0.25, 60, 3, 2);
+  if (aM > 0.01) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (const s of MINI) {
+      if (opts.labels) { ctx.strokeStyle = `rgba(255,140,120,${0.16 * aM})`; ctx.lineWidth = 1; ctx.setLineDash([3, 5]); ctx.beginPath(); let pen = false;
+        for (const p of s.orbit) { const [X, Y] = P(p); if (!isFinite(X)) { pen = false; continue; } pen ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); pen = true; } ctx.stroke(); ctx.setLineDash([]); }
+      // seen from far off, each stream is a soft glowing thread; up close it breaks up into its clumps
+      const wpx = 0.09 * PC_LY * S, th = aM * (1 - sstep(wpx, 3, 12));
+      if (th > 0.01) for (const [mul, al] of [[3.2, 0.07], [1.4, 0.14], [0.5, 0.3]]) {
+        ctx.lineWidth = Math.max(1, wpx * mul); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = `rgba(255,98,82,${(al * th).toFixed(3)})`; ctx.beginPath(); let pen = false;
+        for (const p of s.glow) { const [X, Y] = P(p); if (!isFinite(X)) { pen = false; continue; } pen ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); pen = true; } ctx.stroke();
+      }
+      const r0 = Math.min(40, Math.max(1.2, 0.035 * PC_LY * S * 2.5));
+      for (const c of s.pts) { const [X, Y] = P(c.p); if (!isFinite(X) || X < -r0 || X > Wd + r0 || Y < -r0 || Y > Ht + r0) continue; ctx.globalAlpha = Math.min(1, 0.2 * c.w * aM * Math.min(1, 5 / r0 + 0.3)); ctx.drawImage(NSPR.ion, X - r0, Y - r0, 2 * r0, 2 * r0); }
+      ctx.globalAlpha = 1;
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    const la = fadeWin(span, 0.8, 40, 2, 2);
+    for (const s of MINI) { const [X, Y] = P(s.at(s.lab)); nearLabel(s.name, X, Y, la, s === MINI[2] ? 'the minispiral: streams of ionized gas orbiting Sgr A*' : ''); }
+    credit = Math.max(credit, la);
+  }
+  // the clockwise disc of young stars, moving
+  const yr = Y0 + (performance.now() - T0) / 1000 * S2_RATE;
+  const aD = fadeWin(span, 0.02, 12, 3, 2.5);
+  if (aD > 0.01) {
+    ctx.globalCompositeOperation = 'lighter'; let lx = 0, ly = 0, ln = 0;
+    for (const o of CWDISC) { const [X, Y] = P(kepWorld(o, yr)); if (!isFinite(X)) continue; ctx.globalAlpha = 0.9 * aD; ctx.drawImage(NSPR.blue, X - 5, Y - 5, 10, 10); if (o.a > 4 * AS_AU && o.a < 7 * AS_AU && ln < 1) { lx = X; ly = Y; ln++; } }
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    const la = fadeWin(span, 0.12, 6, 2, 2); if (ln) nearLabel('Disc of young stars', lx, ly, la, 'massive stars born here only a few million years ago, all circling clockwise');
+    moving = 1; credit = Math.max(credit, la);
+  }
+  // the S-stars, on their measured orbits
+  const aS = fadeWin(span, 3e-4, 3, 3, 3);
+  if (aS > 0.01) {
+    ctx.lineWidth = 0.8;
+    for (const o of SSTARS) {
+      const rpx = o.a / AU_PER_LY * S; if (rpx < 3) continue; const ao = aS * Math.min(1, (rpx - 3) / 20) * Math.min(1, 4 * Ht / rpx);
+      if (ao < 0.01) continue;
+      ctx.strokeStyle = o.late ? `rgba(255,190,140,${0.22 * ao})` : `rgba(170,200,255,${0.22 * ao})`; ctx.beginPath(); let pen = false;
+      for (const p of o.path) { const [X, Y] = P(p); if (!isFinite(X)) { pen = false; continue; } pen ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); pen = true; } ctx.stroke();
+      const [X, Y] = P(kepWorld(o, yr)); if (!isFinite(X)) continue;
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = ao; ctx.drawImage(o.late ? NSPR.gold : NSPR.blue, X - 6, Y - 6, 12, 12); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+      if (opts.labels && rpx > 45) { ctx.font = '500 11px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = `rgba(214,222,240,${0.75 * ao})`; ctx.fillText(o.name, X + 7, Y - 4); }
+    }
+    moving = 1; credit = Math.max(credit, aS * fadeWin(span, 1e-3, 3, 2, 2));
+    const la = fadeWin(span, 0.02, 1.5, 2, 2); if (la > 0.05) nearLabel('The S-stars', gx + 0.55 * AS_AU / AU_PER_LY * S, gy + 0.5 * AS_AU / AU_PER_LY * S, la, 'each one\'s orbit measured over 25 years · blue: young · gold: old');
+  }
+  if (credit > 0.05) {
+    ctx.font = '400 10.5px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(190,196,212,${0.6 * credit})`;
+    ctx.fillText('Measured orbits: S-stars (Gillessen 2017), minispiral (Zhao 2009), young-star disc (Yelda 2014) · false-colour gas; clumps and disc stars illustrative', Wd / 2 + (Wd > 900 ? 150 : 0), 20);
+  }
+  ctx.restore();
+  return moving ? Math.max(aD, aS) : 0;
 }
 
 // the black hole itself: every pixel's light traced back through curved spacetime (WebGL)
