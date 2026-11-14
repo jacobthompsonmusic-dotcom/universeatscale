@@ -116,7 +116,7 @@
     }, 6000);
     window.onSpotifyIframeApiReady = function (API) {
       API.createController(host, { uri: 'spotify:track:' + ORDER[0], width: '100%', height: 80 }, function (ctl) {
-        clearTimeout(fallback);
+        clearTimeout(fallback); window.__uasPlayer = ctl;
         var i = 0, advancing = false, wantPlay = false, last = { position: 0, duration: 0, playing: false };
         function next() {
           if (advancing) return; advancing = true; wantPlay = true;
