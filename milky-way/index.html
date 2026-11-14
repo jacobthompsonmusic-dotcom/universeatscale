@@ -60,6 +60,10 @@
   #info dd { margin: 0; }
   #info dd.src { color: #a9b0c6; font-size: 12px; }
   #info .blurb { margin: 0; color: #c9cee0; font-size: 13.5px; }
+  #gc { position: fixed; left: 0; top: 0; z-index: 4; display: none; padding: 3px 10px 3px 8px; border-radius: 999px; border: 1px solid rgba(201,182,255,0.45);
+    background: rgba(16,14,24,0.72); color: rgba(214,200,255,0.92); font: 500 12px Inter, sans-serif; white-space: nowrap; cursor: pointer; text-shadow: 0 1px 2px #000; }
+  #gc .arr { display: inline-block; margin-right: 6px; color: #c9b6ff; }
+  #gc:hover { border-color: #c9b6ff; }
   #info .go { display: none; margin-top: 14px; padding: 7px 12px; border-radius: 999px; border: 1px solid rgba(255,207,110,0.45); background: rgba(255,207,110,0.14); color: var(--text); font: 500 12.5px Inter, sans-serif; cursor: pointer; }
   .embed-only { display: none; } body.embed .embed-only { display: inline; } body.embed .solo { display: none; }
 
@@ -166,6 +170,7 @@
 </div>
 <div id="scale"><div class="bar" id="scale-bar"></div><span id="scale-label"></span></div>
 <div id="tip"></div>
+<button id="gc" title="The centre of the Milky Way — click to go there"></button>
 <div id="note">Star positions: Gaia DR3 &amp; Hipparcos parallaxes (AT-HYG v3.2) · Sun–centre distance 8.275 kpc (GRAVITY 2021) · far-side arms extrapolated · cosmic web pattern illustrative</div>
 
 <script>
@@ -822,6 +827,7 @@ function render(t) {
   if (opts.zodiac) drawZodiac();
   drawObjects();
   updateScale();
+  updateGC();
   const tb = document.getElementById('go3d'), lab = Math.abs(view.tilt) > 0.05 ? '3D' : 'TOP';
   if (tb.textContent !== lab) tb.textContent = lab;
   const td = Math.round(view.tilt / DEG); document.getElementById('r-tilt').textContent = Math.abs(td) > 90 ? `${td}° (from below)` : td + '°';
@@ -1211,6 +1217,24 @@ function zoomAt(X, Y, f) {
   anim = null; draw();
 }
 
+// While the centre of the galaxy is off screen, a pointer on the edge shows the way to it (hidden once you've pulled back out of the galaxy)
+const GC = OBJ.find(o => o.name === 'Sagittarius A*'), gcEl = document.getElementById('gc');
+gcEl.onclick = () => select(GC, true);
+function updateGC() {
+  if (following || viewSpan() > 250000) { gcEl.style.display = 'none'; return; }
+  const [X, Y] = proj(GC.x, GC.y, GC.z);
+  if (X > Wd * 0.03 && X < Wd * 0.97 && Y > Ht * 0.04 && Y < Ht * 0.96) { gcEl.style.display = 'none'; return; }   // in view: its own label marks it
+  let dx = (X - Wd / 2) / (Wd / 2), dy = (Y - Ht / 2) / (Ht / 2);
+  const m = Math.max(Math.abs(dx) / 0.9, Math.abs(dy) / 0.86) || 1; dx /= m; dy /= m;
+  const ex = (dx + 1) / 2 * Wd, ey = (dy + 1) / 2 * Ht, bw = 150;
+  gcEl.innerHTML = `<span class="arr" style="transform:rotate(${(Math.atan2(dy, dx) / DEG).toFixed(0)}deg)">➜</span>Galactic centre`;
+  gcEl.style.display = 'block';
+  let lx = Math.min(Wd - bw - 8, Math.max(8, ex - bw / 2)), ly = ey;
+  const rects = ['top', 'info', 'legend', 'controls', 'readout'].map(id => document.getElementById(id)).filter(Boolean).map(e => e.getBoundingClientRect()).filter(r => r.width);
+  if (EMBED) rects.push({ left: Wd - 140, right: Wd, top: 0, bottom: 270 });   // the scale ladder of the joined page
+  for (const r of rects) if (lx + bw > r.left && lx < r.right && ly + 14 > r.top && ly - 14 < r.bottom) { if (Math.abs(dy) > Math.abs(dx) * 0.95) lx = (lx + bw / 2 < Wd / 2) ? r.right + 10 : r.left - bw - 10; else ly = (ly < Ht / 2) ? r.bottom + 18 : r.top - 18; }
+  gcEl.style.transform = `translate(${lx.toFixed(1)}px, ${(ly - 12).toFixed(1)}px)`;
+}
 function flyTo(x, y, z, span, dur = 1100, orient) {
   const s = clampS(Math.min(Wd, Ht) / span);
   anim = { from: { ...view }, to: { x, y, z, s, yaw: orient ? orient.yaw : view.yaw, tilt: orient ? orient.tilt : view.tilt }, t0: performance.now(), dur };

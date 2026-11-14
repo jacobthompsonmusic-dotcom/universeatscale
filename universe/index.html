@@ -101,6 +101,7 @@ addEventListener('message', e => {
       return;
     }
     if (m.opt) { toMW({ cmd: 'opt', k: m.opt, on: m.on }); return; }
+    if (m.go) { go(m.go); return; }
     if (st.driver !== 'ss' || m.s === undefined) return;
     ssEl.style.opacity = (1 - m.q).toFixed(3);
     if (m.q > 0) toMW({ cmd: 'follow', s: m.s, yaw: m.yaw, tilt: m.tilt });   // keep the galaxy map lined up underneath while one fades into the other
