@@ -37,7 +37,7 @@
     '.uas-mu-pop .x{position:absolute;top:8px;right:10px;border:0;background:none;color:#8d93a8;font-size:16px;cursor:pointer;padding:2px 6px}',
     '.uas-mu-pop .x:hover{color:#e9ecf5}',
     '.uas-mu-pop .frame{border-radius:12px;overflow:hidden;background:#181818;height:80px}',
-    '.uas-mu-pop iframe{display:block;position:static;inset:auto;width:100%;height:80px;border:0;background:none}',
+    '.uas-mu-pop iframe{display:block!important;position:static;inset:auto;width:100%;height:80px;border:0;background:none}',
     '.uas-mu-pop .frame.off{height:auto;padding:12px 10px;text-align:center;display:flex;flex-direction:column;gap:6px}',
     '.uas-mu-pop .frame.off a{font-weight:600;font-size:13.5px}.uas-mu-pop .frame.off span{color:#8d93a8;font-size:11.5px}',
     '.uas-mu-pop .links{margin:5px 6px 1px;display:flex;justify-content:space-between;font-size:11px}',
@@ -99,12 +99,40 @@
         fr.innerHTML = '<a href="' + SPOTIFY + '" target="_blank" rel="noopener">▶ Listen on Spotify</a><span>The built-in player appears on universeatscale.com</span>';
         pop.hidden = false; btn.classList.add('open'); position(); return;
       }
-      var f = document.createElement('iframe');
-      f.src = EMBED_SRC; f.title = 'First Time Again by Jacob Thompson on Spotify';
-      f.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'; f.loading = 'eager';
-      pop.querySelector('.frame').appendChild(f);
+      startPlayer(pop.querySelector('.frame'));
     }
     pop.hidden = false; btn.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); position();
+  }
+  // The album in Spotify's player, starting on "The Last Time" and looping round the whole album for as long as the visitor leaves it playing.
+  // Uses Spotify's iFrame API: each track is loaded in turn, and when one ends the next one starts.
+  var ORDER = ['1zpn2Yzesj7KiJyhYtpeB9', '4NpcCuM3yeyeHqxeR1Hvgy', '7yfLDlMZSLsICflCIsAqTN', '22gfwWPKtsDVZhUz6gmWs7',   // The Last Time, Sacre Coeur in Winter, Three Dreams of a Lotus Garden, Accelerando,
+               '6qxA5xihjqGV2o2BwDUOxc', '0A1rm66PkmAKY9TuVSpf0j'];                                                      // Trespasses, Nine Lives
+  function startPlayer(frame) {
+    var host = document.createElement('div'); frame.appendChild(host);
+    var fallback = setTimeout(function () {                // if the API can't load, fall back to the plain album player
+      if (frame.querySelector('iframe')) return;
+      var f = document.createElement('iframe'); f.src = EMBED_SRC; f.title = 'First Time Again by Jacob Thompson on Spotify';
+      f.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'; frame.appendChild(f);
+    }, 6000);
+    window.onSpotifyIframeApiReady = function (API) {
+      API.createController(host, { uri: 'spotify:track:' + ORDER[0], width: '100%', height: 80 }, function (ctl) {
+        clearTimeout(fallback);
+        var i = 0, advancing = false, wantPlay = false, last = { position: 0, duration: 0, playing: false };
+        function next() {
+          if (advancing) return; advancing = true; wantPlay = true;
+          i = (i + 1) % ORDER.length; ctl.loadUri('spotify:track:' + ORDER[i]);
+        }
+        ctl.addListener('ready', function () { if (wantPlay) { wantPlay = false; ctl.play(); } advancing = false; });
+        ctl.addListener('playback_update', function (e) {
+          var d = e.data || {}, pos = d.position || 0, dur = d.duration || 0;
+          btn.classList.toggle('playing', !d.isPaused);
+          // the track has ended: it reached its end, or it stopped right after being near the end
+          if (dur > 0 && (pos >= dur - 300 || (d.isPaused && last.playing && last.duration === dur && last.position >= dur - 1500))) next();
+          last = { position: pos, duration: dur, playing: !d.isPaused };
+        });
+      });
+    };
+    var sc = document.createElement('script'); sc.src = 'https://open.spotify.com/embed/iframe-api/v1'; sc.async = true; document.head.appendChild(sc);
   }
   function close() { pop.hidden = true; btn.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); }
 
