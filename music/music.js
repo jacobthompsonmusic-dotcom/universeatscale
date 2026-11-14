@@ -27,7 +27,7 @@
     '.uas-mu-corner{right:18px;bottom:18px}',
     '.uas-mu-header{border:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0 0 0 10px;font-size:12px}',
     '.uas-mu-header:hover,.uas-mu-header.open{border:0}',
-    '.uas-mu-pop{position:fixed;z-index:31;width:330px;max-width:calc(100vw - 24px);padding:14px;box-sizing:border-box;',
+    '.uas-mu-pop{position:fixed;z-index:31;width:300px;max-width:calc(100vw - 24px);padding:6px;box-sizing:border-box;',
     ' background:rgba(12,13,20,.94);border:1px solid rgba(255,255,255,.1);border-radius:14px;color:#c9cede;',
     ' font:12.5px/1.45 Inter,system-ui,sans-serif;box-shadow:0 18px 50px rgba(0,0,0,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}',
     '.uas-mu-pop[hidden]{display:block!important;visibility:hidden;pointer-events:none}',   /* hidden, not removed: the music keeps playing */
@@ -36,13 +36,13 @@
     '.uas-mu-pop a{color:#ffcf6e;text-decoration:none}.uas-mu-pop a:hover{text-decoration:underline}',
     '.uas-mu-pop .x{position:absolute;top:8px;right:10px;border:0;background:none;color:#8d93a8;font-size:16px;cursor:pointer;padding:2px 6px}',
     '.uas-mu-pop .x:hover{color:#e9ecf5}',
-    '.uas-mu-pop .frame{border-radius:12px;overflow:hidden;background:#181818;height:352px}',
-    '.uas-mu-pop iframe{display:block;position:static;inset:auto;width:100%;height:352px;border:0;background:none}',
-    '.uas-mu-pop .frame.off{height:auto;padding:22px 14px;text-align:center;display:flex;flex-direction:column;gap:6px}',
+    '.uas-mu-pop .frame{border-radius:12px;overflow:hidden;background:#181818;height:80px}',
+    '.uas-mu-pop iframe{display:block;position:static;inset:auto;width:100%;height:80px;border:0;background:none}',
+    '.uas-mu-pop .frame.off{height:auto;padding:12px 10px;text-align:center;display:flex;flex-direction:column;gap:6px}',
     '.uas-mu-pop .frame.off a{font-weight:600;font-size:13.5px}.uas-mu-pop .frame.off span{color:#8d93a8;font-size:11.5px}',
-    '.uas-mu-pop .links{margin-top:10px;display:flex;justify-content:space-between;font-size:12px}',
+    '.uas-mu-pop .links{margin:5px 6px 1px;display:flex;justify-content:space-between;font-size:11px}',
     '@media (max-width:760px),(max-height:620px){.uas-mu-ladder{top:auto;bottom:14px;right:auto;left:50%;transform:translateX(-50%);width:auto}',
-    ' .uas-mu-pop .frame,.uas-mu-pop iframe{height:152px}}'
+    ' .uas-mu-pop{width:280px}}'
   ].join('\n');
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -59,9 +59,6 @@
   pop.setAttribute('aria-label', 'Soundtrack');
   pop.hidden = true;
   pop.innerHTML =
-    '<button class="x" type="button" aria-label="Close">×</button>' +
-    '<h4>First Time Again</h4>' +
-    '<p>Solo piano by Jacob Thompson, who made these maps. Put it on while you explore.</p>' +
     '<div class="frame"></div>' +
     '<div class="links"><a href="' + SPOTIFY + '" target="_blank" rel="noopener">Open in Spotify ↗</a>' +
     '<a href="' + SITE + '" target="_blank" rel="noopener">iamjacob.ca ↗</a></div>';
@@ -113,7 +110,7 @@
   function close() { pop.hidden = true; btn.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); }
 
   btn.addEventListener('click', function (e) { e.stopPropagation(); pop.hidden ? open() : close(); });
-  pop.querySelector('.x').addEventListener('click', close);
+  document.addEventListener('pointerdown', function (e) { if (!pop.hidden && e.target !== btn && !btn.contains(e.target)) close(); });
   pop.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
   pop.addEventListener('wheel', function (e) { e.stopPropagation(); }, { passive: true });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !pop.hidden) close(); });
