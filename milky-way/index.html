@@ -151,7 +151,7 @@ uniform vec3 uCam, uRight, uUp, uFwd;
 uniform vec2 uRes;
 uniform float uTanH, uOrtho, uHalfH, uExpo, uAlpha;
 const float GW = 62000.0, ZM = 9000.0, RSUN = 26989.0;
-const float HY = 330.0, H1 = 978.0, H2 = 2935.0, HB = 1630.0, HD = 437.0, RD = 7557.0, K0 = 2.83e-4;
+const float HY = 330.0, H1 = 978.0, H2 = 2935.0, HB = 1630.0, HD = 437.0, RD = 7557.0, K0 = 1.7e-4;
 vec2 slab(vec3 ro, vec3 rd) {
   if (abs(rd.z) < 1e-7) return abs(ro.z) < ZM ? vec2(-1e12, 1e12) : vec2(1.0, -1.0);
   float a = (-ZM - ro.z) / rd.z, b = (ZM - ro.z) / rd.z; return vec2(min(a, b), max(a, b));
@@ -171,13 +171,14 @@ void main() {
   float t0 = max(max(s1.x, s2.x), 0.0), t1 = min(s1.y, s2.y);
   if (t1 <= t0) { gl_FragColor = vec4(0.0); return; }
   vec3 I = vec3(0.0), T = vec3(1.0);
-  float t = t0, jit = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);   // per-pixel offset: turns banding into fine grain
+  float t = t0, jit = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));   // interleaved-gradient dither: even, fine-grained, no clumps   // per-pixel offset: turns banding into fine grain
   bool first = true;
-  for (int i = 0; i < 260; i++) {
+  for (int i = 0; i < 360; i++) {
     if (t >= t1) break;
     vec3 q = ro + rd * t;
     float dt = clamp(0.14 * max(abs(q.z), 100.0) / max(abs(rd.z), 0.03), 6.0, 2000.0);
     if (uOrtho < 0.5) dt = min(dt, max(0.1 * t, 6.0));                      // fine steps close to the camera when we're inside
+    dt = min(dt, max(0.15 * length(q), 30.0));                                 // and through the bright core, where coarse steps show as crawling grain
     if (first) { dt *= jit; first = false; }
     dt = min(dt, t1 - t);
     vec3 m = ro + rd * (t + 0.5 * dt);
@@ -905,7 +906,7 @@ const TAN20 = Math.tan(20 * Math.PI / 180), sstep = (x, a, b) => { const k = Mat
 const setupView = () => {
   CY = Math.cos(view.yaw); SY = Math.sin(view.yaw); CT = Math.cos(view.tilt); ST = Math.sin(view.tilt);
   const span = Math.min(Wd, Ht) / view.s, dGC = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z);
-  PT = TAN20 * (1 - sstep(Math.log(span), Math.log(25000), Math.log(400000))) * sstep(Math.log(Math.max(dGC, 1e-9)), Math.log(20), Math.log(200));
+  PT = TAN20 * (1 - sstep(Math.log(span), Math.log(25000), Math.log(400000))) * sstep(Math.log(Math.max(dGC, 0.2 * span, 1e-9)), Math.log(30), Math.log(600));   // flattens gradually as you close in on Sgr A*
   PD = PT > 1e-4 ? (Ht / 2 / view.s) / PT : Infinity;
 };
 // tilt wraps all the way round: 0 = overhead, 90° = side-on, 180° = from below the galaxy
@@ -966,8 +967,13 @@ function render(t) {
   if (anim) {
     const k = Math.min(1, (t - anim.t0) / anim.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
     const f = anim.from, to = anim.to;
-    view.s = Math.exp(Math.log(f.s) + (Math.log(to.s) - Math.log(f.s)) * e);
-    view.x = f.x + (to.x - f.x) * e; view.y = f.y + (to.y - f.y) * e; view.z = f.z + (to.z - f.z) * e;
+    if (anim.vw) {   // along the zoom-and-pan path, easing in and out of it
+      const v = anim.vw, q = v.S * (0.5 - 0.5 * Math.cos(Math.PI * k)), { u, w } = k >= 1 ? { u: v.u1, w: v.w1 } : vwAt(v, q), a = v.flat || !v.u1 ? 0 : Math.min(1, u / v.u1);
+      view.s = k >= 1 ? to.s : v.M / w; view.x = v.c0[0] + v.d[0] * a; view.y = v.c0[1] + v.d[1] * a; view.z = v.c0[2] + v.d[2] * a;
+    } else {
+      view.s = Math.exp(Math.log(f.s) + (Math.log(to.s) - Math.log(f.s)) * e);
+      view.x = f.x + (to.x - f.x) * e; view.y = f.y + (to.y - f.y) * e; view.z = f.z + (to.z - f.z) * e;
+    }
     view.yaw = f.yaw + angDiff(f.yaw, to.yaw) * e; view.tilt = clampTilt(f.tilt + angDiff(f.tilt, to.tilt) * e);
     if (k >= 1) { const done = anim.done; anim = null; if (done) done(); } else draw();
   }
@@ -986,7 +992,8 @@ function render(t) {
   drawField();
   if (opts.zodiac) drawZodiac();
   drawObjects();
-  const nb = drawGCNear(), s2a = drawS2(), bhOn = drawBH();
+  gcTick();
+  const nb = drawGCNear(), s2a = drawS2(), bhOn = drawBH(); GCT.on = nb > 0 || s2a > 0;
   if ((s2a > 0 || nb > 0 || bhOn) && !anim) draw();   // keep S2 and the flow moving
   updateScale();
   updateGC();
@@ -1027,21 +1034,28 @@ function drawGalaxy3D() {
   const key = [view.x, view.y, view.z, view.s, view.yaw, view.tilt, Wd, Ht, PT, dpr].join();
   if (key !== GX.key) {
     const now = performance.now(), ft = now - GX.last; GX.last = now;   // too slow? draw it a little coarser
-    if (ft > 50 && ft < 400) GX.q = Math.max(0.35, GX.q * 0.9); else if (ft < 24) GX.q = Math.min(1, GX.q * 1.03);
-    const q = Math.min(1, 1100 / Math.max(Wd, Ht)) * Math.min(dpr, 1.25) * GX.q, w = Math.max(2, Math.round(Wd * q)), h = Math.max(2, Math.round(Ht * q));
+    const settle = GX.settle; GX.settle = false;   // the one full-quality redraw after moving: don't let it adjust quality or schedule another
+    if (!settle) { if (ft > 50 && ft < 400) GX.q = Math.max(0.35, GX.q * 0.9); else if (ft < 24) GX.q = Math.min(1, GX.q * 1.03); }
+    const qq = GX.q > 0.86 ? 1 : GX.q > 0.64 ? 0.75 : GX.q > 0.47 ? 0.55 : 0.4;   // a few fixed steps, so the resolution doesn't change every frame
+    const q = Math.min(1, 1100 / Math.max(Wd, Ht)) * Math.min(dpr, 1.25) * qq, w = Math.max(2, Math.round(Wd * q)), h = Math.max(2, Math.round(Ht * q));
     if (GX.cv.width !== w || GX.cv.height !== h) { GX.cv.width = w; GX.cv.height = h; }
     const gl = GX.gl, U = GX.u, F = [SY * ST, CY * ST, CT];
     gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform3f(U.uRight, CY, -SY, 0); gl.uniform3f(U.uUp, -SY * CT, -CY * CT, ST); gl.uniform3f(U.uFwd, -F[0], -F[1], -F[2]);
-    gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uExpo, 1.35); gl.uniform1f(U.uAlpha, 1);
+    // inside the bulge the light piles up and would clip to a flat white disc: lower the exposure there so its shape still shows
+    const dGx = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), expo = 1.35 * (0.28 + 0.72 * sstep(Math.log(Math.max(dGx, Ht / view.s * 0.5, 1)), Math.log(3000), Math.log(60000)));
+    gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uExpo, expo); gl.uniform1f(U.uAlpha, 1);
     if (PD === Infinity) { gl.uniform1f(U.uOrtho, 1); gl.uniform3f(U.uCam, view.x, view.y, view.z); gl.uniform1f(U.uHalfH, Ht / 2 / view.s); gl.uniform1f(U.uTanH, 0); }
     else { gl.uniform1f(U.uOrtho, 0); gl.uniform3f(U.uCam, view.x + F[0] * PD, view.y + F[1] * PD, view.z + F[2] * PD); gl.uniform1f(U.uTanH, PT); gl.uniform1f(U.uHalfH, 1); }
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     GX.key = key;
+    // drawn coarser to keep up with movement? once you stop, draw it again at full quality
+    clearTimeout(GX.tq); if (!settle && qq < 1) GX.tq = setTimeout(() => { GX.settleQ = GX.q; GX.q = 1; GX.settle = true; GX.key = null; draw(); }, 350);
+    if (settle && GX.settleQ) { GX.q = GX.settleQ; GX.settleQ = 0; }   // carry on at the moving quality next time you move
   } else GX.last = performance.now();
   // deep in the Galaxy's core the whole screen is bulge light; dim it as you zoom in there, so the stars and gas around Sgr A* stand out
-  const span = viewSpan(), dG = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), coreDim = 1 - 0.85 * (1 - sstep(Math.log(Math.max(dG, 1e-6)), Math.log(300), Math.log(4000))) * (1 - sstep(Math.log(span), Math.log(40), Math.log(4000)));
-  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = coreDim; ctx.drawImage(GX.cv, 0, 0, Wd, Ht); ctx.restore();
+  const span = viewSpan(), dG = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), coreDim = 1 - 0.85 * (1 - sstep(Math.log(Math.max(dG, 1e-6)), Math.log(600), Math.log(8000))) * (1 - sstep(Math.log(span), Math.log(300), Math.log(12000)));
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = coreDim; ctx.filter = `blur(${Math.min(2.5, 0.6 * Wd / GX.cv.width).toFixed(2)}px)`; ctx.drawImage(GX.cv, 0, 0, Wd, Ht); ctx.filter = 'none'; ctx.restore();
   return true;
 }
 function drawHaze() {
@@ -1152,8 +1166,11 @@ function drawGalaxies() {
     if (!o.sprite) continue;
     const [X, Y, , pf] = proj(o.x, o.y, o.z), D = o.diam * view.s * pf;
     if (!isFinite(X) || D < 3 || X + D < 0 || X - D > Wd || Y + D < 0 || Y - D > Ht) continue;
+    // A galaxy far behind what you're looking at (the Sagittarius Dwarf, behind the galactic centre) would swell past the screen
+    // in the flat close-up projection: fade it out once it's bigger than the view. Dwarf galaxies are very faint: keep them dim.
+    const M = Math.max(Wd, Ht), big = 1 - sstep(D, 0.9 * M, 2.2 * M); if (big <= 0.01) continue;
     ctx.save(); ctx.translate(X, Y); ctx.rotate(o.tilt * DEG); ctx.scale(1, o.aspect);
-    ctx.globalAlpha = o.type === 'dwarf' ? 0.8 : 1;
+    ctx.globalAlpha = (o.type === 'dwarf' ? 0.8 * (1 - 0.85 * sstep(D, 80, 400)) : 1) * big;
     ctx.drawImage(SPR[o.sprite], -D / 2, -D / 2, D, D);
     ctx.restore();
   }
@@ -1430,10 +1447,24 @@ function sunDive(X, Y, f) {
 function diveToSun() {   // fly to the Sun, then hand over
   if (!EMBED || !ssReady) return;
   const M = Math.min(Wd, Ht); select(null);
-  anim = { from: { ...view }, to: { x: SUNW.x, y: SUNW.y, z: SUNW.z, s: M / (DIVE * 1.05), yaw: view.yaw, tilt: view.tilt }, t0: performance.now(), dur: viewSpan() > 3000 ? 2200 : 1300, done: () => handOver(M / 5.4) };
-  draw();
+  flyTo(SUNW.x, SUNW.y, SUNW.z, DIVE * 1.05, { raw: true, done: () => handOver(M / 5.4) });
 }
-const zoomTo = (X, Y, f) => { const [ax, ay] = zoomAnchor(X, Y); zoomAt(ax, ay, f); };
+const zoomTo = (X, Y, f, viaWheel) => {
+  if (f > 1 && selected && steerIn(X, Y, f, viaWheel)) return;
+  const [ax, ay] = zoomAnchor(X, Y); zoomAt(ax, ay, f);
+};
+// With something selected, zooming in heads for it — even from far off, or with it off screen — gliding it to the middle as you
+// close in (as in the Solar System). Over another object, the wheel zooms there instead.
+let wheelHover = null, lastWheel = 0;
+function steerIn(X, Y, f, viaWheel) {
+  if (viaWheel) { const now = performance.now(); if (now - lastWheel > 280) wheelHover = pick(X, Y); lastWheel = now; if (wheelHover && wheelHover !== selected) return false; }
+  const o = selected; if (o.type === 'region' && !o.d) return false;
+  if ((o.type === 'sun' && sunDive(Wd / 2, Ht / 2, f)) || (o === GCO && gcSteer(Wd / 2, Ht / 2, f))) return true;   // their own approaches (hand-over; down to the black hole)
+  setupView();
+  const T = { x: o.x, y: o.y, z: o.z || 0 }, k = Math.pow(f, -1.6);   // the gap closes faster than the zoom, so the object slides to the middle
+  view.x = T.x + (view.x - T.x) * k; view.y = T.y + (view.y - T.y) * k; view.z = T.z + (view.z - T.z) * k;
+  view.s = clampS(view.s * f); anim = null; draw(); return true;
+}
 function zoomAt(X, Y, f) {
   if (sunDive(X, Y, f)) return;
   if (gcSteer(X, Y, f)) return;
@@ -1510,6 +1541,9 @@ const DISC = (() => {
 })();
 const yearNow = () => 2000 + (Date.now() - Date.UTC(2000, 0, 1, 12)) / (365.25 * 864e5);
 const T0 = performance.now(), Y0 = yearNow();
+// the clock for the stars around Sgr A*: starts at today's date when you arrive and runs at a year per second only while they're on screen
+const GCT = { yr: Y0, last: 0, on: false };
+function gcTick() { const now = performance.now(); if (GCT.on) GCT.yr += Math.min(0.25, (now - GCT.last) / 1000) * S2_RATE; else GCT.yr = yearNow(); GCT.last = now; }
 
 // the S2 orbit, drawn on the map
 function drawS2() {
@@ -1518,12 +1552,12 @@ function drawS2() {
   const a = Math.min(1, Math.log(0.6 / span) / Math.log(4)) * Math.min(1, Math.log(span / 2e-5) / Math.log(3));
   ctx.strokeStyle = `rgba(255,214,150,${0.5 * a})`; ctx.lineWidth = 1.2; ctx.setLineDash([]); ctx.beginPath();
   S2_PATH.forEach((p, k) => { const [X, Y] = proj(GC.x + p[0], GC.y + p[1], GC.z + p[2]); k ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }); ctx.stroke();
-  const yr = Y0 + (performance.now() - T0) / 1000 * S2_RATE, s = s2At(yr), [X, Y] = proj(GC.x + s[0], GC.y + s[1], GC.z + s[2]);
+  const yr = GCT.yr, s = s2At(yr), [X, Y] = proj(GC.x + s[0], GC.y + s[1], GC.z + s[2]);
   const gr = ctx.createRadialGradient(X, Y, 0, X, Y, 9); gr.addColorStop(0, `rgba(220,232,255,${a})`); gr.addColorStop(0.3, `rgba(170,200,255,${0.6 * a})`); gr.addColorStop(1, 'rgba(150,180,255,0)');
   ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y, 9, 0, 7); ctx.fill();
   ctx.font = '600 12px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = `rgba(225,232,250,${a})`; ctx.fillText('S2', X + 10, Y - 6);
   ctx.font = '400 11px Inter, sans-serif'; ctx.fillStyle = `rgba(200,206,225,${0.75 * a})`;
-  ctx.fillText(`${Math.floor(yr)} · ${Math.round(Math.hypot(...s) * AU_PER_LY).toLocaleString('en-CA')} AU from the black hole`, X + 10, Y + 9);
+  ctx.fillText(`year ${Math.floor(yr)} (1 year per second) · ${Math.round(Math.hypot(...s) * AU_PER_LY).toLocaleString('en-CA')} AU from the black hole`, X + 10, Y + 9);
   return a;
 }
 
@@ -1610,6 +1644,7 @@ const NSPR = { ion: nSprite('255,96,84'), mol: nSprite('214,132,86'), blue: nSpr
 
 function nearLabel(txt, X, Y, a, sub) {
   if (!opts.labels || a < 0.05 || !isFinite(X)) return;
+  X = Math.min(X, Wd - (sub ? 340 : 140)); Y = Math.max(16, Math.min(Y, Ht - 60));   // keep it on screen
   ctx.textAlign = 'left'; ctx.font = '600 12px Inter, sans-serif'; ctx.fillStyle = `rgba(232,226,214,${a})`; ctx.fillText(txt, X + 8, Y);
   if (sub) { ctx.font = '400 11px Inter, sans-serif'; ctx.fillStyle = `rgba(200,200,212,${0.8 * a})`; ctx.fillText(sub, X + 8, Y + 14); }
 }
@@ -1630,22 +1665,22 @@ function drawGCNear() {
     [[0, 1], [0.08, 0.72], [0.25, 0.42], [0.5, 0.24], [1, 0.11], [1.6, 0.05], [2.5, 0.018], [4, 0]].forEach(([x, v]) => gr.addColorStop(x / 4, `rgba(255,222,184,${(v * 0.42 * aN).toFixed(4)})`));
     ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, 4, 0, 7); ctx.fill();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalCompositeOperation = 'source-over';
-    const la = fadeWin(span, 12, 260, 2, 2);
+    const la = fadeWin(span, 10, 120, 2, 2);
     nearLabel('Nuclear star cluster', Math.min(Wd - 360, gx + l1 * 0.8), Math.max(40, gy - l2 * 0.9), la, '~25 million stars, mostly old · half its light within 14 ly');
     credit = Math.max(credit, la);
   }
   // circumnuclear disc
-  const aC = fadeWin(span, 1.2, 160, 3, 2);
+  const aC = fadeWin(span, 1.2, 110, 2.5, 2);
   if (aC > 0.01) {
     ctx.globalCompositeOperation = 'lighter';
     for (const c of CND.pts) { const [X, Y] = P(c.p); if (!isFinite(X)) continue; const r = Math.min(60, Math.max(1.2, c.s * PC_LY * S * 1.6));
       if (X < -r || X > Wd + r || Y < -r || Y > Ht + r) continue; ctx.globalAlpha = Math.min(1, 0.09 * c.w * aC * Math.min(1, 8 / r + 0.4)); ctx.drawImage(NSPR.mol, X - r, Y - r, 2 * r, 2 * r); }
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-    const [X, Y] = P(CND.lab); nearLabel('Circumnuclear disc', X, Y, fadeWin(span, 5, 120, 2, 2), 'a ring of dense molecular gas, 1.5–4 pc out');
-    credit = Math.max(credit, fadeWin(span, 5, 120, 2, 2));
+    const [X, Y] = P(CND.lab); nearLabel('Circumnuclear disc', X, Y, fadeWin(span, 4, 60, 2, 2), 'a ring of dense molecular gas, 1.5–4 pc out');
+    credit = Math.max(credit, fadeWin(span, 4, 60, 2, 2));
   }
   // the minispiral
-  const aM = fadeWin(span, 0.25, 60, 3, 2);
+  const aM = fadeWin(span, 0.25, 40, 2.5, 2);
   if (aM > 0.01) {
     ctx.globalCompositeOperation = 'lighter';
     for (const s of MINI) {
@@ -1662,22 +1697,22 @@ function drawGCNear() {
       ctx.globalAlpha = 1;
     }
     ctx.globalCompositeOperation = 'source-over';
-    const la = fadeWin(span, 0.8, 40, 2, 2);
+    const la = fadeWin(span, 0.8, 16, 2, 2);
     for (const s of MINI) { const [X, Y] = P(s.at(s.lab)); nearLabel(s.name, X, Y, la, s === MINI[2] ? 'the minispiral: streams of ionized gas orbiting Sgr A*' : ''); }
     credit = Math.max(credit, la);
   }
   // the clockwise disc of young stars, moving
-  const yr = Y0 + (performance.now() - T0) / 1000 * S2_RATE;
-  const aD = fadeWin(span, 0.02, 12, 3, 2.5);
+  const yr = GCT.yr;
+  const aD = fadeWin(span, 0.02, 6, 2.5, 2.5);
   if (aD > 0.01) {
     ctx.globalCompositeOperation = 'lighter'; let lx = 0, ly = 0, ln = 0;
     for (const o of CWDISC) { const [X, Y] = P(kepWorld(o, yr)); if (!isFinite(X)) continue; ctx.globalAlpha = 0.9 * aD; ctx.drawImage(NSPR.blue, X - 5, Y - 5, 10, 10); if (o.a > 4 * AS_AU && o.a < 7 * AS_AU && ln < 1) { lx = X; ly = Y; ln++; } }
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-    const la = fadeWin(span, 0.12, 6, 2, 2); if (ln) nearLabel('Disc of young stars', lx, ly, la, 'massive stars born here only a few million years ago, all circling clockwise');
+    const la = fadeWin(span, 0.12, 3, 2, 2); if (ln) nearLabel('Disc of young stars', lx, ly, la, 'massive stars born here only a few million years ago, all circling clockwise');
     moving = 1; credit = Math.max(credit, la);
   }
   // the S-stars, on their measured orbits
-  const aS = fadeWin(span, 3e-4, 3, 3, 3);
+  const aS = fadeWin(span, 3e-4, 1.2, 2.5, 3);
   if (aS > 0.01) {
     ctx.lineWidth = 0.8;
     for (const o of SSTARS) {
@@ -1690,9 +1725,9 @@ function drawGCNear() {
       if (opts.labels && rpx > 45) { ctx.font = '500 11px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = `rgba(214,222,240,${0.75 * ao})`; ctx.fillText(o.name, X + 7, Y - 4); }
     }
     moving = 1; credit = Math.max(credit, aS * fadeWin(span, 1e-3, 3, 2, 2));
-    const la = fadeWin(span, 0.02, 1.5, 2, 2); if (la > 0.05) nearLabel('The S-stars', gx + 0.55 * AS_AU / AU_PER_LY * S, gy + 0.5 * AS_AU / AU_PER_LY * S, la, 'each one\'s orbit measured over 25 years · blue: young · gold: old');
+    const la = fadeWin(span, 0.02, 0.6, 2, 2); if (la > 0.05) nearLabel('The S-stars', gx + 0.55 * AS_AU / AU_PER_LY * S, gy + 0.5 * AS_AU / AU_PER_LY * S, la, 'each one\'s orbit measured over 25 years · blue: young · gold: old');
   }
-  if (credit > 0.05) {
+  if (credit > 0.05 && Wd >= 900) {   // too long for a phone screen
     ctx.font = '400 10.5px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(190,196,212,${0.6 * credit})`;
     ctx.fillText('Measured orbits: S-stars (Gillessen 2017), minispiral (Zhao 2009), young-star disc (Yelda 2014) · false-colour gas; clumps and disc stars illustrative', Wd / 2 + (Wd > 900 ? 150 : 0), 20);
   }
@@ -1755,10 +1790,35 @@ function gcSteer(X, Y, f) {
   anim = null; draw(); return true;
 }
 
-function flyTo(x, y, z, span, dur = 1100, orient) {
-  const s = clampS(Math.min(Wd, Ht) / span);
-  anim = { from: { ...view }, to: { x, y, z, s, yaw: orient ? orient.yaw : view.yaw, tilt: orient ? orient.tilt : view.tilt }, t0: performance.now(), dur };
+// Flights take the path that feels shortest to the eye (van Wijk & Nuij 2003): pull back until both ends are in view, glide
+// across, then sink in — so a long trip shows you the distance it covers. The duration grows with the path's length, from
+// a couple of seconds for a nearby star to 12 s for the edge of the observable universe.
+const RHO = 1.42;
+function clampAt(s, x, y, z) {   // clampS, with the zoom limit of the destination rather than of here
+  const near = Math.hypot(x - GCO.x, y - GCO.y, z - GCO.z);
+  return Math.max(minScale(), Math.min(Math.min(Wd, Ht) / Math.max(4e-6, Math.min(6, 1.5 * near)), s));
+}
+function flyTo(x, y, z, span, o = {}) {
+  if (typeof o === 'number') o = { max: o };
+  const M = Math.min(Wd, Ht), s1 = o.raw ? M / span : clampAt(M / span, x, y, z);
+  const c0 = [view.x, view.y, view.z], d = [x - c0[0], y - c0[1], z - c0[2]], u1 = Math.hypot(...d);
+  const w0 = M / view.s, w1 = M / s1;
+  let S, r0 = 0, flat = u1 < 1e-6 * Math.max(w0, w1);
+  if (flat) S = Math.abs(Math.log(w1 / w0)) / RHO;
+  else {
+    const b0 = (w1 * w1 - w0 * w0 + RHO ** 4 * u1 * u1) / (2 * w0 * RHO * RHO * u1), b1 = (w1 * w1 - w0 * w0 - RHO ** 4 * u1 * u1) / (2 * w1 * RHO * RHO * u1);
+    r0 = -Math.asinh(b0); S = (-Math.asinh(b1) - r0) / RHO;
+  }
+  const dur = o.dur || Math.min(o.max || 12000, Math.max(2200, 1800 + 1400 * S));
+  anim = { vw: { c0, d, u1, w0, w1, S, r0, flat, M }, from: { ...view }, to: { x, y, z, s: s1, yaw: o.orient ? o.orient.yaw : view.yaw, tilt: o.orient ? o.orient.tilt : view.tilt },
+    t0: performance.now(), dur, done: o.done };
   draw();
+}
+// where the flight is at path position q (0…S): centre and view width
+function vwAt(v, q) {
+  if (v.flat) return { u: 0, w: v.w0 * Math.exp(Math.sign(Math.log(v.w1 / v.w0)) * RHO * q) };
+  const k = v.w0 / (RHO * RHO);
+  return { u: k * Math.cosh(v.r0) * Math.tanh(RHO * q + v.r0) - k * Math.sinh(v.r0), w: v.w0 * Math.cosh(v.r0) / Math.cosh(RHO * q + v.r0) };
 }
 function orient(yaw, tilt, dur = 900) {
   repivot();
@@ -1860,7 +1920,7 @@ function select(o, fly) {
   { const go = document.getElementById('info-go'), bh = o === GCO, sun = EMBED && ssReady && o.type === 'sun';
     go.style.display = bh || sun ? 'inline-block' : 'none';
     go.textContent = bh ? 'Fly down to the black hole' : 'Dive into the Solar System';
-    go.onclick = bh ? () => { select(null); anim = { from: { ...view }, to: { x: GCO.x, y: GCO.y, z: GCO.z, s: Math.min(Wd, Ht) / 1.4e-5, yaw: view.yaw, tilt: view.tilt }, t0: performance.now(), dur: 6500 }; draw(); } : diveToSun; }
+    go.onclick = bh ? () => { select(null); flyTo(GCO.x, GCO.y, GCO.z, 1.4e-5, { raw: true }); } : diveToSun; }
   info.style.display = 'block';
   if (fly) flyTo(o.x, o.y, o.z || 0, spanFor(o));
 }
@@ -1870,6 +1930,7 @@ let drag = null, gest = null;
 const isOrbit = e => e.button === 2 || e.shiftKey || e.altKey;
 cv.addEventListener('contextmenu', e => e.preventDefault());
 cv.addEventListener('pointerdown', e => {
+  if (anim && anim.vw && !anim.done) anim = null;   // grab the view mid-flight to stop there
   cv.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId, [e.clientX, e.clientY]);
   if (isOrbit(e) || pointers.size === 2) repivot();
@@ -1891,7 +1952,8 @@ cv.addEventListener('pointermove', e => {
     const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
     view.yaw = gest.yaw - angDiff(gest.ang, ang);
     view.tilt = clampTilt(gest.tilt - (my - gest.my) * 0.006);
-    const [ax, ay] = zoomAnchor(mx, my); zoomAt(ax, ay, clampS(gest.s * d / gest.d) / view.s);
+    const f = clampS(gest.s * d / gest.d) / view.s;
+    if (!(f > 1 && selected && steerIn(mx, my, f, false))) { const [ax, ay] = zoomAnchor(mx, my); zoomAt(ax, ay, f); }
   } else if (drag) {
     const dx = e.clientX - drag.X, dy = e.clientY - drag.Y;
     drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
@@ -1932,7 +1994,14 @@ cv.addEventListener('pointermove', e => {
 });
 const endPtr = e => {
   pointers.delete(e.pointerId);
-  if (drag && drag.moved <= 3 && e.type === 'pointerup' && !drag.orbit) { const o = pick(e.clientX, e.clientY); select(o || null, false); }
+  if (drag && drag.moved <= 3 && e.type === 'pointerup' && !drag.orbit) {
+    const o = pick(e.clientX, e.clientY); select(o || null, false);
+    if (e.pointerType === 'touch') {   // a second tap within 0.35 s, close to the first: fly in
+      const now = performance.now();
+      if (lastTap && now - lastTap.t < 350 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) { lastTap = null; tapFlyAt = now; flyIn(e.clientX, e.clientY); }
+      else lastTap = { t: now, x: e.clientX, y: e.clientY };
+    }
+  }
   if (pointers.size < 2) gest = null;
   if (pointers.size === 0) drag = null;
   else if (pointers.size === 1 && !drag) { const [p] = [...pointers.values()]; drag = { X: p[0], Y: p[1], v: { ...view }, moved: 10, orbit: false }; }
@@ -1941,8 +2010,16 @@ const endPtr = e => {
 cv.addEventListener('pointerup', endPtr);
 cv.addEventListener('pointercancel', endPtr);
 cv.addEventListener('pointerleave', () => { document.getElementById('tip').style.display = 'none'; if (hover) { hover = null; draw(); } });
-cv.addEventListener('wheel', e => { e.preventDefault(); zoomTo(e.clientX, e.clientY, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0018))); }, { passive: false });
-cv.addEventListener('dblclick', e => { if (!pick(e.clientX, e.clientY)) zoomAt(e.clientX, e.clientY, 2.5); });
+cv.addEventListener('wheel', e => { e.preventDefault(); zoomTo(e.clientX, e.clientY, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0018)), true); }, { passive: false });
+let lastTap = null, tapFlyAt = 0;
+cv.addEventListener('dblclick', e => { if (performance.now() - tapFlyAt > 600) flyIn(e.clientX, e.clientY); });
+function flyIn(X, Y) {
+  const e = { clientX: X, clientY: Y };
+  const o = pick(e.clientX, e.clientY);
+  if (o) { if (selected !== o) select(o); if (o.type === 'sun' && EMBED && ssReady && viewSpan() < 400) diveToSun(); else flyTo(o.x, o.y, o.z || 0, spanFor(o)); return; }
+  setupView(); const p = unproj(e.clientX, e.clientY), sp = viewSpan() / 2.5;   // empty space: a short glide in, toward the spot clicked
+  flyTo(p.x + (view.x - p.x) / 2.5, p.y + (view.y - p.y) / 2.5, p.z + (view.z - p.z) / 2.5, sp, { dur: 900 });
+}
 
 document.getElementById('zin').onclick = () => zoomTo(Wd / 2, Ht / 2, 2);
 document.getElementById('zout').onclick = () => zoomTo(Wd / 2, Ht / 2, 0.5);
@@ -1950,9 +2027,9 @@ document.getElementById('go3d').onclick = () => Math.abs(view.tilt) > 0.05 ? ori
 document.getElementById('spin').onclick = () => orient(view.yaw + 45 * DEG, Math.abs(view.tilt) < 0.05 ? 50 * DEG : view.tilt);
 document.getElementById('gosun').onclick = () => select(SUN, true);
 document.getElementById('goall').onclick = () => flyTo(0, 4000, 0, 118000);
-document.getElementById('golan').onclick = () => { const r = REGIONS[1]; flyTo(r.x * 0.5, r.y * 0.5, r.z * 0.5, 7e8, 1800); };
-document.getElementById('goobs').onclick = () => flyTo(0, 0, 0, 1.0e11, 2200);
-document.getElementById('golg').onclick = () => { const m = gpos('Andromeda'); flyTo(m.x * 0.45, m.y * 0.45, m.z * 0.45, 3.6e6, 1600); };
+document.getElementById('golan').onclick = () => { const r = REGIONS[1]; flyTo(r.x * 0.5, r.y * 0.5, r.z * 0.5, 7e8); };
+document.getElementById('goobs').onclick = () => flyTo(0, 0, 0, 1.0e11);
+document.getElementById('golg').onclick = () => { const m = gpos('Andromeda'); flyTo(m.x * 0.45, m.y * 0.45, m.z * 0.45, 3.6e6); };
 document.querySelector('#info .close').onclick = () => select(null);
 document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); draw();
   if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-mw', opt: 'zodiac', on: opts.zodiac }, '*'); });
@@ -1966,19 +2043,19 @@ if (EMBED) {
     else if (m.cmd === 'release') { following = false; render.sp = 0; draw(); }
     else if (m.cmd === 'dive') diveToSun();
     else if (m.cmd === 'go') { following = false; select(null);
-      if (m.key === 'stars') flyTo(SUNW.x, SUNW.y, SUNW.z, 60, 1500);
+      if (m.key === 'stars') flyTo(SUNW.x, SUNW.y, SUNW.z, 60);
       else document.getElementById({ milkyway: 'goall', lg: 'golg', lan: 'golan', obs: 'goobs' }[m.key]).onclick(); }
     else if (m.cmd === 'opt') { opts[m.k] = m.on; document.querySelector(`.tg[data-k="${m.k}"]`).classList.toggle('on', m.on); draw(); }
   });
   parent.postMessage({ src: 'uas-mw', ready: true }, '*');
 }
-if (/[?&]debug=1/.test(location.search)) window.__mw = { gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, get following() { return following; }, get ssReady() { return ssReady; } };
+if (/[?&]debug=1/.test(location.search)) window.__mw = { GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, get following() { return following; }, get ssReady() { return ssReady; } };
 
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
   if (e.key === '+' || e.key === '=') zoomTo(Wd / 2, Ht / 2, 1.6);
   if (e.key === '-' || e.key === '_') zoomTo(Wd / 2, Ht / 2, 1 / 1.6);
-  if (e.key === '0') flyTo(0, 4000, 0, 118000, 1100, { yaw: 0, tilt: 0 });
+  if (e.key === '0') flyTo(0, 4000, 0, 118000, { orient: { yaw: 0, tilt: 0 } });
   if (e.key.startsWith('Arrow')) repivot();
   if (e.key === 'ArrowLeft') { view.yaw -= 0.08; anim = null; draw(); e.preventDefault(); }
   if (e.key === 'ArrowRight') { view.yaw += 0.08; anim = null; draw(); e.preventDefault(); }
