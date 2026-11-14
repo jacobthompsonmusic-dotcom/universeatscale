@@ -69,6 +69,12 @@ MAPS = [('universe/', 'From Earth to the Edge of the Universe'), ('solar-system/
         ('milky-way/', 'The Milky Way in 3D'), ('moons/', "The Giant Planets' Moon Systems"),
         ('giant-planets-3d/', 'Giant Planets in 3D')]
 
+# Google Analytics 4 (property 'Universe at Scale', stream 16342512575). Only on universeatscale.com and
+# only in the top window, so the joined page's embedded maps don't double-count.
+GA = ('<script>(function(){if(window.top!==window||!/(^|\\.)universeatscale\\.com$/.test(location.hostname))return;'
+      "var s=document.createElement('script');s.async=1;s.src='https://www.googletagmanager.com/gtag/js?id=G-EQP5W8H17E';document.head.appendChild(s);"
+      "window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config','G-EQP5W8H17E');})();</script>")
+
 def esc(s):
     return s.replace('&', '&amp;').replace('"', '&quot;').replace('<', '&lt;')
 
@@ -128,6 +134,7 @@ def block(f, p):
         f'<meta name="twitter:image" content="{img}">',
         *(['<meta name="msvalidate.01" content="AE41016DF86C9910A0C934ABB196E6EF">'] if f == 'index.html' else []),
         ld(graph(f, p)),
+        GA,
         '<!-- seo:end -->'])
 
 OLD = re.compile(r'\s*<(?:title>[^<]*</title|meta (?:name|property)="(?:description|og:[^"]+|twitter:[^"]+|robots|author|theme-color)"[^>]*|link rel="(?:canonical|icon|apple-touch-icon)"[^>]*)>')
