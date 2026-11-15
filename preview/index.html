@@ -92,6 +92,16 @@
   }
   @media (prefers-reduced-motion: reduce) { .plate { transition: none; } .plate:hover { transform: none; } }
 </style>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style id="globe-type">
+  :root { --text:#eee2c4; }
+  body, button, input, select, textarea, .panel, #info, #legend, #top, #time { font-family:'IM Fell English', Georgia, serif !important; letter-spacing:0.01em; }
+  h1, h2, h3, .title, #info-name, [class*=title] { font-family:'IM Fell English SC', 'IM Fell English', Georgia, serif !important; font-weight:400 !important; letter-spacing:0.04em; }
+  .lab { color:#efe3c3 !important; }
+  .lab.mark { font-style:normal !important; letter-spacing:0.22em !important; color:rgba(226,214,186,0.75) !important; }
+  .lab.sun { color:#ffe2a0 !important; }
+</style>
+<script>document.fonts && document.fonts.ready.then(() => { dispatchEvent(new Event('resize')); });</script>
 </head>
 <body>
 <canvas id="sky" aria-hidden="true"></canvas>
@@ -330,4 +340,4 @@
 <script src="music/music.js" data-place="corner" defer></script>
 </body>
 </html>
-<!-- preview built 2026-11-15T01:24:48Z from 62f81e8 -->
+<!-- preview built 2026-11-15T01:32:30Z from 148b122 -->
