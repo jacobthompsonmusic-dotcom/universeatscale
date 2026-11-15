@@ -2,7 +2,7 @@
 # IM Fell English (Igino Marini's revival of the 17th-century Fell types, OFL) in italic for place names, its small caps for headings.
 import re, pathlib, sys
 root = pathlib.Path(__file__).resolve().parent.parent / 'preview'
-FONT = "'IM Fell English', Georgia, serif"
+FONT = '"IM Fell English", Georgia, serif'   # double quotes: these land inside single-quoted JS strings
 LINK = '<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">'
 CSS = """<style id="globe-type">
   :root { --text:#eee2c4; }
@@ -20,7 +20,7 @@ def canvas_font(m):
 for f in root.rglob('*.html'):
     s = f.read_text()
     s = re.sub(r"(\d00 )?(\d+(?:\.\d+)?)px Inter, sans-serif", canvas_font, s)
-    s = s.replace('"Space Grotesk", sans-serif', "'IM Fell English SC', Georgia, serif").replace("Inter, sans-serif", FONT)
+    s = s.replace('"Space Grotesk", sans-serif', '"IM Fell English SC", Georgia, serif').replace("Inter, sans-serif", FONT)
     s = s.replace('</head>', LINK + '\n' + CSS + '\n</head>', 1)
     f.write_text(s)
 print('globe lettering applied to', root)
