@@ -149,7 +149,7 @@
 uniform sampler2D uGal;
 uniform vec3 uCam, uRight, uUp, uFwd;
 uniform vec2 uRes;
-uniform float uTanH, uOrtho, uHalfH, uExpo, uAlpha;
+uniform float uTanH, uOrtho, uHalfH, uExpo, uAlpha, uGam;
 const float GW = 62000.0, ZM = 9000.0, RSUN = 26989.0;
 const float HY = 330.0, H1 = 978.0, H2 = 2935.0, HB = 1630.0, HD = 437.0, RD = 7557.0, K0 = 1.7e-4;
 vec2 slab(vec3 ro, vec3 rd) {
@@ -199,7 +199,7 @@ void main() {
     t += dt;
     if (max(T.r, max(T.g, T.b)) < 0.003) break;
   }
-  vec3 col = pow(1.0 - exp(-I * uExpo), vec3(1.2));
+  vec3 col = pow(1.0 - exp(-I * uExpo), vec3(uGam));   // a deep black point: faint light off the band falls to near-black, the band itself keeps most of its glow
   gl_FragColor = vec4(col * uAlpha, max(col.r, max(col.g, col.b)) * uAlpha);
 }
 </script>
@@ -1017,7 +1017,7 @@ function gxInit() {
   gl.useProgram(pr); const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
   const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  for (const n of ['uGal', 'uCam', 'uRight', 'uUp', 'uFwd', 'uRes', 'uTanH', 'uOrtho', 'uHalfH', 'uExpo', 'uAlpha']) GX.u[n] = gl.getUniformLocation(pr, n);
+  for (const n of ['uGal', 'uCam', 'uRight', 'uUp', 'uFwd', 'uRes', 'uTanH', 'uOrtho', 'uHalfH', 'uExpo', 'uAlpha', 'uGam']) GX.u[n] = gl.getUniformLocation(pr, n);
   // the face-on picture of the disc, on black (so its colours are premultiplied), 2048² so it can be mipmapped
   const c = document.createElement('canvas'); c.width = c.height = 2048; const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, 2048, 2048); g.filter = 'blur(1.6px)'; g.drawImage(gal, 0, 0, 2048, 2048); g.filter = 'none';
   const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, c); gl.generateMipmap(gl.TEXTURE_2D);
@@ -1045,6 +1045,9 @@ function drawGalaxy3D() {
     // inside the bulge the light piles up and would clip to a flat white disc: lower the exposure there so its shape still shows
     const dGx = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), expo = 1.35 * (0.28 + 0.72 * sstep(Math.log(Math.max(dGx, Ht / view.s * 0.5, 1)), Math.log(3000), Math.log(60000)));
     gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uExpo, expo); gl.uniform1f(U.uAlpha, 1);
+    // from inside the disc the sky between the band is near-black: a deep black point, easing back to the softer curve as you
+    // pull out to see the whole galaxy (it matches the Solar System view's curve at the hand-over)
+    gl.uniform1f(U.uGam, 1.2 + 0.6 * (1 - sstep(Math.log(Math.max(Ht / view.s, 1)), Math.log(3000), Math.log(40000))));
     if (PD === Infinity) { gl.uniform1f(U.uOrtho, 1); gl.uniform3f(U.uCam, view.x, view.y, view.z); gl.uniform1f(U.uHalfH, Ht / 2 / view.s); gl.uniform1f(U.uTanH, 0); }
     else { gl.uniform1f(U.uOrtho, 0); gl.uniform3f(U.uCam, view.x + F[0] * PD, view.y + F[1] * PD, view.z + F[2] * PD); gl.uniform1f(U.uTanH, PT); gl.uniform1f(U.uHalfH, 1); }
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

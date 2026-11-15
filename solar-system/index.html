@@ -898,7 +898,7 @@ const GALAXY_FS = `// The Milky Way as a volume, ray-marched per pixel. World fr
 uniform sampler2D uGal;
 uniform vec3 uCam, uRight, uUp, uFwd;
 uniform vec2 uRes;
-uniform float uTanH, uOrtho, uHalfH, uExpo, uAlpha;
+uniform float uTanH, uOrtho, uHalfH, uExpo, uAlpha, uGam;
 const float GW = 62000.0, ZM = 9000.0, RSUN = 26989.0;
 const float HY = 330.0, H1 = 978.0, H2 = 2935.0, HB = 1630.0, HD = 437.0, RD = 7557.0, K0 = 1.7e-4;
 vec2 slab(vec3 ro, vec3 rd) {
@@ -947,7 +947,7 @@ void main() {
     t += dt;
     if (max(T.r, max(T.g, T.b)) < 0.003) break;
   }
-  vec3 col = pow(1.0 - exp(-I * uExpo), vec3(1.2));
+  vec3 col = pow(1.0 - exp(-I * uExpo), vec3(uGam));   // a deep black point: faint light off the band falls to near-black, the band itself keeps most of its glow
   gl_FragColor = vec4(col * uAlpha, max(col.r, max(col.g, col.b)) * uAlpha);
 }
 `;
@@ -958,7 +958,7 @@ const MWV = { ready: false };
   const V3 = () => ({ value: new THREE.Vector3() });
   MWV.mat = new THREE.ShaderMaterial({
     uniforms: { uGal: { value: tex }, uCam: V3(), uRight: V3(), uUp: V3(), uFwd: V3(), uRes: { value: new THREE.Vector2(1, 1) }, uTanH: { value: TAN20 },
-      uOrtho: { value: 0 }, uHalfH: { value: 1 }, uExpo: { value: 1.35 }, uAlpha: { value: 1 } },
+      uOrtho: { value: 0 }, uHalfH: { value: 1 }, uExpo: { value: 1.35 }, uAlpha: { value: 1 }, uGam: { value: 1.8 } },
     vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }', fragmentShader: GALAXY_FS,
     blending: THREE.NoBlending, depthTest: false, depthWrite: false });
   // ray-marching every pixel is heavy, so the volume is drawn into a smaller picture, and only redrawn when the view changes
