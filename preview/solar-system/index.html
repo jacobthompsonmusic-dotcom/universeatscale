@@ -110,6 +110,13 @@
   #time .date { font:500 12.5px Inter, sans-serif; color:#d6d0c6; min-width:170px; text-align:center; font-variant-numeric:tabular-nums; }
   #time input[type=range] { width:150px; accent-color:var(--accent); touch-action:pan-x; }
   #time .spd { font-size:12px; color:var(--muted); min-width:62px; }
+  #time .date { cursor:pointer; border-radius:8px; padding:7px 8px; border:1px dashed rgba(255,255,255,0.18); }
+  #time .date:hover { border-color:var(--accent); color:#fff; }
+  #datepick { position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:12px;
+    background:rgba(14,15,22,0.96); border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,0.5); font:500 12px Inter, sans-serif; color:var(--muted); }
+  #datepick[hidden] { display:none; }
+  #datepick label { display:flex; gap:6px; align-items:center; }
+  #datepick input { background:rgba(255,255,255,0.06); border:1px solid var(--line); border-radius:7px; color:var(--text); font:500 12.5px Inter, sans-serif; padding:5px 7px; color-scheme:dark; }
   #scale { position:fixed; bottom:74px; left:50%; transform:translateX(-50%); text-align:center; font-size:11.5px; color:var(--muted); pointer-events:none; z-index:1; font-variant-numeric:tabular-nums; text-shadow:0 1px 2px #000; }
   #scale .bar { height:6px; border:1.5px solid rgba(255,255,255,0.55); border-top:0; margin:0 auto 3px; }
   #loading { position:fixed; inset:0; display:flex; align-items:flex-end; justify-content:center; padding-bottom:9vh; box-sizing:border-box; color:rgba(233,236,245,0.85); font-size:13px; letter-spacing:0.04em; z-index:5; transition:opacity .9s;
@@ -202,7 +209,8 @@
   <button id="play" aria-label="Pause">❚❚</button>
   <input id="speed" type="range" min="0" max="1000" step="1" value="418" aria-label="Speed">
   <span class="spd" id="spd"></span>
-  <span class="date" id="date"></span>
+  <span class="date" id="date" role="button" tabindex="0" title="Pick any date from 1800 to 2050 — your birthday, say">​</span>
+  <div id="datepick" hidden><label>Date <input id="dp-d" type="date" min="1800-01-01" max="2050-12-31"></label><label>Time <input id="dp-t" type="time" value="12:00"></label><button id="dp-go">Go</button></div>
   <button id="now">Now</button>
 </div>
 
@@ -1890,6 +1898,16 @@ document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset
 const playBtn = document.getElementById('play'), speedIn = document.getElementById('speed');
 playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶'; };
 speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
+// pick a date (a birthday, say): the planets, moons and probes jump to where they were, and time pauses there
+{ const dEl = document.getElementById('date'), box = document.getElementById('datepick'), di = document.getElementById('dp-d'), ti = document.getElementById('dp-t');
+  const pad = n => String(n).padStart(2, '0');
+  const open = () => { const d = new Date(simMs); di.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; box.hidden = false; di.focus(); };
+  dEl.onclick = () => box.hidden ? open() : (box.hidden = true); dEl.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dEl.onclick(); } };
+  const go = () => { if (!di.value) return; const ms = new Date(`${di.value}T${ti.value || '12:00'}`).getTime(); if (!isFinite(ms)) return;
+    CK.set(Math.min(TMAX, Math.max(TMIN, ms))); simMs = CK.now(); playing = false; CK.setPlaying(false); playBtn.textContent = '▶'; box.hidden = true; };
+  document.getElementById('dp-go').onclick = go; box.onkeydown = e => { if (e.key === 'Enter') go(); if (e.key === 'Escape') box.hidden = true; };
+  addEventListener('pointerdown', e => { if (!box.hidden && !box.contains(e.target) && e.target !== dEl) box.hidden = true; });
+}
 document.getElementById('now').onclick = () => { CK.set(Date.now()); simMs = CK.now(); logTarget = logCur = 0; speedIn.value = 0; };
 const topPanel = document.getElementById('top'), aboutBtn = document.getElementById('about');
 const collapse = c => { topPanel.classList.toggle('collapsed', c); aboutBtn.textContent = c ? 'i' : '×'; };
