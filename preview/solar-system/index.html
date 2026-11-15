@@ -1826,7 +1826,7 @@ function updateLabels() {
       o.el.style.transform = `translate(${lx}px, ${ly}px) translateY(-50%)`; o.onScreen = false; continue;
     }
     if (o.isSun) { o.el.classList.remove('edge'); o.el.textContent = 'Sun'; }
-    let show = o.onScreen && (opts.labels || o === selected || o.isSun) && o.px < 160;
+    let show = o.onScreen && (opts.labels || o === selected) && o.px < 160;
     const sx = o.ax + Math.max(0, o.px - 4);
     if (show) { const w = o.name.length * 7 + 18, bx = sx + 6, by = o.ay - 9; if (boxes.some(b => bx < b[0] + b[2] && bx + w > b[0] && by < b[1] + b[3] && by + 18 > b[1])) show = false; else boxes.push([bx, by, w, 18]); }
     o.el.style.display = show ? 'block' : 'none';
