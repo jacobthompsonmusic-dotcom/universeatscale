@@ -34,11 +34,11 @@ const srv = http.createServer((q, r) => { let p = decodeURIComponent(q.url.split
       const fr = pg.frames(), ss = fr.find(f => f.url().includes('solar-system')), mw = fr.find(f => f.url().includes('milky-way'));
       const same = await pg.evaluate(() => { const fs = [...document.querySelectorAll('iframe')].map(f => f.contentWindow); return fs.length === 2 && fs.every(w => w.UAS_CLOCK) && !!window.__uasClock; });
       same ? ok('joined page: both views share the top window\'s clock') : bad('joined page: the views do not share one clock');
-      const [a, c] = await Promise.all([ss.evaluate(() => UAS_CLOCK.now()), mw.evaluate(() => UAS_CLOCK.now())]);
-      Math.abs(a - c) < 3600e3 * 0.5 ? ok(`joined page: dates agree (${new Date(a).toISOString()})`) : bad(`joined page: dates differ by ${(a - c) / 864e5} days`);
+      const [a, c] = await pg.evaluate(() => [...document.querySelectorAll('iframe')].map(f => f.contentWindow.UAS_CLOCK.now()));   // same JS tick
+      Math.abs(a - c) < 60e3 ? ok(`joined page: dates agree (${new Date(a).toISOString()})`) : bad(`joined page: dates differ by ${(a - c) / 864e5} days`);
       // the S-stars' fast clock carries the Solar System's date with it
       await mw.evaluate(() => { UAS_CLOCK.boost(365.25 * 864e5 / 1000, 'check'); }); await pg.waitForTimeout(1000);
-      const [a2, c2] = await Promise.all([ss.evaluate(() => UAS_CLOCK.now()), mw.evaluate(() => UAS_CLOCK.now())]);
+      const [a2, c2] = await pg.evaluate(() => [...document.querySelectorAll('iframe')].map(f => f.contentWindow.UAS_CLOCK.now()));
       await mw.evaluate(() => UAS_CLOCK.unboost('check'));
       (a2 - a > 0.5 * 365 * 864e5 && Math.abs(a2 - c2) < 7 * 864e5) ? ok('joined page: a time boost in one view moves the other') : bad('joined page: a boost in the galaxy map did not reach the Solar System');
       const fA = await ss.evaluate(() => [UAS_FRAME.R0_LY, UAS_FRAME.TH]), fB = await mw.evaluate(() => [UAS_FRAME.R0_LY, UAS_FRAME.TH]);
