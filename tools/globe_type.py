@@ -6,9 +6,14 @@ root = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else pathlib.Path(__file__)
 PAGES = ['universe/index.html', 'milky-way/index.html', 'solar-system/index.html', 'moons/index.html', 'giant-planets-3d/index.html']
 LINK = 'https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap'
 CSS = """<style id="globe-type">
+  /* clean lining figures for read-outs (distances, dates, coordinates): digits come from a plain system face, letters stay in Fell */
+  @font-face { font-family:"UAS Num"; src:local("Helvetica Neue"), local("HelveticaNeue"), local("Helvetica"), local("Arial"), local("Roboto");
+    unicode-range:U+0030-0039, U+002C-002E, U+00B0, U+2212, U+2009, U+00A0; }
   :root { --text:#eee2c4; }
   body, button, input, select, textarea, .panel, #info, #legend, #top, #time { font-family:"IM Fell English", Georgia, serif !important; letter-spacing:0.01em; }
   h1, h2, h3, .title, #info-name, [class*=title] { font-family:"IM Fell English SC", "IM Fell English", Georgia, serif !important; font-weight:400 !important; letter-spacing:0.04em; }
+  #info-facts dd, #readout, #readout *, #scale-label, #scale-txt, #time .date, #time .spd, #datepick input, .lab.nearstar small {
+    font-family:"UAS Num", "IM Fell English", Georgia, serif !important; font-variant-numeric:tabular-nums; }
   .lab { color:#efe3c3 !important; }
   .lab.mark { font-style:normal !important; letter-spacing:0.22em !important; color:rgba(226,214,186,0.75) !important; }
   .lab.sun { color:#ffe2a0 !important; }
@@ -23,7 +28,8 @@ for rel in PAGES:
     s = re.sub(r"(\d00 )?(\d+(?:\.\d+)?)px(/[\d.]+)? Inter,\s*(?:system-ui,\s*)?sans-serif", canvas, s)
     s = s.replace('"Space Grotesk", sans-serif', 'IM Fell English SC, Georgia, serif')
     s = re.sub(r'https://fonts\.googleapis\.com/css2\?family=Inter[^"]*', LINK, s)
-    if 'id="globe-type"' not in s: s = s.replace('</head>', CSS + '\n</head>', 1)
+    s = re.sub(r'<style id="globe-type">.*?</script>\n', '', s, flags=re.S)   # replace any older version of the block
+    s = s.replace('</head>', CSS + '\n</head>', 1)
     f.write_text(s)
 m = root / 'music/music.js'
 if m.exists():

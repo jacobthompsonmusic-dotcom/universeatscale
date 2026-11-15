@@ -34,22 +34,27 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
 <style>
-  html, body { margin: 0; height: 100%; background: #020205; overflow: hidden; font:13.5px/1.3 IM Fell English, Georgia, serif; color: #e9ecf5; }
+  html, body { margin: 0; height: 100%; background: #020205; overflow: hidden; font:15px/1.3 IM Fell English, Georgia, serif; color: #e9ecf5; }
   iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #020205; }
   #mw { z-index: 1; } #ss { z-index: 2; }
   /* the scale ladder: where you are between Earth and the edge of the observable universe (outermost at the top) */
   #ladder { position: fixed; z-index: 3; top: 16px; right: 16px; width: 116px; display: flex; flex-direction: column; gap: 1px; padding: 6px;
     background: rgba(12, 13, 20, 0.78); border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 14px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-  #ladder button { border: 0; background: none; color: #8d93a8; font: italic 13px IM Fell English, Georgia, serif; padding: 6px 9px; border-radius: 8px; cursor: pointer; white-space: nowrap; text-align: left; }
+  #ladder button { border: 0; background: none; color: #8d93a8; font: italic 14.5px IM Fell English, Georgia, serif; padding: 6px 9px; border-radius: 8px; cursor: pointer; white-space: nowrap; text-align: left; }
   #ladder button:hover, #ladder button:focus-visible { color: #e9ecf5; background: rgba(255, 255, 255, 0.06); outline: none; }
   #ladder button.on { color: #14110a; background: #ffcf6e; }
   @media (max-width: 760px), (max-height: 620px) { #ladder { display: none; } }
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 </style>
 <style id="globe-type">
+  /* clean lining figures for read-outs (distances, dates, coordinates): digits come from a plain system face, letters stay in Fell */
+  @font-face { font-family:"UAS Num"; src:local("Helvetica Neue"), local("HelveticaNeue"), local("Helvetica"), local("Arial"), local("Roboto");
+    unicode-range:U+0030-0039, U+002C-002E, U+00B0, U+2212, U+2009, U+00A0; }
   :root { --text:#eee2c4; }
   body, button, input, select, textarea, .panel, #info, #legend, #top, #time { font-family:"IM Fell English", Georgia, serif !important; letter-spacing:0.01em; }
   h1, h2, h3, .title, #info-name, [class*=title] { font-family:"IM Fell English SC", "IM Fell English", Georgia, serif !important; font-weight:400 !important; letter-spacing:0.04em; }
+  #info-facts dd, #readout, #readout *, #scale-label, #scale-txt, #time .date, #time .spd, #datepick input, .lab.nearstar small {
+    font-family:"UAS Num", "IM Fell English", Georgia, serif !important; font-variant-numeric:tabular-nums; }
   .lab { color:#efe3c3 !important; }
   .lab.mark { font-style:normal !important; letter-spacing:0.22em !important; color:rgba(226,214,186,0.75) !important; }
   .lab.sun { color:#ffe2a0 !important; }
@@ -160,11 +165,11 @@ addEventListener('message', e => {
 });
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-const UAS_V = '70c61e73';
+const UAS_V = 'db112c9d';
 mwEl.src = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
 ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 })();
 </script>
-<script src="../music/music.js?v=70c61e73" data-place="ladder" defer></script>
+<script src="../music/music.js?v=db112c9d" data-place="ladder" defer></script>
 </body>
 </html>
