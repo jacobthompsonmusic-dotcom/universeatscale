@@ -153,9 +153,9 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=1fc70480"></script>
-<script src="../shared/clock.js?v=1fc70480"></script>
-<script src="../shared/galaxy-volume.js?v=1fc70480"></script>
+<script src="../shared/frame.js?v=f442c2d6"></script>
+<script src="../shared/clock.js?v=f442c2d6"></script>
+<script src="../shared/galaxy-volume.js?v=f442c2d6"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1222,10 +1222,12 @@ const NEBI = {};
 function nebImg(name) {
   const e = NEB[name]; if (NEBI[name]) return NEBI[name].ready ? NEBI[name].cv : null;
   const st = NEBI[name] = { ready: false, cv: null }, im = new Image(); im.crossOrigin = 'anonymous'; im.decoding = 'async';
-  im.onload = () => { const W = 512, H = Math.round(512 * im.height / im.width), c = document.createElement('canvas'); c.width = W; c.height = H;
+  im.onload = () => { const W = Math.min(960, im.width), H = Math.round(W * im.height / im.width), c = document.createElement('canvas'); c.width = W; c.height = H;
     const g = c.getContext('2d'); g.drawImage(im, 0, 0, W, H);
-    const gr = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.28, W / 2, H / 2, Math.max(W, H) * 0.56);   // soft edges
-    gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.globalCompositeOperation = 'destination-in'; g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    // soft edges: an elliptical fade matching the picture's shape, fully clear before the frame
+    g.globalCompositeOperation = 'destination-in'; g.translate(W / 2, H / 2); g.scale(W / H, 1);
+    const gr = g.createRadialGradient(0, 0, H * 0.24, 0, 0, H * 0.5); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(-H / 2, -H / 2, H, H);
     st.cv = c; st.ready = true; draw(); };
   im.src = e.u; return null;
 }
@@ -2097,6 +2099,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=1fc70480" data-place="header" defer></script>
+<script src="../music/music.js?v=f442c2d6" data-place="header" defer></script>
 </body>
 </html>
