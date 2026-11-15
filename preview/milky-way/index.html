@@ -153,9 +153,9 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=07fdb596"></script>
-<script src="../shared/clock.js?v=07fdb596"></script>
-<script src="../shared/galaxy-volume.js?v=07fdb596"></script>
+<script src="../shared/frame.js?v=e72c06e4"></script>
+<script src="../shared/clock.js?v=e72c06e4"></script>
+<script src="../shared/galaxy-volume.js?v=e72c06e4"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1570,7 +1570,7 @@ function drawTrappist() {
     const hz = pl.n === 'e' || pl.n === 'f' || pl.n === 'g';
     ctx.fillStyle = hz ? `rgba(170,220,190,${A})` : `rgba(226,214,200,${A})`; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
     if (opts.labels && rp > 30) {
-      ctx.font = 'italic 14px IM Fell English, Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = `rgba(238,226,196,${0.9 * A})`; ctx.fillText(pl.n, x + r + 4, y - 3);
+      ctx.font = '15px IM Fell English, Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = `rgba(238,226,196,${0.9 * A})`; ctx.fillText(pl.n, x + r + 4, y - 3);   // upright: Fell's italic h looks like a b
       if (rp > 90) { ctx.font = 'italic 12.5px UAS Num, IM Fell English, Georgia, serif'; ctx.fillStyle = `rgba(214,206,190,${0.7 * A})`;
         ctx.fillText(`${pl.per.toFixed(2)} days · ${pl.r.toFixed(2)}× Earth's width · ~${pl.teq} K`, x + r + 4, y + 11); }
     }
@@ -2174,6 +2174,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=07fdb596" data-place="header" defer></script>
+<script src="../music/music.js?v=e72c06e4" data-place="header" defer></script>
 </body>
 </html>
