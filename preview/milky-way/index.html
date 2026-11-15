@@ -160,9 +160,9 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=09c05ae8"></script>
-<script src="../shared/clock.js?v=09c05ae8"></script>
-<script src="../shared/galaxy-volume.js?v=09c05ae8"></script>
+<script src="../shared/frame.js?v=c5338470"></script>
+<script src="../shared/clock.js?v=c5338470"></script>
+<script src="../shared/galaxy-volume.js?v=c5338470"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -241,11 +241,11 @@ void main() {
   <div id="legend-rows"></div>
   <div class="toggles">
     <button class="tg on" data-k="arms">Arms</button>
+    <button class="tg on" data-k="grid">Distance rings</button>
     <button class="tg on" data-k="labels">Labels</button>
     <button class="tg on" data-k="stars">Star field</button>
     <button class="tg on" data-k="voids">Voids</button>
     <button class="tg" data-k="stalks">Depth lines</button>
-    <button class="tg" data-k="grid">Distance rings</button>
     <button class="tg" data-k="zodiac">Zodiac</button>
   </div>
 </div>
@@ -816,7 +816,7 @@ function drawVoids() {
 const cv = document.getElementById('map'), ctx = cv.getContext('2d');
 let Wd = 0, Ht = 0, dpr = 1;
 const view = { x: 0, y: 4000, z: 0, s: 0.01, yaw: 0, tilt: 0 };
-const opts = { arms: true, grid: false, labels: true, stars: true, stalks: false, voids: true, zodiac: false };   // depth lines and distance rings start off, to keep the view clean
+const opts = { arms: true, grid: true, labels: true, stars: true, stalks: false, voids: true, zodiac: false };   // depth lines start off, to keep the view clean
 let sky = null, hover = null, selected = null, anim = null;
 let CY = 1, SY = 0, CT = 1, ST = 0;
 // Close in, the map is drawn through a real camera with a 40° lens (the same as the Solar System view), so you see the Milky Way
@@ -2196,6 +2196,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=09c05ae8" data-place="header" defer></script>
+<script src="../music/music.js?v=c5338470" data-place="header" defer></script>
 </body>
 </html>
