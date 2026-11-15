@@ -208,6 +208,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="../shared/frame.js"></script>
+<script src="../shared/clock.js"></script>
 <script src="../shared/galaxy-volume.js"></script>
 <script>
 (() => {
@@ -707,7 +709,7 @@ function denseTexture(dense) {
 // ===================================================================
 // scene axes: +Y = the planet's north pole, +Z = toward the Sun (projected onto the equator)
 const vec = (ra, de) => new THREE.Vector3(Math.cos(de * DEG) * Math.cos(ra * DEG), Math.cos(de * DEG) * Math.sin(ra * DEG), Math.sin(de * DEG));
-const GAL = { x: new THREE.Vector3(-0.0548755604, -0.8734370902, -0.4838350155), y: new THREE.Vector3(0.4941094279, -0.4448296300, 0.7469822445), z: new THREE.Vector3(-0.8676661490, -0.1980763734, 0.4559837762) };
+const FR = window.UAS_FRAME, GAL = { x: new THREE.Vector3(...FR.EQ2GAL[0]), y: new THREE.Vector3(...FR.EQ2GAL[1]), z: new THREE.Vector3(...FR.EQ2GAL[2]) };   // shared/frame.js
 function skyFrame(c, ms) {
   const T = (ms / 86400000 + 2440587.5 - 2451545.0) / 36525;
   const kep = (a, e, L, w) => { const M = (L - w) * DEG; let E = M; for (let i = 0; i < 10; i++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E)); const x = a * (Math.cos(E) - e), y = a * Math.sqrt(1 - e * e) * Math.sin(E), W = w * DEG; return [x * Math.cos(W) - y * Math.sin(W), x * Math.sin(W) + y * Math.cos(W)]; };
@@ -775,7 +777,7 @@ const ORB = {
   uranus:  [[19.18916464, -0.00196176], [0.04725744, -0.00004397], [0.77263783, -0.00242939], [313.23810451, 428.48202785], [170.95427630, 0.40805281], [74.01692503, 0.04240589]],
   neptune: [[30.06992276, 0.00026291], [0.00859048, 0.00005105], [1.77004347, 0.00035372], [-55.12002969, 218.45945325], [44.96476227, -0.32241464], [131.78422574, -0.00508664]],
 };
-const AUS = AU * U, LIGHT = 299792.458, EPS = 23.4392911 * DEG;
+const AUS = AU * U, LIGHT = 299792.458, EPS = FR.EPS;
 const T_of = ms => (ms / 86400000 + 2440587.5 - 2451545.0) / 36525;
 const elementsAt = (key, T) => ORB[key].map(([v, r]) => v + r * T);
 // a point on the orbit at eccentric anomaly E, in scene axes: +X = vernal equinox, +Y = ecliptic north
@@ -801,13 +803,13 @@ const eqToScene = v => new THREE.Vector3(v.x, -v.y * Math.sin(EPS) + v.z * Math.
 //  deep space: the galaxy map's frame, and where this view hands over to it
 // ===================================================================
 const EMBED = window.name === 'uas-embed' || /[?&]embed=1/.test(location.search);   // layered with the galaxy map in the joined page
-const LYKM = 9460730472580.8, LY = LYKM * U, TAN20 = Math.tan(20 * DEG);   // a light-year (Julian year × c) in km and in scene units
+const LYKM = FR.LY_KM, LY = LYKM * U, TAN20 = Math.tan(20 * DEG);   // a light-year (Julian year × c) in km and in scene units
 // heliocentric galactic axes (IAU galactic frame, ICRS J2000) in scene coordinates
 const GXs = eqToScene(GAL.x), GYs = eqToScene(GAL.y), GZs = eqToScene(GAL.z);
 const galToScene = (x, y, z, out = new THREE.Vector3()) => out.set(0, 0, 0).addScaledVector(GXs, x).addScaledVector(GYs, y).addScaledVector(GZs, z);
 // the galaxy map's own axes: its "up" is the pole of the disc's true midplane, tipped 0.14° from the IAU pole because the Sun
 // sits 20.8 pc above that plane (Bennett & Bovy 2019) at 8.275 kpc from the centre (GRAVITY 2021) — the same frame the map uses
-const MW_TH = Math.asin(20.8 / 8275), MW_Y = galToScene(-Math.cos(MW_TH), 0, -Math.sin(MW_TH)), MW_Z = galToScene(-Math.sin(MW_TH), 0, Math.cos(MW_TH));
+const MW_TH = FR.TH, MW_Y = galToScene(-Math.cos(MW_TH), 0, -Math.sin(MW_TH)), MW_Z = galToScene(-Math.sin(MW_TH), 0, Math.cos(MW_TH));
 // far from the Sun the whole scene turns so that "up" swings from the pole of Earth's orbit to the pole of the galaxy (60.2° apart)
 const Q_GAL = new THREE.Quaternion().setFromUnitVectors(MW_Z, new THREE.Vector3(0, 1, 0)), Q_ID = new THREE.Quaternion();
 const MW_AZ = (() => { const v = MW_Y.clone().applyQuaternion(Q_GAL); return Math.atan2(v.x, v.z); })();   // the map's yaw 0, as an azimuth here
@@ -851,7 +853,7 @@ const starMat = new THREE.ShaderMaterial({
   vertexShader: `attribute float aM; attribute float aOn; attribute vec3 aCol; uniform float uMix; uniform float uPR; varying vec3 vCol; varying float vA;
     void main() {
       vec4 wp = modelMatrix * vec4(position, 1.0);
-      float pc = max(distance(wp.xyz, cameraPosition), 0.001) / 3.26156;
+      float pc = max(distance(wp.xyz, cameraPosition), 0.001) / ${FR.PC_LY.toFixed(5)};
       float m = aM + 5.0 * log(pc / 10.0) / 2.302585;                    // apparent magnitude from wherever the camera is
       float sSky = clamp(5.6 - 0.72 * m, 1.5, 8.0), aSky = clamp(1.4 - 0.13 * m, 0.0, 1.0) * smoothstep(7.6, 6.5, m);
       float fr = clamp(0.75 + (6.0 - aM) * 0.17, 0.55, 2.6);            // the galaxy map's star dots, sized by true brightness
@@ -911,7 +913,7 @@ const MWV = { ready: false };
   MWV.key = ''; MWV.still = 0;
 }
 // heliocentric galactic light-years → the galaxy map's frame (Sgr A* at the origin, true midplane at z = 0)
-const R0_LY = 8275 * 3.26156, cTHm = Math.cos(MW_TH), sTHm = Math.sin(MW_TH), _g3 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _q3 = new THREE.Quaternion();
+const R0_LY = FR.R0_LY, cTHm = Math.cos(MW_TH), sTHm = Math.sin(MW_TH), _g3 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _q3 = new THREE.Quaternion();
 const sceneToGal = (v, out) => out.set(v.dot(GXs), v.dot(GYs), v.dot(GZs));
 const galToMap = (gv, out, point) => { const x0 = gv.x - (point ? R0_LY : 0), xg = x0 * cTHm + gv.z * sTHm, zg = -x0 * sTHm + gv.z * cTHm; return out.set(-gv.y, -xg, zg); };
 function updateMWV() {
@@ -1538,7 +1540,8 @@ function placeMoons(g) {
 //  time
 // ===================================================================
 const MAXLOG = Math.log10(10 * 31557600), TMIN = Date.UTC(1800, 0, 1), TMAX = Date.UTC(2050, 11, 31);
-let simMs = Date.now(), playing = true, lastT = 0, logTarget = Math.log10(3600), logCur = logTarget; // opens at 1 hour per second
+const CK = window.UAS_CLOCK;   // shared/clock.js: the one clock both views read
+let simMs = CK.now(), playing = CK.playing, lastT = 0, logTarget = Math.log10(3600), logCur = logTarget; // opens at 1 hour per second
 function speedLabel(sp) { if (sp < 1.5) return 'Real time'; for (const [u, n] of [[31557600, 'yr'], [2629800, 'mo'], [604800, 'wk'], [86400, 'day'], [3600, 'hr'], [60, 'min'], [1, 'sec']]) if (sp >= u * 0.95) { const v = sp / u; return `${v < 10 ? +v.toFixed(1) : Math.round(v)} ${n}/s`; } }
 
 // ===================================================================
@@ -1887,7 +1890,7 @@ document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset
 const playBtn = document.getElementById('play'), speedIn = document.getElementById('speed');
 playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶'; };
 speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
-document.getElementById('now').onclick = () => { simMs = Date.now(); logTarget = logCur = 0; speedIn.value = 0; };
+document.getElementById('now').onclick = () => { CK.set(Date.now()); simMs = CK.now(); logTarget = logCur = 0; speedIn.value = 0; };
 const topPanel = document.getElementById('top'), aboutBtn = document.getElementById('about');
 const collapse = c => { topPanel.classList.toggle('collapsed', c); aboutBtn.textContent = c ? 'i' : '×'; };
 aboutBtn.onclick = () => collapse(!topPanel.classList.contains('collapsed'));
@@ -1930,8 +1933,10 @@ function frame(t) {
   if (paused) return;
   const dt = lastT ? Math.min(t - lastT, 100) : 0; lastT = t;
   logCur += (logTarget - logCur) * Math.min(1, dt / 220);
-  if (playing) simMs += dt * Math.pow(10, logCur);
-  if (simMs > TMAX || simMs < TMIN) { simMs = Math.min(TMAX, Math.max(TMIN, simMs)); playing = false; playBtn.textContent = '▶'; }
+  if (!CK.boosted) { CK.setPlaying(playing); if (playing) CK.setRate(Math.pow(10, logCur)); }   // the galaxy map may be running time fast for the S-stars
+  else if (!playing) { playing = true; playBtn.textContent = '❚❚'; }
+  simMs = CK.now();
+  if (simMs > TMAX || simMs < TMIN) { simMs = Math.min(TMAX, Math.max(TMIN, simMs)); CK.set(simMs); playing = false; CK.setPlaying(false); playBtn.textContent = '▶'; }
   // far from the Sun: stay centred on it, and turn the scene from the frame of Earth's orbit to the galaxy's
   { const r0 = camera.position.distanceTo(controls.target) / AUS;
     if (r0 > 1500 && !fly) { if (focus !== SUN) setFocus(SUN); if (selected && !selected.isSun && selected.kind !== 'probe' && r0 > 4000) select(null); if (controls.target.lengthSq() > 0) { _v1.copy(controls.target).multiplyScalar(0.2); controls.target.sub(_v1); camera.position.sub(_v1); } }

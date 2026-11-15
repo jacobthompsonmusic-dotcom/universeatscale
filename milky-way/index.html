@@ -139,6 +139,8 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
+<script src="../shared/frame.js"></script>
+<script src="../shared/clock.js"></script>
 <script src="../shared/galaxy-volume.js"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
@@ -257,11 +259,12 @@ void main() {
 
 // ---------- constants (current measurements) ----------
 const DEG = Math.PI / 180;
-const PC = 3.26156;                     // light-years per parsec
+const FRM = window.UAS_FRAME;           // shared/frame.js: the measured constants and transforms both views use
+const PC = FRM.PC_LY;                    // light-years per parsec
 const LY_PER_KPC = 1000 * PC;
-const R0 = 8275 * PC;                   // Sun–Sgr A* distance, GRAVITY Collaboration 2021 (8.275 ± 0.034 kpc)
-const ZSUN = 20.8 * PC;                 // Sun's height above the disc midplane, Bennett & Bovy 2019 (20.8 pc)
-const TH = Math.asin(ZSUN / R0), cTH = Math.cos(TH), sTH = Math.sin(TH);
+const R0 = FRM.R0_LY;                    // Sun–Sgr A* distance, GRAVITY Collaboration 2021 (8.275 ± 0.034 kpc)
+const ZSUN = FRM.ZSUN_LY;                // Sun's height above the disc midplane, Bennett & Bovy 2019 (20.8 pc)
+const TH = FRM.TH, cTH = Math.cos(TH), sTH = Math.sin(TH);
 const W = 62000;                        // half-width of the pre-rendered galaxy image, in ly
 const S = 3400;                         // pre-render size in px
 const EZ = W / 4;                       // half-height of the edge-on image, in ly
@@ -274,12 +277,7 @@ let ssReady = false, following = false;
 // World frame: Sgr A* at the origin; z points to the north galactic pole (true midplane at z = 0).
 // Seen from above, galactic longitude 0° points up (Sun → centre) and 90° points left. y grows downward.
 // Heliocentric galactic cartesian (x toward the centre, y toward l = 90°, z north) → world, as in astropy's Galactocentric frame.
-function helioToWorld(xh, yh, zh) {
-  const x0 = xh - R0, xg = x0 * cTH + zh * sTH, zg = -x0 * sTH + zh * cTH;
-  return { x: -yh, y: -xg, z: zg };
-}
-const galToWorld = (d, l, b) => { const cb = Math.cos(b * DEG);
-  return helioToWorld(d * cb * Math.cos(l * DEG), d * cb * Math.sin(l * DEG), d * Math.sin(b * DEG)); };
+const helioToWorld = FRM.helioToWorld, galToWorld = FRM.galToWorld;
 const SUNW = helioToWorld(0, 0, 0);     // (0, ~26,990 ly, +68 ly)
 
 // ---------- spiral arms (log spirals after Reid et al. 2019, anchored to the Sun since they're mapped by maser parallaxes) ----------
@@ -1443,8 +1441,8 @@ const GM_LY = 6.707e-7, RS_LY = 2 * GM_LY, AU_PER_LY = 63241.077, RS_SEC = 42.33
 const BH_TIME = 120;                     // the flow is shown 120× faster than real time
 const S2_RATE = 1;                       // S2's orbit is shown at one year per second
 // directions on the sky at Sgr A* (Reid & Brunthaler 2004: RA 266.41684°, Dec −29.00781°), as vectors in the galactic frame and in this map's frame
-const EQ2GAL = [[-0.0548755604, -0.8734370902, -0.4838350155], [0.4941094279, -0.4448296300, 0.7469822445], [-0.8676661490, -0.1980763734, 0.4559837762]];
-const eqToGal = v => EQ2GAL.map(r => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
+const EQ2GAL = FRM.EQ2GAL;
+const eqToGal = FRM.eqToGal;
 const galDirToWorld = v => { const a = helioToWorld(v[0], v[1], v[2]), o = helioToWorld(0, 0, 0); return [a.x - o.x, a.y - o.y, a.z - o.z]; };
 const worldDirToGal = w => { const yh = -w[0], xg = -w[1], zg = w[2]; return [xg * cTH - zg * sTH, yh, xg * sTH + zg * cTH]; };
 const SKY = (() => {
@@ -1464,7 +1462,7 @@ function skyOffset(r, u, i, Om) {
 const skyToGal = ([n, e, z]) => [0, 1, 2].map(k => n * SKY.g.north[k] + e * SKY.g.east[k] + z * SKY.g.away[k]);
 const skyToWorld = ([n, e, z]) => [0, 1, 2].map(k => n * SKY.w.north[k] + e * SKY.w.east[k] + z * SKY.w.away[k]);
 // S2 (GRAVITY Collaboration 2020): a = 125.058 mas, e = 0.884649, i = 134.567°, Ω = 228.171°, ω = 66.263°, pericentre 2018.379, period 16.0455 yr
-const S2 = { a: 0.125058 * 8275, e: 0.884649, i: 134.567 * DEG, Om: 228.171 * DEG, w: 66.263 * DEG, tp: 2018.379, P: 16.0455 };
+const S2 = { a: 0.125058 * FRM.R0_PC, e: 0.884649, i: 134.567 * DEG, Om: 228.171 * DEG, w: 66.263 * DEG, tp: 2018.379, P: 16.0455 };
 function s2At(year) {
   const M = 2 * Math.PI * (((year - S2.tp) / S2.P) % 1); let E = M + S2.e * Math.sin(M);
   for (let k = 0; k < 8; k++) E -= (E - S2.e * Math.sin(E) - M) / (1 - S2.e * Math.cos(E));
@@ -1479,11 +1477,13 @@ const DISC = (() => {
   const e1 = norm3(cross3(n, Math.abs(n[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0])), e2 = cross3(n, e1);
   return { n, e1, e2 };
 })();
-const yearNow = () => 2000 + (Date.now() - Date.UTC(2000, 0, 1, 12)) / (365.25 * 864e5);
+const CK = window.UAS_CLOCK;             // shared/clock.js: the same clock as the Solar System view
+const yearNow = () => CK.year();
 const T0 = performance.now(), Y0 = yearNow();
 // the clock for the stars around Sgr A*: starts at today's date when you arrive and runs at a year per second only while they're on screen
 const GCT = { yr: Y0, last: 0, on: false };
-function gcTick() { const now = performance.now(); if (GCT.on) GCT.yr += Math.min(0.25, (now - GCT.last) / 1000) * S2_RATE; else GCT.yr = yearNow(); GCT.last = now; }
+// while the S-stars are on screen time runs at one year per second, on the shared clock, so the Solar System's date moves on with it
+function gcTick() { if (GCT.on) CK.boost(S2_RATE * 365.25 * 864e5 / 1000, 'sstars'); else CK.unboost('sstars'); GCT.yr = CK.year(); }
 
 // the S2 orbit, drawn on the map
 // the map's scale and view span measured at Sgr A* itself: under the perspective lens the view-centre scale is only right at the
@@ -1508,8 +1508,8 @@ function drawS2() {
 //  Sgr A*'s neighbourhood, from the measurements: the S-stars on their orbits, the disc of young stars,
 //  the minispiral of ionized gas falling inward, the circumnuclear disc of molecular gas, and the nuclear star cluster
 // ===================================================================
-const AS_AU = 8275;                       // one arcsecond at Sgr A* (8.275 kpc, GRAVITY 2021), in AU
-const PC_LY = 3.26156;
+const AS_AU = FRM.R0_PC;                   // one arcsecond at Sgr A* (8.275 kpc, GRAVITY 2021), in AU
+const PC_LY = FRM.PC_LY;
 const fadeWin = (span, lo, hi, kin = 3, kout = 3) => Math.max(0, Math.min(1, Math.log(hi / span) / Math.log(kin))) * Math.max(0, Math.min(1, Math.log(span / lo) / Math.log(kout)));
 const kepE = (M, e) => { let E = M + e * Math.sin(M); for (let k = 0; k < 10; k++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E)); return E; };
 // position on a Keplerian orbit (a in AU) at a given year, as a world offset in ly; sky elements in the astrometric convention
@@ -1536,7 +1536,7 @@ const CWDISC = (() => {
 // The minispiral (Sgr A West): three streams of ionized gas on Keplerian orbits around Sgr A* (Zhao et al. 2009, ApJ 699, 186, Table 5),
 // all turning anticlockwise on the sky. Their elements are in a frame of (east, north, away from us), Ω counted from east toward north;
 // semi-major axes rescaled from their 8 kpc to 8.275 kpc. arc: the stretch of each orbit that actually glows, in true anomaly.
-const ZH = 8275 / 8000;
+const ZH = FRM.R0_PC / 8000;
 const MINI = [
   { name: 'Northern Arm', e: 0.83, a: 205e3 * ZH, Om: 64, w: 132, i: 139, arc: [-165, 60], lab: -128 },
   { name: 'Eastern Arm', e: 0.82, a: 289e3 * ZH, Om: -42, w: -280, i: 122, arc: [-150, 15], lab: -132 },
@@ -1828,7 +1828,7 @@ function select(o, fly) {
   document.getElementById('info-dot').style.background = T.color;
   document.getElementById('info-type').textContent = T.label;
   document.getElementById('info-name').textContent = o.name;
-  const year = new Date().getFullYear();
+  const year = Math.floor(CK.year());   // the shared clock's year, so it matches the Solar System's date
   const facts = [];
   let blurb = o.blurb;
   const lightLeft = d => d >= 1e9 ? `${(d / 1e9).toFixed(1)} billion years ago` : d < year ? (d < 50 ? `${d.toFixed(1)} years ago` : `around ${year - Math.round(d)} AD`) : `${fmtLy(d).replace(' ly', '')} years ago`;
