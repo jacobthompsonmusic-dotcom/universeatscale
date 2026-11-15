@@ -7,6 +7,7 @@ Live at https://universeatscale.com (GitHub Pages from `main`, custom domain via
 - **Risky or heavy changes**: run `tools/preview.sh`, commit, push, and test at https://universeatscale.com/preview/ in Jacob's Chrome (real GPU — the cloud headless browser renders the galaxy volume at ~12 s/frame). The preview copy is noindex with analytics off.
 - **Test in Jacob's Chrome** with the javascript tool: `?debug=1` exposes `window.__mw` (galaxy map) and `window.__ss` (Solar System). Headless fallback: `node tools/join/shot.js <path> <out.png> <steps.json> <wait-ms>`.
 - **Run `node tools/check.js` before every push** (needs three@0.128 in /tmp/t: `cd /tmp/t && npm i three@0.128.0`). It fails if a page hard-codes the shared constants, if the joined page's views stop sharing one clock, or on page errors.
+- `tools/preview.sh` also runs `tools/stamp.py` (content-hash `?v=` on the joined page's frame URLs and the shared/music scripts) and `tools/globe_type.py` (old-globe lettering). Run it before every commit, or Chrome may keep showing stale frames for ~10 min.
 - Other Claude sessions may push to this repo: always `git pull --ff-only` before starting and before pushing.
 - The old "Universe at Scale" Claude artifact mirror is retired — don't republish it unless Jacob asks.
 - Keep replies to Jacob to 3–4 sentences.

@@ -5,6 +5,7 @@
 set -e
 cd "$(dirname "$0")/.."
 python3 tools/globe_type.py >/dev/null   # idempotent: keeps the map pages' globe lettering in place
+python3 tools/stamp.py >/dev/null      # cache-busting stamps (frames + shared scripts)
 rm -rf preview && mkdir preview
 for d in index.html universe milky-way solar-system moons giant-planets-3d music shared og favicon.svg favicon.ico favicon-48.png apple-touch-icon.png; do cp -r "$d" preview/; done
 find preview -name '*.html' -print0 | xargs -0 sed -i \

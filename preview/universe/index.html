@@ -160,10 +160,11 @@ addEventListener('message', e => {
 });
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-mwEl.src = '../milky-way/index.html' + dbg;
-ssEl.src = '../solar-system/index.html' + dbg;
+const UAS_V = '70c61e73';
+mwEl.src = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
+ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 })();
 </script>
-<script src="../music/music.js" data-place="ladder" defer></script>
+<script src="../music/music.js?v=70c61e73" data-place="ladder" defer></script>
 </body>
 </html>
