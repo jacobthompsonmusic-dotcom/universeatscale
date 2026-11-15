@@ -34,7 +34,7 @@
     '.uas-mu-header:hover,.uas-mu-header.open{border:0}',
     '.uas-mu-pop{position:fixed;z-index:31;width:340px;max-width:calc(100vw - 24px);padding:6px;box-sizing:border-box;',
     ' background:rgba(12,13,20,.94);border:1px solid rgba(255,255,255,.1);border-radius:14px;color:#c9cede;',
-    ' font:italic 13.5px/1.45 "IM Fell English",Georgia,serif;box-shadow:0 18px 50px rgba(0,0,0,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}',
+    ' font:13.5px/1.45 "IM Fell English",Georgia,serif;box-shadow:0 18px 50px rgba(0,0,0,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}',
     '.uas-mu-pop[hidden]{display:block!important;visibility:hidden;pointer-events:none}',   /* hidden, not removed: the music keeps playing */
     '.uas-mu-pop h4{margin:0 0 2px;font:italic 14.5px "IM Fell English",Georgia,serif;color:#e9ecf5}',
     '.uas-mu-pop p{margin:0 0 10px;color:#8d93a8}',

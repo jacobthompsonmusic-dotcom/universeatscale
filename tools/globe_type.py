@@ -15,7 +15,7 @@ CSS = """<style id="globe-type">
 </style>
 <script>document.fonts && document.fonts.ready.then(() => { dispatchEvent(new Event('resize')); });</script>"""
 FAM = 'IM Fell English, Georgia, serif'   # unquoted (valid CSS), so it is safe inside any JS or HTML string
-canvas = lambda m: f"italic {float(m.group(2)) + 1.5:g}px{m.group(3) or ''} {FAM}"
+canvas = lambda m: f"{'' if m.group(3) else 'italic '}{float(m.group(2)) + 1.5:g}px{m.group(3) or ''} {FAM}"   # body text (with a line height) stays roman
 for rel in PAGES:
     f = root / rel
     if not f.exists(): continue
@@ -28,6 +28,6 @@ for rel in PAGES:
 m = root / 'music/music.js'
 if m.exists():
     s = m.read_text()
-    s = re.sub(r"(\d00 )?(\d+(?:\.\d+)?)px(/[\d.]+)? Inter,system-ui,sans-serif", lambda k: f"italic {float(k.group(2)) + 1:g}px{k.group(3) or ''} \"IM Fell English\",Georgia,serif", s)
+    s = re.sub(r"(\d00 )?(\d+(?:\.\d+)?)px(/[\d.]+)? Inter,system-ui,sans-serif", lambda k: f"{'' if k.group(3) else 'italic '}{float(k.group(2)) + 1:g}px{k.group(3) or ''} \"IM Fell English\",Georgia,serif", s)
     m.write_text(s)
 print('globe lettering applied under', root)
