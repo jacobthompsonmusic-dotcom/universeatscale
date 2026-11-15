@@ -16,7 +16,7 @@
   if (embedded) return;                       // the joined page shows its own note, so the music keeps playing across the hand-over
 
   var css = [
-    '.uas-mu-btn{font:500 11.5px Inter,system-ui,sans-serif;color:#8d93a8;background:rgba(12,13,20,.78);border:1px solid rgba(255,255,255,.09);',
+    '.uas-mu-btn{font:italic 12.5px "IM Fell English",Georgia,serif;color:#8d93a8;background:rgba(12,13,20,.78);border:1px solid rgba(255,255,255,.09);',
     ' border-radius:999px;padding:6px 11px;cursor:pointer;white-space:nowrap;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:color .15s,border-color .15s}',
     '.uas-mu-btn:hover,.uas-mu-btn:focus-visible,.uas-mu-btn.open{color:#e9ecf5;border-color:rgba(255,207,110,.45);outline:none}',
     '.uas-mu-btn .n{color:#ffcf6e;margin-right:5px}',
@@ -34,9 +34,9 @@
     '.uas-mu-header:hover,.uas-mu-header.open{border:0}',
     '.uas-mu-pop{position:fixed;z-index:31;width:340px;max-width:calc(100vw - 24px);padding:6px;box-sizing:border-box;',
     ' background:rgba(12,13,20,.94);border:1px solid rgba(255,255,255,.1);border-radius:14px;color:#c9cede;',
-    ' font:12.5px/1.45 Inter,system-ui,sans-serif;box-shadow:0 18px 50px rgba(0,0,0,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}',
+    ' font:italic 13.5px/1.45 "IM Fell English",Georgia,serif;box-shadow:0 18px 50px rgba(0,0,0,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}',
     '.uas-mu-pop[hidden]{display:block!important;visibility:hidden;pointer-events:none}',   /* hidden, not removed: the music keeps playing */
-    '.uas-mu-pop h4{margin:0 0 2px;font:600 13.5px Inter,system-ui,sans-serif;color:#e9ecf5}',
+    '.uas-mu-pop h4{margin:0 0 2px;font:italic 14.5px "IM Fell English",Georgia,serif;color:#e9ecf5}',
     '.uas-mu-pop p{margin:0 0 10px;color:#8d93a8}',
     '.uas-mu-pop a{color:#ffcf6e;text-decoration:none}.uas-mu-pop a:hover{text-decoration:underline}',
     '.uas-mu-pop .x{position:absolute;top:8px;right:10px;border:0;background:none;color:#8d93a8;font-size:16px;cursor:pointer;padding:2px 6px}',

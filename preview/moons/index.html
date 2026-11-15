@@ -32,11 +32,11 @@
 <!-- seo:end -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
 <style>
   :root { --bg:#05060a; --panel:rgba(14,13,18,0.8); --line:rgba(255,255,255,0.09); --text:#efeae2; --muted:#9a9388; --accent:#f0b56a; }
   * { box-sizing: border-box; }
-  html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font:14px/1.45 Inter, system-ui, sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font:italic 15.5px/1.45 IM Fell English, Georgia, serif; overflow:hidden; -webkit-font-smoothing:antialiased; }
   canvas#map { position:fixed; inset:0; width:100%; height:100%; cursor:grab; touch-action:none; display:block; }
   canvas#map.dragging { cursor:grabbing; } canvas#map.pointing { cursor:pointer; }
   .panel { position:fixed; background:var(--panel); border:1px solid var(--line); border-radius:14px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); }
@@ -123,11 +123,10 @@
   .homelink:hover, .homelink:focus-visible { color:var(--accent); }
   .to3d { color:var(--accent); font-size:12.5px; text-decoration:none; display:inline-block; margin-bottom:10px; }
 </style>
-<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
 <style id="globe-type">
   :root { --text:#eee2c4; }
-  body, button, input, select, textarea, .panel, #info, #legend, #top, #time { font-family:'IM Fell English', Georgia, serif !important; letter-spacing:0.01em; }
-  h1, h2, h3, .title, #info-name, [class*=title] { font-family:'IM Fell English SC', 'IM Fell English', Georgia, serif !important; font-weight:400 !important; letter-spacing:0.04em; }
+  body, button, input, select, textarea, .panel, #info, #legend, #top, #time { font-family:"IM Fell English", Georgia, serif !important; letter-spacing:0.01em; }
+  h1, h2, h3, .title, #info-name, [class*=title] { font-family:"IM Fell English SC", "IM Fell English", Georgia, serif !important; font-weight:400 !important; letter-spacing:0.04em; }
   .lab { color:#efe3c3 !important; }
   .lab.mark { font-style:normal !important; letter-spacing:0.22em !important; color:rgba(226,214,186,0.75) !important; }
   .lab.sun { color:#ffe2a0 !important; }

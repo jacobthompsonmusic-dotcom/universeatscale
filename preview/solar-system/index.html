@@ -32,11 +32,11 @@
 <!-- seo:end -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
 <style>
   :root { --panel:rgba(14,13,18,0.8); --line:rgba(255,255,255,0.09); --text:#efeae2; --muted:#9a9388; --accent:#f0b56a; }
   * { box-sizing:border-box; }
-  html, body { margin:0; height:100%; background:#020205; color:var(--text); font:14px/1.45 Inter, system-ui, sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }
+  html, body { margin:0; height:100%; background:#020205; color:var(--text); font:italic 15.5px/1.45 IM Fell English, Georgia, serif; overflow:hidden; -webkit-font-smoothing:antialiased; }
   canvas#gl { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
   .panel { position:fixed; background:var(--panel); border:1px solid var(--line); border-radius:14px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); }
   #top { top:16px; left:16px; padding:14px 16px; width:340px; z-index:3; }
@@ -135,11 +135,10 @@
     #scale { bottom:130px; }
   }
 </style>
-<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
 <style id="globe-type">
   :root { --text:#eee2c4; }
-  body, button, input, select, textarea, .panel, #info, #legend, #top, #time { font-family:'IM Fell English', Georgia, serif !important; letter-spacing:0.01em; }
-  h1, h2, h3, .title, #info-name, [class*=title] { font-family:'IM Fell English SC', 'IM Fell English', Georgia, serif !important; font-weight:400 !important; letter-spacing:0.04em; }
+  body, button, input, select, textarea, .panel, #info, #legend, #top, #time { font-family:"IM Fell English", Georgia, serif !important; letter-spacing:0.01em; }
+  h1, h2, h3, .title, #info-name, [class*=title] { font-family:"IM Fell English SC", "IM Fell English", Georgia, serif !important; font-weight:400 !important; letter-spacing:0.04em; }
   .lab { color:#efe3c3 !important; }
   .lab.mark { font-style:normal !important; letter-spacing:0.22em !important; color:rgba(226,214,186,0.75) !important; }
   .lab.sun { color:#ffe2a0 !important; }
@@ -1925,7 +1924,7 @@ aboutBtn.onclick = () => collapse(!topPanel.classList.contains('collapsed'));
 const kindLabel = o => o.isSun ? 'Star' : o.kind === 'giant' ? 'Giant planet' : o.kind === 'planet' ? 'Planet' : o.kind === 'dwarf' ? 'Dwarf planet' : `Moon of ${o.parent.name}`;
 const sIn = document.getElementById('search'), sRes = document.getElementById('results'); let hits = [], active = 0;
 // On the joined page the search box also finds things in the Milky Way map (asked through the page that holds both maps)
-const sepRow = t => `<div style="padding:6px 12px 3px;font:600 10px Inter,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:rgba(200,205,222,.55)">${t}</div>`;
+const sepRow = t => `<div style="padding:6px 12px 3px;font:italic 11.5px IM Fell English, Georgia, serif;letter-spacing:.09em;text-transform:uppercase;color:rgba(200,205,222,.55)">${t}</div>`;
 function renderHits() { let firstExt = true; sRes.innerHTML = hits.map((o, i) => (o.ext && firstExt && !(firstExt = false) ? sepRow('In the Milky Way and beyond') : '') + `<button data-i="${i}" class="${i === active ? 'active' : ''}"><span class="dot" style="background:${o.color}"></span>${o.name}<small>${o.ext ? o.sub : kindLabel(o)}</small></button>`).join(''); sRes.style.display = hits.length ? 'block' : 'none'; }
 let localHits = [], extHits = [], searchId = 0;
 function chooseHit(o) { if (!o) return; sRes.style.display = 'none'; sIn.blur(); if (o.ext) { sIn.value = ''; hits = []; } if (o.ext) parent.postMessage({ src: 'uas-ss', pick: { map: 'mw', name: o.name } }, '*'); else flyTo(o); }

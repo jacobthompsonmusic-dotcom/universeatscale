@@ -32,24 +32,24 @@
 <!-- seo:end -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
 <style>
   :root { --panel:rgba(14,13,18,0.8); --line:rgba(255,255,255,0.09); --text:#efeae2; --muted:#9a9388; --accent:#f0b56a; }
   * { box-sizing:border-box; }
-  html, body { margin:0; height:100%; background:#020205; color:var(--text); font:14px/1.45 Inter, system-ui, sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }
+  html, body { margin:0; height:100%; background:#020205; color:var(--text); font:italic 15.5px/1.45 IM Fell English, Georgia, serif; overflow:hidden; -webkit-font-smoothing:antialiased; }
   canvas#gl { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
   .panel { position:fixed; background:var(--panel); border:1px solid var(--line); border-radius:14px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); }
   #top { top:16px; left:16px; padding:14px 16px; width:340px; z-index:3; }
-  #top h1 { margin:6px 0 0; font:600 18px/1.2 "Space Grotesk", sans-serif; }
+  #top h1 { margin:6px 0 0; font:600 18px/1.2 "IM Fell English SC", Georgia, serif; }
   #top p { margin:4px 0 10px; color:var(--muted); font-size:12.5px; }
-  .homelink { display:inline-block; margin-bottom:10px; font:500 12px Inter, sans-serif; letter-spacing:0.02em; color:var(--muted); text-decoration:none; }
+  .homelink { display:inline-block; margin-bottom:10px; font:italic 13.5px "IM Fell English", Georgia, serif; letter-spacing:0.02em; color:var(--muted); text-decoration:none; }
   .homelink:hover, .homelink:focus-visible { color:var(--accent); }
   .searchrow { display:flex; gap:6px; align-items:center; }
   #search { flex:1; min-width:0; padding:9px 12px; border-radius:9px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--text); font:inherit; outline:none; }
   #search:focus { border-color:rgba(240,181,106,0.5); }
-  #about { flex:none; width:36px; height:36px; border-radius:9px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--muted); font:600 14px Inter, sans-serif; cursor:pointer; }
+  #about { flex:none; width:36px; height:36px; border-radius:9px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--muted); font:italic 15.5px "IM Fell English", Georgia, serif; cursor:pointer; }
   .switch { display:flex; gap:4px; padding:3px; margin:0 0 6px; border-radius:10px; background:rgba(255,255,255,0.05); border:1px solid var(--line); }
-  .switch button { flex:1; padding:6px 0; border:0; border-radius:7px; background:none; color:var(--muted); font:600 11.5px Inter, sans-serif; cursor:pointer; min-width:0; }
+  .switch button { flex:1; padding:6px 0; border:0; border-radius:7px; background:none; color:var(--muted); font:italic 13px "IM Fell English", Georgia, serif; cursor:pointer; min-width:0; }
   .switch button.on { background:rgba(255,255,255,0.1); color:var(--text); }
   #top.collapsed { padding:8px; } #top.collapsed h1, #top.collapsed p, #top.collapsed .homelink { display:none; }
   #top.collapsed .switch { margin-bottom:6px; }
@@ -62,7 +62,7 @@
   #info { top:16px; right:98px; width:330px; padding:18px; display:none; max-height:calc(100vh - 120px); overflow-y:auto; z-index:3; }
   #info .close { position:absolute; top:10px; right:10px; width:28px; height:28px; border-radius:8px; border:0; background:none; color:var(--muted); font-size:18px; cursor:pointer; }
   #info .chip { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
-  #info h2 { margin:6px 0 12px; font:600 22px/1.2 "Space Grotesk", sans-serif; display:flex; align-items:center; gap:12px; }
+  #info h2 { margin:6px 0 12px; font:600 22px/1.2 "IM Fell English SC", Georgia, serif; display:flex; align-items:center; gap:12px; }
   @font-face { font-family:'AstroSym'; src:url(data:font/woff2;base64,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) format('woff2'); unicode-range:U+2609,U+2BD3,U+1F77B,U+1F77C,U+2BF0; }
   @font-face { font-family:'AstroSym'; src:url(data:font/woff2;base64,d09GMgABAAAAAAXQABIAAAAACtQAAAVyAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhYbIBw8BmA/U1RBVC4AgVIRCAqJLIgWATYCJAMoCxYABCAFg3wHIAwHFyQYFhvuCFGUUc6fIL5IsN1GUygREQ5sGD/LqqdDKx7+f6687ydDyRaAIkuKyQKhq23tqCIKS6jAEgjVPb4EPnxe1ftJQ8h0jZI0U0aqxVSb6QFxBL0AC8vj6LoilnLN4VyG+v1fyMw5w2fF//97VbMHyF5kAY3Izf/ZN2MMeqX/Q9GOqbUClQs0N+3j1Snek2V41eVB9w8Q6AAkgZYQKAxWgMzz1LQgSg7/ASBQmMQgXGXxmK2rFk+B2za8XAC3c/HwJLh9/UtnwJlyGfJsGTl4CqlN+QBL0YPFBgjhwG5NZsGlC79exBvzrf8L/+Df92D+Y5QBEJD6Ux+B4SghNAV6IxiMOjw6tpSEIcmQpDgGpEcAcmQYTc5sQQssPa34SJgZoKkpUc2a75l/939ANXO+Y57yqS5wvnDKbT45qWuo6QCHADSZIkBF7pDKCVF1DrJEpqjmSiRpNc8wH1BXVAskaorqposQ3xcmH+CH/0MiKEBv0AviPJDGAoSvccOGEnReLc/HzMlKYg/sCjYuNyktsn5hWeuSb4kP7yijiDJOx+4JhcimYDBm9wcLLVdDnKsDAczvj+ERq9AtOkKJbvxjdvtxR0NMbyxd5l3a1kj4x3zISm1Sa1vL5dvyYpNnIIEFNtgaEJ/rk+qPgiSWTfmGCaqq90OX6Aq60xpbfn+sJmSZ1NrGrLTS+IAKhXLV32JbKWu6WJJLR46lxd48VxZ2Ku/YKcN2dsyRcXS28ORZBL9yf2Wbd3/2FtkU0pIYRZQZUCi1ivTPUbgdwN74xLHndbLptZjdr2Djq7GXQsVY88nXdgc16YZuiL+NjrtOllvfF7AUcQPx9NO63R9/RvlFnp6Pjn40KqiH1Hg+tbxs+d43E4rdLOvhi1k3emnxnEPu5ldja5liQ7dW220wAMifZzg/JZfJUyh96TdbuW1IIVrnScpqb61OW1nl8JjKOttVZqtPVdpj5bM7DA3m317xPACt69GOY71O15VfWOSva7Ru/sUUXCqv6hmf7FHotT092k28yHEiXxk8IsvzkNMcPSOKHJ4pT+5G3/xGfZlPrTP2xeQa+vWCeI4vFjlW5IWJ2Z+TY+jVq5TGDQaNz2IwlaNwqXeLnNbNc3oeqw9rWBGx/sg+oSFufNkBEKawZGRTd6Q8tCeXTXLSMgnTliUK6X3qYJJtcP31sKGvRlMz4Bl4rHncmaEojNghcdp+qa8z88U/SSzMdAVqAmkik/bELye5vrOo3HxRh5fCphjFpiwFr3Suemv3k7OO7nXdjrM/7v7RDhKMq5/sfvOIysUVRW025bnycltzEeibeH4Hau2qm5jWg5G2S6dkUdcbWS6TY2ji/l12Nr5mu35oWL+tpla3bWiIZNTWbNMPD7GgKum3Z6guma0hpIGXnC6JXx2RDmEF2rERXpGQcK575KhA4/orXK42Pl0IAALJs++TvtH0Jpp+jaKzTuDtr/4nwOf8PX0Q/p/OoP4EdQkEv91StkhBQtgDxH5VkVahpwj7uwhlGgecCElWLEkdtYywaAfhBIXJwncJ1V1NO9Aib+ESQFrDSMesSVdPrJl5PrHmJkaStWZgOCx1Y6Prx0auI9pwks1aZbFxo8YsxRCUEwgYLcYMY9SRLSVjNFhMNmHYoKUYdsssNUa22BKMhW7g4DxrCYOy7qhxpbuWGVBqkGxamRmn7REySZZaogyQVaYNVPunLMEGbjfrV8QlxLKZ3WTYqGXk8/stJihVrpySkahePZHRUaJdqd2hJK837E5M120zfPk4fjFbmBPZyOBDyfBjqNL2aP8HweLfI/93K2wfSHeQL//F0Z2QXvwVFv7nXbo6SP9oLR2R3aA+pyPTS0ZHT/0E) format('woff2'); unicode-range:U+263F,U+2640,U+1F728,U+2642,U+2643,U+2644,U+2645,U+2646,U+26B3; }
   #info-sym { display:none; flex:none; width:34px; height:34px; border-radius:50%; align-items:center; justify-content:center; font:400 21px/1 'AstroSym', sans-serif; border:1px solid color-mix(in srgb, currentColor 40%, transparent); background:color-mix(in srgb, currentColor 9%, transparent); cursor:default; }
@@ -70,11 +70,11 @@
   #info dl { margin:0 0 12px; display:grid; grid-template-columns:auto 1fr; gap:5px 14px; font-size:13px; }
   #info dt { color:var(--muted); } #info dd { margin:0; font-variant-numeric:tabular-nums; }
   #info .blurb { margin:0; color:#d6d0c6; font-size:13.5px; }
-  #info .go { margin-top:14px; padding:7px 12px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--text); font:500 12.5px Inter, sans-serif; cursor:pointer; }
+  #info .go { margin-top:14px; padding:7px 12px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--text); font:italic 14px "IM Fell English", Georgia, serif; cursor:pointer; }
   #info .go.on { background:rgba(240,181,106,0.18); border-color:rgba(240,181,106,0.45); cursor:default; }
 
   #labels { position:fixed; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
-  .lab { position:absolute; left:0; top:0; transform:translate(10px,-50%); white-space:nowrap; font:500 12px Inter, sans-serif; color:rgba(235,230,222,0.85); text-shadow:0 1px 2px #000, 0 0 6px #000; pointer-events:auto; cursor:pointer; padding:2px 4px; border-radius:5px; }
+  .lab { position:absolute; left:0; top:0; transform:translate(10px,-50%); white-space:nowrap; font:italic 13.5px "IM Fell English", Georgia, serif; color:rgba(235,230,222,0.85); text-shadow:0 1px 2px #000, 0 0 6px #000; pointer-events:auto; cursor:pointer; padding:2px 4px; border-radius:5px; }
   .lab.big { font-weight:600; font-size:13px; color:#fff6e6; }
   .lab.mark { color:rgba(190,206,236,0.72); font-size:10.5px; letter-spacing:0.09em; text-transform:uppercase; pointer-events:none; cursor:default; }
   .lab.mark::before { display:none; }
@@ -97,26 +97,26 @@
   .lab::before { content:""; position:absolute; left:-10px; top:50%; width:5px; height:5px; margin-top:-2.5px; border-radius:50%; background:var(--c, #ccc); box-shadow:0 0 6px var(--c, #ccc); }
 
   #controls { bottom:16px; right:16px; padding:8px; display:flex; flex-direction:column; gap:6px; z-index:2; }
-  #controls button { width:54px; height:40px; border-radius:10px; border:1px solid var(--line); background:rgba(255,255,255,0.04); color:var(--text); font:500 18px Inter, sans-serif; cursor:pointer; }
+  #controls button { width:54px; height:40px; border-radius:10px; border:1px solid var(--line); background:rgba(255,255,255,0.04); color:var(--text); font:italic 19.5px "IM Fell English", Georgia, serif; cursor:pointer; }
   #controls button.txt { font-size:10.5px; font-weight:600; letter-spacing:0.04em; }
   #legend { bottom:16px; left:16px; padding:12px 14px; font-size:12.5px; z-index:2; }
   .toggles { display:flex; gap:6px; flex-wrap:wrap; max-width:270px; }
-  .tg { padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:none; color:var(--muted); font:500 12px Inter, sans-serif; cursor:pointer; }
+  .tg { padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:none; color:var(--muted); font:italic 13.5px "IM Fell English", Georgia, serif; cursor:pointer; }
   .tg.on { color:var(--text); background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.18); }
   #legend .hint { margin-top:8px; color:var(--muted); font-size:11.5px; max-width:270px; }
 
   #time { bottom:16px; left:50%; transform:translateX(-50%); padding:8px 10px; display:flex; align-items:center; gap:10px; white-space:nowrap; z-index:2; }
-  #time button { height:32px; min-width:32px; padding:0 10px; border-radius:8px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--text); font:500 12.5px Inter, sans-serif; cursor:pointer; }
-  #time .date { font:500 12.5px Inter, sans-serif; color:#d6d0c6; min-width:170px; text-align:center; font-variant-numeric:tabular-nums; }
+  #time button { height:32px; min-width:32px; padding:0 10px; border-radius:8px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--text); font:italic 14px "IM Fell English", Georgia, serif; cursor:pointer; }
+  #time .date { font:italic 14px "IM Fell English", Georgia, serif; color:#d6d0c6; min-width:170px; text-align:center; font-variant-numeric:tabular-nums; }
   #time input[type=range] { width:150px; accent-color:var(--accent); touch-action:pan-x; }
   #time .spd { font-size:12px; color:var(--muted); min-width:62px; }
   #time .date { cursor:pointer; border-radius:8px; padding:7px 8px; border:1px dashed rgba(255,255,255,0.18); }
   #time .date:hover { border-color:var(--accent); color:#fff; }
   #datepick { position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:12px;
-    background:rgba(14,15,22,0.96); border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,0.5); font:500 12px Inter, sans-serif; color:var(--muted); }
+    background:rgba(14,15,22,0.96); border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,0.5); font:italic 13.5px "IM Fell English", Georgia, serif; color:var(--muted); }
   #datepick[hidden] { display:none; }
   #datepick label { display:flex; gap:6px; align-items:center; }
-  #datepick input { background:rgba(255,255,255,0.06); border:1px solid var(--line); border-radius:7px; color:var(--text); font:500 12.5px Inter, sans-serif; padding:5px 7px; color-scheme:dark; }
+  #datepick input { background:rgba(255,255,255,0.06); border:1px solid var(--line); border-radius:7px; color:var(--text); font:italic 14px "IM Fell English", Georgia, serif; padding:5px 7px; color-scheme:dark; }
   #scale { position:fixed; bottom:74px; left:50%; transform:translateX(-50%); text-align:center; font-size:11.5px; color:var(--muted); pointer-events:none; z-index:1; font-variant-numeric:tabular-nums; text-shadow:0 1px 2px #000; }
   #scale .bar { height:6px; border:1.5px solid rgba(255,255,255,0.55); border-top:0; margin:0 auto 3px; }
   #loading { position:fixed; inset:0; display:flex; align-items:flex-end; justify-content:center; padding-bottom:9vh; box-sizing:border-box; color:rgba(233,236,245,0.85); font-size:13px; letter-spacing:0.04em; z-index:5; transition:opacity .9s;
@@ -135,6 +135,15 @@
     #scale { bottom:130px; }
   }
 </style>
+<style id="globe-type">
+  :root { --text:#eee2c4; }
+  body, button, input, select, textarea, .panel, #info, #legend, #top, #time { font-family:"IM Fell English", Georgia, serif !important; letter-spacing:0.01em; }
+  h1, h2, h3, .title, #info-name, [class*=title] { font-family:"IM Fell English SC", "IM Fell English", Georgia, serif !important; font-weight:400 !important; letter-spacing:0.04em; }
+  .lab { color:#efe3c3 !important; }
+  .lab.mark { font-style:normal !important; letter-spacing:0.22em !important; color:rgba(226,214,186,0.75) !important; }
+  .lab.sun { color:#ffe2a0 !important; }
+</style>
+<script>document.fonts && document.fonts.ready.then(() => { dispatchEvent(new Event('resize')); });</script>
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -956,7 +965,7 @@ const zodiac = new THREE.Group(); zodiac.visible = false; skyRoot.add(zodiac);
   const zl = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0x9fbcff, transparent: true, opacity: 0.34, depthTest: false, depthWrite: false })); zl.frustumCulled = false; zodiac.add(zl);
   for (const c of ZODIAC) { // name labels, floating at the typical distance of the figure's stars
     const cv = document.createElement('canvas'), x = cv.getContext('2d'); cv.width = 512; cv.height = 96;
-    x.font = '500 46px Inter, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = 'rgba(170,195,255,0.62)';
+    x.font = 'italic 47.5px "IM Fell English", Georgia, serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = 'rgba(170,195,255,0.62)';
     x.fillText(c.n.toUpperCase().split('').join(String.fromCharCode(8202)), 256, 48);
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false, depthWrite: false }));
     galToScene(c.l[0] * c.d, c.l[1] * c.d, c.l[2] * c.d, sp.position); sp.scale.set(c.d * 0.13, c.d * 0.13 * 96 / 512, 1); zodiac.add(sp);
@@ -1915,7 +1924,7 @@ aboutBtn.onclick = () => collapse(!topPanel.classList.contains('collapsed'));
 const kindLabel = o => o.isSun ? 'Star' : o.kind === 'giant' ? 'Giant planet' : o.kind === 'planet' ? 'Planet' : o.kind === 'dwarf' ? 'Dwarf planet' : `Moon of ${o.parent.name}`;
 const sIn = document.getElementById('search'), sRes = document.getElementById('results'); let hits = [], active = 0;
 // On the joined page the search box also finds things in the Milky Way map (asked through the page that holds both maps)
-const sepRow = t => `<div style="padding:6px 12px 3px;font:600 10px Inter,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:rgba(200,205,222,.55)">${t}</div>`;
+const sepRow = t => `<div style="padding:6px 12px 3px;font:italic 11.5px IM Fell English, Georgia, serif;letter-spacing:.09em;text-transform:uppercase;color:rgba(200,205,222,.55)">${t}</div>`;
 function renderHits() { let firstExt = true; sRes.innerHTML = hits.map((o, i) => (o.ext && firstExt && !(firstExt = false) ? sepRow('In the Milky Way and beyond') : '') + `<button data-i="${i}" class="${i === active ? 'active' : ''}"><span class="dot" style="background:${o.color}"></span>${o.name}<small>${o.ext ? o.sub : kindLabel(o)}</small></button>`).join(''); sRes.style.display = hits.length ? 'block' : 'none'; }
 let localHits = [], extHits = [], searchId = 0;
 function chooseHit(o) { if (!o) return; sRes.style.display = 'none'; sIn.blur(); if (o.ext) { sIn.value = ''; hits = []; } if (o.ext) parent.postMessage({ src: 'uas-ss', pick: { map: 'mw', name: o.name } }, '*'); else flyTo(o); }
