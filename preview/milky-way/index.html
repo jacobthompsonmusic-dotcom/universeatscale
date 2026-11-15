@@ -153,9 +153,9 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=439b04a7"></script>
-<script src="../shared/clock.js?v=439b04a7"></script>
-<script src="../shared/galaxy-volume.js?v=439b04a7"></script>
+<script src="../shared/frame.js?v=07fdb596"></script>
+<script src="../shared/clock.js?v=07fdb596"></script>
+<script src="../shared/galaxy-volume.js?v=07fdb596"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -832,6 +832,7 @@ const farOut = () => view.s < fitScale() * 0.22;
 // closest zoom: a 6-ly view in general, but you can go closer at a nebula with a photograph (down to its own size) and all the way to Sgr A*
 function zoomLimit(x, y, z) {
   let lim = Math.min(6, 1.5 * Math.hypot(x - GCO.x, y - GCO.y, z - GCO.z));
+  { const t = OBJ.find(q => q.name === 'TRAPPIST-1'); if (t) { const d = Math.hypot(x - t.x, y - t.y, z - t.z); if (d < 1) lim = Math.min(lim, Math.max(8e-8, d * 1.5)); } }   // down to TRAPPIST-1's planets
   if (typeof NEB !== 'undefined') for (const o of OBJ) { const e = NEB[o.name]; if (!e || !e.w || e.w > 6) continue; const d = Math.hypot(x - o.x, y - o.y, z - o.z); if (d < 2 * e.w) lim = Math.min(lim, Math.max(e.w * 0.8, d * 1.2)); }
   return Math.max(4e-6, lim);
 }
@@ -912,8 +913,8 @@ function render(t) {
   drawNebulae();
   drawObjects();
   gcTick();
-  const nb = drawGCNear(), s2a = drawS2(), bhOn = drawBH(); GCT.on = nb > 0 || s2a > 0;
-  if ((s2a > 0 || nb > 0 || bhOn) && !anim) draw();   // keep S2 and the flow moving
+  const nb = drawGCNear(), s2a = drawS2(), bhOn = drawBH(), t1a = drawTrappist(); GCT.on = nb > 0 || s2a > 0;
+  if ((s2a > 0 || nb > 0 || bhOn || t1a > 0) && !anim) draw();   // keep S2 and the flow moving
   updateScale();
   updateGC();
   const tb = document.getElementById('go3d'), lab = Math.abs(view.tilt) > 0.05 ? '3D' : 'TOP';
@@ -1516,6 +1517,72 @@ function gcTick() { if (GCT.on) CK.boost(S2_RATE * 365.25 * 864e5 / 1000, 'sstar
 // the map's scale and view span measured at Sgr A* itself: under the perspective lens the view-centre scale is only right at the
 // view centre, so from near the Sun (a 1 ly view) the centre, 27,000 ly off, must not be drawn as if you'd zoomed in on it
 function gcScale() { const [gx, gy, , f] = proj(GC.x, GC.y, GC.z); const S = isFinite(gx) && f > 0 ? view.s * f : 0; return [gx, gy, S, S > 0 ? Math.min(Wd, Ht) / S : Infinity]; }
+// ===================================================================
+//  TRAPPIST-1 and its seven planets, from the measurements (Agol et al. 2021, Planet. Sci. J. 2, 1: Tables 2, 5–7)
+//  Periods and transit times give where each planet is on any date (a linear ephemeris: the planets' tugs on each other shift
+//  transits by minutes, too small to see here). The orbits are seen almost exactly edge-on from the Sun (i ≈ 89.7–89.9°), so the
+//  planet crosses in front of the star — a transit — when it lies between the star and us. Which way the orbits are turned
+//  on our sky can't be measured from transits, so that one angle is illustrative.
+// ===================================================================
+const T1 = (() => {
+  const AU_LY = 1 / AU_PER_LY;
+  // name, period (d), transit time (BJD_TDB), a (AU), radius (Earth = 1), mass (Earth = 1), inclination (°)
+  const P = [['b', 1.510826, 2457257.55044, 0.01154, 1.116, 1.374, 89.728], ['c', 2.421937, 2457258.58728, 0.01580, 1.097, 1.308, 89.778],
+    ['d', 4.049219, 2457257.06768, 0.02227, 0.788, 0.388, 89.896], ['e', 6.101013, 2457257.82771, 0.02925, 0.920, 0.692, 89.793],
+    ['f', 9.207540, 2457257.07426, 0.03849, 1.045, 1.039, 89.740], ['g', 12.352446, 2457257.71462, 0.04683, 1.129, 1.321, 89.742],
+    ['h', 18.772866, 2457249.60676, 0.06189, 0.755, 0.326, 89.805]];
+  const L = 0.000553;   // luminosity, Suns
+  const planets = P.map(([n, per, t0, a, r, m, inc]) => ({ n, per, t0, a: a * AU_LY, au: a, r, m, inc: inc * DEG, teq: Math.round(278.6 * Math.pow(L, 0.25) / Math.sqrt(a)) }));
+  return { star: null, planets, rStarLy: 0.1192 * 695700 / FRM.LY_KM, L, M: 0.0898, R: 0.1192, T: 2566 };
+})();
+function t1Basis() {
+  if (T1.basis) return T1.basis;
+  const o = OBJ.find(q => q.name === 'TRAPPIST-1'); T1.star = o;
+  const u = norm3([o.x - SUNW.x, o.y - SUNW.y, o.z - SUNW.z]), toSun = u.map(v => -v);
+  const zN = [0, 0, 1], p = norm3(cross3(u, cross3(zN, u)));   // illustrative: the orbit normal leans toward the galaxy's north
+  T1.basis = { toSun, p }; return T1.basis;
+}
+// a planet's position (offset from the star, ly) at a Julian date
+function t1Pos(pl, jd) {
+  const { toSun, p } = t1Basis(), c = Math.cos(pl.inc), sn = Math.sin(pl.inc);
+  const n = [0, 1, 2].map(k => sn * p[k] + c * toSun[k]);                 // orbit normal, i from the line of sight
+  const e1 = norm3(cross3(n, cross3(toSun, n))), e2 = cross3(n, e1);         // e1: toward us, in the orbit's plane
+  const th = 2 * Math.PI * (((jd - pl.t0) / pl.per) % 1);
+  return [0, 1, 2].map(k => pl.a * (Math.cos(th) * e1[k] + Math.sin(th) * e2[k]));
+}
+function drawTrappist() {
+  const b = t1Basis(), o = T1.star, [X, Y, , f] = proj(o.x, o.y, o.z); if (!isFinite(X)) return 0;
+  const S = view.s * f, rh = T1.planets[6].a * S; if (rh < 18 || X < -rh || X > Wd + rh || Y < -rh || Y > Ht + rh) return 0;
+  const A = sstep(rh, 18, 90), jd = CK.now() / 864e5 + 2440587.5;
+  const P = q => proj(o.x + q[0], o.y + q[1], o.z + q[2]);
+  ctx.save();
+  // the star: an ultracool red dwarf, 2,566 K
+  const rs = Math.max(2.5, T1.rStarLy * S), gl = ctx.createRadialGradient(X, Y, 0, X, Y, rs * 6 + 10);
+  gl.addColorStop(0, `rgba(255,170,120,${0.55 * A})`); gl.addColorStop(1, 'rgba(255,120,80,0)');
+  ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(X, Y, rs * 6 + 10, 0, 7); ctx.fill();
+  ctx.fillStyle = `rgba(255,196,150,${A})`; ctx.beginPath(); ctx.arc(X, Y, rs, 0, 7); ctx.fill(); ctx.globalCompositeOperation = 'source-over';
+  for (const pl of T1.planets) {
+    const rp = pl.a * S; if (rp < 4) continue;
+    ctx.strokeStyle = `rgba(255,214,170,${0.22 * A})`; ctx.lineWidth = 1; ctx.beginPath();
+    for (let k = 0; k <= 96; k++) { const q = t1Pos(pl, pl.t0 + pl.per * k / 96), [x, y] = P(q); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke();
+    const [x, y] = P(t1Pos(pl, jd)), r = Math.max(2.4, pl.r * 6371 / FRM.LY_KM * S);
+    const hz = pl.n === 'e' || pl.n === 'f' || pl.n === 'g';
+    ctx.fillStyle = hz ? `rgba(170,220,190,${A})` : `rgba(226,214,200,${A})`; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    if (opts.labels && rp > 30) {
+      ctx.font = 'italic 14px IM Fell English, Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = `rgba(238,226,196,${0.9 * A})`; ctx.fillText(pl.n, x + r + 4, y - 3);
+      if (rp > 90) { ctx.font = 'italic 12.5px UAS Num, IM Fell English, Georgia, serif'; ctx.fillStyle = `rgba(214,206,190,${0.7 * A})`;
+        ctx.fillText(`${pl.per.toFixed(2)} days · ${pl.r.toFixed(2)}× Earth's width · ~${pl.teq} K`, x + r + 4, y + 11); }
+    }
+  }
+  if (opts.labels && rh > 120) {
+    ctx.font = 'italic 12.5px IM Fell English, Georgia, serif'; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(200,206,225,${0.65 * A})`;
+    ctx.fillText('Orbits from transit timing (Agol et al. 2021) · seen edge-on from the Sun; their tilt on our sky is illustrative · green: in the habitable zone', Wd / 2, Ht - 70);
+  }
+  ctx.restore();
+  return A;
+}
+
 function drawS2() {
   const [gx, gy, , span] = gcScale(); if (span > 0.6 || span < 2e-5) return 0;
   if (gx < -Wd || gx > 2 * Wd || gy < -Ht || gy > 2 * Ht) return 0;
@@ -1811,6 +1878,7 @@ function spanFor(o) {
   }
   if (o.type === 'sun') return 3200;
   if (o.name === 'Sagittarius A*') return 26000;
+  if (o.name === 'TRAPPIST-1') return 0.155 / 63241.077;   // the whole planetary system fills the screen
   if (typeof NEB !== 'undefined' && NEB[o.name] && !NEB[o.name].fill) return NEB[o.name].w * 1.1;   // the photograph fills the screen
   const sz = OBJ_SIZE[o.name];
   if (sz !== undefined) return Math.max(sz * 1.6, 8);
@@ -1896,6 +1964,7 @@ function select(o, fly) {
     facts.push(['Light you see left', lightLeft(o.d)]);
     facts.push(['Constellation', o.con]);
     if (o.src) facts.push(['Measured by', `<span class="src">${o.src}</span>`]);
+    if (o.name === 'TRAPPIST-1') facts.push(['Star', 'an ultracool red dwarf: 9% of the Sun’s mass, 12% of its width, 2,566 K'], ['Planets', 'seven rocky worlds, b to h, circling every 1.5 to 18.8 days, all closer in than Mercury'], ['Habitable zone', 'e, f and g'], ['Orbits from', '<span class="src">transit timing, Agol et al. 2021</span>']);
     if (NEB[o.name]) { const e = NEB[o.name]; if (OBJ_SIZE[o.name]) facts.push(['Size', fmtLy(OBJ_SIZE[o.name])]);
       facts.push(['Photo', `<span class="src">${e.c} · ${e.l}, via <a href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(e.f.replace(/ /g, '_'))}" target="_blank" rel="noopener">Wikimedia Commons</a> · shown at about its real size</span>`]); }
   }
@@ -2105,6 +2174,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=439b04a7" data-place="header" defer></script>
+<script src="../music/music.js?v=07fdb596" data-place="header" defer></script>
 </body>
 </html>
