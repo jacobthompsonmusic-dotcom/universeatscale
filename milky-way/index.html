@@ -153,9 +153,9 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=b782147a"></script>
-<script src="../shared/clock.js?v=b782147a"></script>
-<script src="../shared/galaxy-volume.js?v=b782147a"></script>
+<script src="../shared/frame.js?v=1d5971ee"></script>
+<script src="../shared/clock.js?v=1d5971ee"></script>
+<script src="../shared/galaxy-volume.js?v=1d5971ee"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1391,10 +1391,10 @@ function zoomAnchor(X, Y) {
   return [X, Y];
 }
 // Joined with the Solar System map: zooming in on the Sun eases it to the middle of the screen, then hands over at the same scale and angle.
-function handOver(s) {
+function handOver(s, into) {
   if (view.tilt < 0) { view.tilt = -view.tilt; view.yaw += Math.PI; }   // the same line of sight, the right way up
   view.x = SUNW.x; view.y = SUNW.y; view.z = SUNW.z; view.s = s; anim = null; following = true; draw();
-  parent.postMessage({ src: 'uas-mw', dive: true, s, yaw: view.yaw, tilt: view.tilt }, '*');
+  parent.postMessage({ src: 'uas-mw', dive: true, into: !!into, s, yaw: view.yaw, tilt: view.tilt }, '*');   // into: carry on in to the planets
 }
 function sunDive(X, Y, f) {
   if (!EMBED || !ssReady || f <= 1 || viewSpan() > 60) return false;
@@ -1413,7 +1413,7 @@ function sunDive(X, Y, f) {
 function diveToSun() {   // fly to the Sun, then hand over to the Solar System (on its own page, open it)
   const M = Math.min(Wd, Ht); select(null);
   if (EMBED && !ssReady) return flyTo(SUNW.x, SUNW.y, SUNW.z, DIVE * 1.05, { raw: true });
-  flyTo(SUNW.x, SUNW.y, SUNW.z, DIVE * 1.05, { raw: true, done: () => EMBED ? handOver(M / 5.4) : (location.href = '../universe/') });
+  flyTo(SUNW.x, SUNW.y, SUNW.z, DIVE * 1.05, { raw: true, done: () => EMBED ? handOver(M / 5.4, true) : (location.href = '../universe/') });
 }
 const zoomTo = (X, Y, f, viaWheel) => {
   if (f > 1 && selected && steerIn(X, Y, f, viaWheel)) return;
@@ -2174,6 +2174,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=b782147a" data-place="header" defer></script>
+<script src="../music/music.js?v=1d5971ee" data-place="header" defer></script>
 </body>
 </html>
