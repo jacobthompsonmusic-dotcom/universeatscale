@@ -26,8 +26,11 @@ vec2 cyl(vec3 ro, vec3 rd) {
 void main() {
   vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / (0.5 * uRes.y);
   vec3 ro, rd;
-  if (uOrtho > 0.5) { rd = uFwd; ro = uCam + (uRight * p.x + uUp * p.y) * uHalfH - uFwd * 2.0e6; }
-  else { ro = uCam; rd = normalize(uFwd + (uRight * p.x + uUp * p.y) * uTanH); }
+  // uCam is where the rays start: a plane just in front of the galaxy, worked out on the page in double precision. Far-off cameras
+  // (millions of ly) would otherwise lose the precision of 32-bit floats and break the volume up into streaks.
+  // uHalfH: half the view's height at that plane, in ly (0 = rays all start at uCam, as in the Solar System view)
+  ro = uCam + (uRight * p.x + uUp * p.y) * uHalfH;
+  rd = uOrtho > 0.5 ? uFwd : normalize(uFwd + (uRight * p.x + uUp * p.y) * uTanH);
   vec2 s1 = slab(ro, rd), s2 = cyl(ro, rd);
   float t0 = max(max(s1.x, s2.x), 0.0), t1 = min(s1.y, s2.y);
   if (t1 <= t0) { gl_FragColor = vec4(0.0); return; }

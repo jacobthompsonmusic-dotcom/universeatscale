@@ -899,7 +899,7 @@ const MWV = { ready: false };
   const V3 = () => ({ value: new THREE.Vector3() });
   MWV.mat = new THREE.ShaderMaterial({
     uniforms: { uGal: { value: tex }, uCam: V3(), uRight: V3(), uUp: V3(), uFwd: V3(), uRes: { value: new THREE.Vector2(1, 1) }, uTanH: { value: TAN20 },
-      uOrtho: { value: 0 }, uHalfH: { value: 1 }, uExpo: { value: 1.35 }, uAlpha: { value: 1 }, uGam: { value: 1.8 } },
+      uOrtho: { value: 0 }, uHalfH: { value: 0 }, uExpo: { value: 1.35 }, uAlpha: { value: 1 }, uGam: { value: 1.8 } },
     vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }', fragmentShader: GALAXY_FS,
     blending: THREE.NoBlending, depthTest: false, depthWrite: false });
   // ray-marching every pixel is heavy, so the volume is drawn into a smaller picture, and only redrawn when the view changes

@@ -983,8 +983,12 @@ function drawGalaxy3D() {
     // from inside the disc the sky between the band is near-black: a deep black point, easing back to the softer curve as you
     // pull out to see the whole galaxy (it matches the Solar System view's curve at the hand-over)
     gl.uniform1f(U.uGam, 1.2 + 0.6 * (1 - sstep(Math.log(Math.max(Ht / view.s, 1)), Math.log(3000), Math.log(40000))));
-    if (PD === Infinity) { gl.uniform1f(U.uOrtho, 1); gl.uniform3f(U.uCam, view.x, view.y, view.z); gl.uniform1f(U.uHalfH, Ht / 2 / view.s); gl.uniform1f(U.uTanH, 0); }
-    else { gl.uniform1f(U.uOrtho, 0); gl.uniform3f(U.uCam, view.x + F[0] * PD, view.y + F[1] * PD, view.z + F[2] * PD); gl.uniform1f(U.uTanH, PT); gl.uniform1f(U.uHalfH, 1); }
+    // the rays start on a plane just in front of the galaxy (its bounding sphere is ~63,000 ly), computed here in double precision
+    const fw = [-F[0], -F[1], -F[2]], GB = 70000;
+    if (PD === Infinity) { const k = view.x * fw[0] + view.y * fw[1] + view.z * fw[2] + GB;
+      gl.uniform1f(U.uOrtho, 1); gl.uniform3f(U.uCam, view.x - fw[0] * k, view.y - fw[1] * k, view.z - fw[2] * k); gl.uniform1f(U.uHalfH, Ht / 2 / view.s); gl.uniform1f(U.uTanH, 0); }
+    else { const cx = view.x + F[0] * PD, cy = view.y + F[1] * PD, cz = view.z + F[2] * PD, T = Math.max(0, -(cx * fw[0] + cy * fw[1] + cz * fw[2]) - GB);
+      gl.uniform1f(U.uOrtho, 0); gl.uniform3f(U.uCam, cx + fw[0] * T, cy + fw[1] * T, cz + fw[2] * T); gl.uniform1f(U.uTanH, PT); gl.uniform1f(U.uHalfH, T * PT); }
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     GX.key = key;
     // drawn coarser to keep up with movement? once you stop, draw it again at full quality
