@@ -153,9 +153,9 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=ba283063"></script>
-<script src="../shared/clock.js?v=ba283063"></script>
-<script src="../shared/galaxy-volume.js?v=ba283063"></script>
+<script src="../shared/frame.js?v=b27f8406"></script>
+<script src="../shared/clock.js?v=b27f8406"></script>
+<script src="../shared/galaxy-volume.js?v=b27f8406"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1401,6 +1401,9 @@ function sunDive(X, Y, f) {
   setupView();
   const [sx, sy] = proj(SUNW.x, SUNW.y, SUNW.z), M = Math.min(Wd, Ht);
   if (sx < 0 || sx > Wd || sy < 0 || sy > Ht || (Math.hypot(sx - X, sy - Y) > 130 && !(selected && selected.type === 'sun'))) return false;
+  // only when you're heading for the Sun: not while zooming in on a neighbouring star or anything else picked or selected
+  if (selected && selected.type !== 'sun') return false;
+  const under = pick(X, Y); if (under && under.type !== 'sun') return false;
   const sNew = view.s * f, spanNew = M / sNew;
   if (spanNew <= DIVE) { handOver(Math.min(sNew, M / 3.4)); return true; }
   const k = Math.min(1, Math.log(spanNew / DIVE) / Math.log(60 / DIVE));
@@ -2069,7 +2072,7 @@ cv.addEventListener('dblclick', e => { if (performance.now() - tapFlyAt > 600) f
 function flyIn(X, Y) {
   const e = { clientX: X, clientY: Y };
   const o = pick(e.clientX, e.clientY);
-  if (o) { if (selected !== o) select(o); if (o.type === 'sun') diveToSun(); else flyTo(o.x, o.y, o.z || 0, spanFor(o)); return; }   // the Sun: all the way into the Solar System
+  if (o) { if (selected !== o) select(o); if (o.type === 'sun') diveToSun(); else if (o === GCO) flyTo(GCO.x, GCO.y, GCO.z, 1.4e-5, { raw: true }); else flyTo(o.x, o.y, o.z || 0, spanFor(o)); return; }   // the Sun: into the Solar System; Sgr A*: down to the black hole   // the Sun: all the way into the Solar System
   setupView(); const p = unproj(e.clientX, e.clientY), sp = viewSpan() / 2.5;   // empty space: a short glide in, toward the spot clicked
   flyTo(p.x + (view.x - p.x) / 2.5, p.y + (view.y - p.y) / 2.5, p.z + (view.z - p.z) / 2.5, sp, { dur: 900 });
 }
@@ -2174,6 +2177,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=ba283063" data-place="header" defer></script>
+<script src="../music/music.js?v=b27f8406" data-place="header" defer></script>
 </body>
 </html>
