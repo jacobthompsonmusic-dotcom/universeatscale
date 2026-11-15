@@ -1816,7 +1816,7 @@ function flyTo(x, y, z, span, o = {}) {
     const b0 = (w1 * w1 - w0 * w0 + RHO ** 4 * u1 * u1) / (2 * w0 * RHO * RHO * u1), b1 = (w1 * w1 - w0 * w0 - RHO ** 4 * u1 * u1) / (2 * w1 * RHO * RHO * u1);
     r0 = -Math.asinh(b0); S = (-Math.asinh(b1) - r0) / RHO;
   }
-  const dur = o.dur || Math.min(o.max || 12000, Math.max(2200, 1800 + 1400 * S));
+  const dur = o.dur || Math.min(o.max || 12500, Math.max(2200, 1800 + 1400 * S));   // never longer than 12.5 s
   anim = { vw: { c0, d, u1, w0, w1, S, r0, flat, M }, from: { ...view }, to: { x, y, z, s: s1, yaw: o.orient ? o.orient.yaw : view.yaw, tilt: o.orient ? o.orient.tilt : view.tilt },
     t0: performance.now(), dur, done: o.done };
   draw();
@@ -1832,17 +1832,28 @@ function orient(yaw, tilt, dur = 900) {
   anim = { from: { ...view }, to: { ...view, yaw, tilt }, t0: performance.now(), dur }; draw();
 }
 
+// Physical sizes (ly) of the named objects in the galaxy, from the literature, so a flight arrives with the object filling most of the screen
+const OBJ_SIZE = { 'Orion Nebula': 24, 'Carina Nebula': 230, 'Eagle Nebula': 70, 'Crab Nebula': 11, 'Omega Centauri': 150, 'Cassiopeia A': 10,
+  'Pleiades': 43, 'Lagoon Nebula': 110, 'Westerlund 1': 10, 'Rosette Nebula': 130, 'Double Cluster': 140, 'Hercules Cluster (M13)': 145, 'M4': 75,
+  'Ring Nebula': 2.6, 'Helix Nebula': 5.7, "Kepler's Supernova": 14, 'Cygnus X-1': 0 };
 function spanFor(o) {
   if (o.type === 'region' || o.type === 'void') return o.r * 2.6;
   if (o.mw) return 108000;
   if (o.type === 'quasar') return 6e9;
-  if (o.type === 'gcluster') return Math.max(o.diam * 4, 6e7);
-  if (o.gal) return Math.max(o.diam * 3.5, 40000);
+  if (o.type === 'gcluster') return Math.max(o.diam * 1.8, 6e7);
+  if (o.gal) {   // the galaxy, with any smaller galaxies circling it close by (Andromeda's M32 and M110, the LMC's SMC…)
+    let sep = 0;
+    for (const g of GALAXIES) if (g !== o && !g.mw && g.diam < o.diam) { const d = Math.hypot(g.x - o.x, g.y - o.y, g.z - o.z); if (d < Math.max(1.5 * o.diam, 100000)) sep = Math.max(sep, d); }
+    return Math.max(o.diam * 1.5, 1.6 * sep, 6000);
+  }
   if (o.type === 'sun') return 3200;
   if (o.name === 'Sagittarius A*') return 26000;
-  if (o.d < 60) return Math.max(o.d * 4, 40);
-  if (o.d < 1500) return Math.max(o.d * 2.6, 900);
-  return 15000;
+  const sz = OBJ_SIZE[o.name];
+  if (sz !== undefined) return Math.max(sz * 1.6, 8);
+  if (['nebula', 'remnant', 'pn'].includes(o.type)) return 40;
+  if (o.type === 'globular') return 240;
+  if (o.type === 'cluster') return 60;
+  return 8;   // a single star (or a star with planets, whose orbits are far too small to see at this scale): close up, with its nearest neighbours
 }
 
 const COLOUR = { O: 'blue', B: 'blue-white', A: 'white', F: 'yellow-white', G: 'yellow', K: 'orange', M: 'red' };
@@ -2059,7 +2070,7 @@ if (EMBED) {
   });
   parent.postMessage({ src: 'uas-mw', ready: true }, '*');
 }
-if (/[?&]debug=1/.test(location.search)) window.__mw = { GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, gcScale, drawGCNear, drawS2, drawBH, GC, get following() { return following; }, get ssReady() { return ssReady; } };
+if (/[?&]debug=1/.test(location.search)) window.__mw = { spanFor, GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, gcScale, drawGCNear, drawS2, drawBH, GC, get following() { return following; }, get ssReady() { return ssReady; } };
 
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
