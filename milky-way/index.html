@@ -1546,9 +1546,12 @@ const GCT = { yr: Y0, last: 0, on: false };
 function gcTick() { const now = performance.now(); if (GCT.on) GCT.yr += Math.min(0.25, (now - GCT.last) / 1000) * S2_RATE; else GCT.yr = yearNow(); GCT.last = now; }
 
 // the S2 orbit, drawn on the map
+// the map's scale and view span measured at Sgr A* itself: under the perspective lens the view-centre scale is only right at the
+// view centre, so from near the Sun (a 1 ly view) the centre, 27,000 ly off, must not be drawn as if you'd zoomed in on it
+function gcScale() { const [gx, gy, , f] = proj(GC.x, GC.y, GC.z); const S = isFinite(gx) && f > 0 ? view.s * f : 0; return [gx, gy, S, S > 0 ? Math.min(Wd, Ht) / S : Infinity]; }
 function drawS2() {
-  const span = viewSpan(); if (span > 0.6 || span < 2e-5) return 0;
-  const [gx, gy] = proj(GC.x, GC.y, GC.z); if (gx < -Wd || gx > 2 * Wd || gy < -Ht || gy > 2 * Ht) return 0;
+  const [gx, gy, , span] = gcScale(); if (span > 0.6 || span < 2e-5) return 0;
+  if (gx < -Wd || gx > 2 * Wd || gy < -Ht || gy > 2 * Ht) return 0;
   const a = Math.min(1, Math.log(0.6 / span) / Math.log(4)) * Math.min(1, Math.log(span / 2e-5) / Math.log(3));
   ctx.strokeStyle = `rgba(255,214,150,${0.5 * a})`; ctx.lineWidth = 1.2; ctx.setLineDash([]); ctx.beginPath();
   S2_PATH.forEach((p, k) => { const [X, Y] = proj(GC.x + p[0], GC.y + p[1], GC.z + p[2]); k ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }); ctx.stroke();
@@ -1649,9 +1652,9 @@ function nearLabel(txt, X, Y, a, sub) {
   if (sub) { ctx.font = '400 11px Inter, sans-serif'; ctx.fillStyle = `rgba(200,200,212,${0.8 * a})`; ctx.fillText(sub, X + 8, Y + 14); }
 }
 function drawGCNear() {
-  const span = viewSpan(); if (span > 500) return 0;
-  const [gx, gy] = proj(GC.x, GC.y, GC.z); if (!isFinite(gx) || gx < -3 * Wd || gx > 4 * Wd || gy < -3 * Ht || gy > 4 * Ht) return 0;
-  const P = p => proj(GC.x + p[0], GC.y + p[1], GC.z + p[2]), S = view.s;
+  const [gx, gy, S, span] = gcScale(); if (span > 500) return 0;
+  if (!isFinite(gx) || gx < -3 * Wd || gx > 4 * Wd || gy < -3 * Ht || gy > 4 * Ht) return 0;
+  const P = p => proj(GC.x + p[0], GC.y + p[1], GC.z + p[2]);
   let moving = 0, credit = 0;
   ctx.save();
   // nuclear star cluster: the ellipsoid's outline on screen, from its three axes
@@ -1754,7 +1757,7 @@ function bhInit() {
   bhGL = gl; bhProg = pr;
 }
 function drawBH() {
-  const [gx, gy] = proj(GC.x, GC.y, GC.z), pxRs = view.s * RS_LY, shadowPx = 2.6 * pxRs;
+  const [gx, gy, Sg] = gcScale(), pxRs = Sg * RS_LY, shadowPx = 2.6 * pxRs;
   const on = !bhFailed && shadowPx > 1.5 && gx > -40 * pxRs && gx < Wd + 40 * pxRs && gy > -40 * pxRs && gy < Ht + 40 * pxRs;
   if (!on) { if (bhCv.style.display !== 'none') { bhCv.style.display = 'none'; bhNote.style.display = 'none'; } return false; }
   if (!bhGL) { bhInit(); if (!bhGL) return false; }
@@ -1778,9 +1781,10 @@ function drawBH() {
 }
 // zooming in on Sgr A*: ease it to the middle of the screen on the way down, so you can follow it all the way to the event horizon
 function gcSteer(X, Y, f) {
-  if (f <= 1 || viewSpan() > 80) return false;
+  if (f <= 1) return false;
   setupView();
-  const [sx, sy] = proj(GC.x, GC.y, GC.z), M = Math.min(Wd, Ht);
+  const [sx, sy, , spG] = gcScale(); if (spG > 80) return false;
+  const M = Math.min(Wd, Ht);
   if (sx < 0 || sx > Wd || sy < 0 || sy > Ht || (Math.hypot(sx - X, sy - Y) > 150 && selected !== GC)) return false;
   const sNew = Math.min(M / 4e-6, view.s * f), spanNew = M / sNew, k = Math.max(0, Math.min(1, Math.log(spanNew / 4e-6) / Math.log(80 / 4e-6)));
   let ox = sx - Wd / 2, oy = sy - Ht / 2; const m = Math.hypot(ox, oy), cap = 0.5 * M * Math.pow(k, 1.5);
@@ -2052,7 +2056,7 @@ if (EMBED) {
   });
   parent.postMessage({ src: 'uas-mw', ready: true }, '*');
 }
-if (/[?&]debug=1/.test(location.search)) window.__mw = { GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, get following() { return following; }, get ssReady() { return ssReady; } };
+if (/[?&]debug=1/.test(location.search)) window.__mw = { GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, gcScale, drawGCNear, drawS2, drawBH, GC, get following() { return following; }, get ssReady() { return ssReady; } };
 
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
