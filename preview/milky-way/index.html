@@ -161,9 +161,9 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=eaa720eb"></script>
-<script src="../shared/clock.js?v=eaa720eb"></script>
-<script src="../shared/galaxy-volume.js?v=eaa720eb"></script>
+<script src="../shared/frame.js?v=e7ce340a"></script>
+<script src="../shared/clock.js?v=e7ce340a"></script>
+<script src="../shared/galaxy-volume.js?v=e7ce340a"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1699,6 +1699,7 @@ function acenUpdate(yr) {
   P.B = [S.x + (1 - q) * rb[0], S.y + (1 - q) * rb[1], S.z + (1 - q) * rb[2]];
   P.P = [S.x + rp[0], S.y + rp[1], S.z + rp[2]];
   ACEN.yr = yr;
+  if (typeof ACEN_A !== 'undefined') { ACEN_A.x = P.A[0]; ACEN_A.y = P.A[1]; ACEN_A.z = P.A[2]; }
   for (const k of ['B', 'P']) {   // the catalogue entries for Toliman and Proxima follow the model, so a flight or a card lands on the star
     const st = ACEN.ST[k], i = st.fi; if (i < 0) continue;
     fx[i] = P[k][0]; fy[i] = P[k][1]; fz[i] = P[k][2];
@@ -2414,6 +2415,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=eaa720eb" data-place="header" defer></script>
+<script src="../music/music.js?v=e7ce340a" data-place="header" defer></script>
 </body>
 </html>
