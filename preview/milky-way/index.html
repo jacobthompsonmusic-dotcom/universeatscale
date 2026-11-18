@@ -73,7 +73,7 @@
   #t1panel th, #acpanel th { text-align: left; font-weight: 400; color: var(--muted); font-size: 12.5px; padding: 0 4px 4px 0; }
   #t1panel td, #acpanel td { padding: 2px 4px 2px 0; } #t1panel tr.hz td, #acpanel tr.hz td { color: #b6e3c6; } #t1panel td:first-child, #acpanel td:first-child { font-family: "IM Fell English", Georgia, serif; font-size: 15px; }
   #t1panel p, #acpanel p { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.35; }
-  #acpanel td:first-child { font-size: 14px; white-space: nowrap; } #acpanel p.src { font-size: 11.5px; }
+  #acpanel { width: 350px; } #acpanel td { white-space: nowrap; } #acpanel td:first-child { font-size: 14px; } #acpanel p.src { font-size: 11.5px; } #acpanel.compact .more { display: none; } #acpanel table.more { margin-top: 8px; }
   #t1panel[hidden], #acpanel[hidden] { display: none; }
   #info { top: 16px; right: 84px; width: 330px; padding: 18px; display: none; max-height: calc(100vh - 32px); overflow-y: auto; }
   #info .close { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 8px;
@@ -161,9 +161,9 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=52b3671b"></script>
-<script src="../shared/clock.js?v=52b3671b"></script>
-<script src="../shared/galaxy-volume.js?v=52b3671b"></script>
+<script src="../shared/frame.js?v=4e8ca898"></script>
+<script src="../shared/clock.js?v=4e8ca898"></script>
+<script src="../shared/galaxy-volume.js?v=4e8ca898"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1209,7 +1209,7 @@ function drawField() {
   fieldPts = [];
   const span = viewSpan();
   if (!opts.stars || span > 14000) return;
-  const g = (span < 1500 ? 1 : Math.max(0, 1 - Math.log(span / 1500) / Math.log(9.3))) * (1 - 0.65 * SYSIN);   // dimmer inside another star system, as in ours
+  const g = (span < 1500 ? 1 : Math.max(0, 1 - Math.log(span / 1500) / Math.log(9.3))) * (1 - 0.72 * SYSIN);   // dimmer inside another star system, as in ours
   const s = view.s, stalks = opts.stalks && stalkFade() > 0 && span < 600;
   const zf = SUNW.z - view.z;
   const sAlpha = 0.16 * g * Math.min(1, (600 - span) / 200) * stalkFade(), near2 = (span * 0.6) ** 2, maxLen = Ht * 0.4;
@@ -1723,36 +1723,36 @@ function drawAcen() {
   const A = sstep(Rpx, 14, 70); ACEN.show = A; if (A <= 0) return 0;
   const Pz = ACEN.pos, yr = ACEN.yr, lab = opts.labels;
   const P = q => proj(q[0], q[1], q[2]);
+  // a closed curve through n+1 points; parts behind or right beside the camera are skipped rather than drawn as streaks
+  const curve = (fn, n) => { ctx.beginPath(); let on = false; for (let j = 0; j <= n; j++) { const [x, y] = P(fn(j / n)); if (!isFinite(x) || Math.abs(x - Wd / 2) > 20 * Wd || Math.abs(y - Ht / 2) > 20 * Ht) { on = false; continue; } on ? ctx.lineTo(x, y) : ctx.moveTo(x, y); on = true; } };
   ctx.save();
   const text = (s, x, y, a, col = '238,226,196', it = false) => { ctx.font = (it ? 'italic ' : '') + '15px IM Fell English, Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = `rgba(${col},${a})`; ctx.fillText(s, x, y); };
   // Proxima's long orbit around A and B (the same ellipse, through where Proxima is now)
-  {
-    ctx.strokeStyle = `rgba(255,160,110,${0.3 * A})`; ctx.lineWidth = 1; ctx.beginPath();
-    for (let k = 0; k <= 240; k++) { const q = ACEN.proxAtE(2 * Math.PI * k / 240), [x, y] = P([S.x + q[0], S.y + q[1], S.z + q[2]]); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
-    ctx.stroke();
+  const big = 1 - sstep(Rpx, 3 * M, 10 * M);   // once it's far bigger than the screen it passes behind the camera: let it go
+  if (big > 0) {
+    ctx.strokeStyle = `rgba(255,160,110,${0.3 * A * big})`; ctx.lineWidth = 1; ctx.beginPath();
+    curve(t => { const q = ACEN.proxAtE(2 * Math.PI * t); return [S.x + q[0], S.y + q[1], S.z + q[2]]; }, 240); ctx.stroke();
   }
   // A and B's orbits around their centre of mass
-  const ab = ACEN.AB.a / AU_PER_LY * view.s * f0, abA = sstep(ab, 6, 30);
+  const ab = ACEN.AB.a / AU_PER_LY * view.s * f0, abA = sstep(ab, 6, 30) * (1 - sstep(ab, 4 * M, 12 * M));
   if (abA > 0) {
     for (const [k, w] of [['A', -ACEN.qA], ['B', 1 - ACEN.qA]]) {
-      const c = ACEN.ST[k].col; ctx.strokeStyle = `rgba(${c},${0.35 * A * abA})`; ctx.beginPath();
-      for (let j = 0; j <= 180; j++) { const r = ACEN.relB(ACEN.AB.tp + ACEN.AB.P * j / 180), [x, y] = P([S.x + w * r[0], S.y + w * r[1], S.z + w * r[2]]); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
-      ctx.stroke();
+      const c = ACEN.ST[k].col; ctx.strokeStyle = `rgba(${c},${0.35 * A * abA})`;
+      curve(t => { const r = ACEN.relB(ACEN.AB.tp + ACEN.AB.P * t); return [S.x + w * r[0], S.y + w * r[1], S.z + w * r[2]]; }, 180); ctx.stroke();
     }
   }
   // habitable zones (faint green bands) and planets
-  const ring = (c, pl, r) => { ctx.beginPath(); for (let j = 0; j <= 96; j++) { const t = 2 * Math.PI * j / 96, q = [0, 1, 2].map(k => c[k] + r * (Math.cos(t) * pl.e1[k] + Math.sin(t) * pl.e2[k])), [x, y] = P(q); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } };
+  const ring = (c, pl, r) => { for (let j = 0; j <= 96; j++) { const t = 2 * Math.PI * j / 96, q = [0, 1, 2].map(k => c[k] + r * (Math.cos(t) * pl.e1[k] + Math.sin(t) * pl.e2[k])), [x, y] = P(q); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } };
   for (const k of ['A', 'B', 'P']) {
     const [r1, r2, pl] = ACEN.HZ[k], c = Pz[k], [cx, cy, , fc] = P(c); if (!isFinite(cx)) continue;
-    const px = r2 / AU_PER_LY * view.s * fc, ha = sstep(px, 10, 40) * A; if (ha <= 0) continue;
-    ctx.fillStyle = `rgba(120,220,150,${0.07 * ha})`; ring(c, pl, r2 / AU_PER_LY); ring(c, pl, r1 / AU_PER_LY); ctx.fill('evenodd');
+    const px = r2 / AU_PER_LY * view.s * fc, ha = sstep(px, 10, 40) * (1 - sstep(px, 3 * M, 8 * M)) * A; if (ha <= 0) continue;
+    ctx.fillStyle = `rgba(120,220,150,${0.07 * ha})`; ctx.beginPath(); ring(c, pl, r2 / AU_PER_LY); ring(c, pl, r1 / AU_PER_LY); ctx.fill('evenodd');
   }
   for (const p of ACEN.PL) {
     const c = Pz[p.star], [, , , fc] = P(c), rp = p.a / AU_PER_LY * view.s * fc; if (rp < 5) continue;
-    const pa = sstep(rp, 5, 26) * A;
+    const pa = sstep(rp, 5, 26) * (1 - sstep(rp, 4 * M, 12 * M)) * A; if (pa <= 0) continue;
     ctx.strokeStyle = p.hz ? `rgba(150,225,180,${0.4 * pa})` : `rgba(255,214,170,${0.28 * pa})`; ctx.lineWidth = 1; if (p.cand) ctx.setLineDash([3, 4]);
-    ctx.beginPath(); for (let j = 0; j <= 120; j++) { const q = acenPlanet(p, p.per * (j / 120 - p.ph)), [x, y] = P([c[0] + q[0], c[1] + q[1], c[2] + q[2]]); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
-    ctx.stroke(); ctx.setLineDash([]);
+    curve(t => { const q = acenPlanet(p, p.per * (t - p.ph)); return [c[0] + q[0], c[1] + q[1], c[2] + q[2]]; }, 120); ctx.stroke(); ctx.setLineDash([]);
     const q = acenPlanet(p, yr), [x, y] = P([c[0] + q[0], c[1] + q[1], c[2] + q[2]]), r = p.cand ? 3 : 2.4;
     ctx.fillStyle = p.hz ? `rgba(170,220,190,${pa})` : p.cand ? `rgba(230,205,160,${pa})` : `rgba(226,214,200,${pa})`;
     if (p.cand) { ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.stroke(); }
@@ -1770,7 +1770,7 @@ function drawAcen() {
     const o = k === 'A' ? ACEN_A : fieldObj(st.fi);
     if (!merged || k === 'P') { if (k === 'A') { ACEN_A.x = c[0]; ACEN_A.y = c[1]; ACEN_A.z = c[2]; } screenPts.push({ o, X: x, Y: y, dep: 0 }); }
     if (o === selected || o === hover) { ctx.strokeStyle = '#ffffffcc'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, Math.max(rs + 6, o === selected ? 13 : 10), 0, 7); ctx.stroke(); }
-    if (lab && A > 0.3) text(merged ? 'A and B' : k === 'P' ? 'Proxima' : k === 'A' ? 'A  Rigil Kentaurus' : 'B  Toliman', x + rs + 6, y + 5, 0.9 * A, col);
+    if (lab && A > 0.3) text(k === 'P' ? 'Proxima' : merged ? 'A and B' : k === 'A' ? 'A  Rigil Kentaurus' : 'B  Toliman', x + rs + 6, y + 5, 0.9 * A, col);
   }
   ctx.restore();
   return A;
@@ -1800,16 +1800,18 @@ function acenPanel(show, r) {
   if (show && !el.dataset.built) {
     const S = ACEN.ST, row = (n, a, b, c, d, cls = '') => `<tr class="${cls}"><td>${n}</td><td>${a}</td><td>${b}</td><td>${c}</td><td>${d}</td></tr>`;
     const pc = s => `<span style="color:${S[s].hex}">●</span> `;
-    el.innerHTML = '<h3>Alpha Centauri</h3><table><tr><th></th><th>type</th><th>mass</th><th>width</th><th>temp.</th></tr>' +
+    el.innerHTML = '<h3>Alpha Centauri</h3><table><tr><th>star</th><th>type</th><th>mass</th><th>width</th><th>temp.</th></tr>' +
       row(pc('A') + 'A', 'G2V', '1.08', '1.22', '5,790 K') + row(pc('B') + 'B', 'K1V', '0.91', '0.86', '5,260 K') + row(pc('P') + 'Proxima', 'M5.5V', '0.12', '0.15', '3,050 K') +
-      '</table><p>Mass and width compared with the Sun. A and B circle each other every 79.8 years, 11 to 35 AU apart (closest next in 2035); Proxima circles both every ~560,000 years and is near its farthest, 13,000 AU out.</p>' +
-      '<table><tr><th>planet</th><th>orbit</th><th>mass</th><th>temp.</th><th></th></tr>' +
-      ACEN.PL.map(p => row(p.cand ? 'A’s candidate' : 'Proxima ' + p.n, p.per < 1 ? (p.per * 365.25).toFixed(1) + ' d' : '~' + p.per + ' yr', p.m + '×', '~' + p.teq + ' K', p.cand ? 'unconfirmed' : '', p.hz ? 'hz' : '')).join('') +
-      '</table><p>Planet masses compared with Earth (minimum masses for Proxima’s); temperature for a bare surface. Green: habitable zone. <span id="ac-rate"></span></p>' +
-      '<p class="src">Orbits: A–B Akeson et al. 2021 (ALMA); Proxima from its measured motion (Kervella et al. 2017); planets Faria et al. 2022, candidate Beichman et al. 2025. The tilt and positions of the planets’ orbits are illustrative.</p>';
+      '</table><p class="more">Mass and width compared with the Sun. A and B circle each other every 79.8 years, 11 to 35 AU apart (next closest in 2035). Proxima circles both every ~560,000 years and is near its farthest, 13,000 AU out.</p>' +
+      '<table class="more"><tr><th>planet</th><th>orbit</th><th>mass</th><th>temp.</th><th></th></tr>' +
+      ACEN.PL.map(p => row(p.cand ? 'A?' : 'Proxima ' + p.n, p.per < 1 ? (p.per * 365.25).toFixed(1) + ' d' : '~' + p.per + ' yr', p.m + '×', '~' + p.teq + ' K', p.cand ? 'candidate' : '', p.hz ? 'hz' : '')).join('') +
+      '</table><p class="more">Planet masses compared with Earth (minimum masses for Proxima’s); temperature for a bare surface. Green: habitable zone.</p><p id="ac-rate"></p>' +
+      '<p class="src more">Orbits: A–B Akeson et al. 2021 (ALMA); Proxima from its measured motion (Kervella et al. 2017); planets Faria et al. 2022, candidate Beichman et al. 2025. The tilt and positions of the planets’ orbits are illustrative.</p>';
     el.dataset.built = 1;
   }
   if (show) { const t = document.getElementById('ac-rate'), s = r ? `Time here runs at ${r >= 1 ? r + ' years' : r >= 0.05 ? Math.round(r * 365.25) + ' days' : '1 day'} a second.` : ''; if (t.textContent !== s) t.textContent = s; }
+  const card = document.getElementById('info').style.display === 'block';   // with a card open, keep to the stars (the card sits above)
+  if (el.classList.contains('compact') !== card) el.classList.toggle('compact', card);
   if (el.hidden === !!show) el.hidden = !show;
 }
 function acenFacts(k) {
@@ -2412,6 +2414,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=52b3671b" data-place="header" defer></script>
+<script src="../music/music.js?v=4e8ca898" data-place="header" defer></script>
 </body>
 </html>
