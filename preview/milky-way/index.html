@@ -162,9 +162,9 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=8c12a890"></script>
-<script src="../shared/clock.js?v=8c12a890"></script>
-<script src="../shared/galaxy-volume.js?v=8c12a890"></script>
+<script src="../shared/frame.js?v=53f47a3d"></script>
+<script src="../shared/clock.js?v=53f47a3d"></script>
+<script src="../shared/galaxy-volume.js?v=53f47a3d"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -2035,7 +2035,7 @@ function qsoPanel(q, yps) {
   if (!q) { if (!el.hidden) el.hidden = true; return; }
   if (el.dataset.q !== q.name) {
     const au = q.Rs * AU_PER_LY * 2, row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
-    el.innerHTML = `<h3>${q.name}</h3><table>` +
+    el.innerHTML = `<h3>${q.name}</h3><table class="more">` +
       row('Black hole', `${q.Mtxt}<br><span class="src">${q.Msrc}</span>`) +
       row('Event horizon', `${au >= 100 ? Math.round(au / 10) * 10 : au.toFixed(0)} AU across`) +
       row('Accretion disc', `~${q.rd < 1 ? (q.rd * 365.25).toFixed(0) + ' light-days' : q.rd.toFixed(1) + ' ly'} wide (model) · ${Math.round(q.Tpk / 1000) * 1000 > 0 ? '~' + (Math.round(q.Tpk / 1000)).toLocaleString('en-CA') + ',000 K' : ''} at its hottest`) +
@@ -2456,7 +2456,7 @@ function select(o, fly) {
     else if (MULT[o.name]) facts.push(['Star system', MULT[o.name]]);
     facts.push(['From Sun', fmtLy(o.d)]);
     facts.push([o.gal ? 'From our centre' : 'From centre', fmtLy(gc)]);
-    if (o.name !== 'Sagittarius A*') facts.push(['Height', height(o.z)]);
+    if (o.name !== 'Sagittarius A*' && !o.qso && o.d < 1e8) facts.push(['Height', height(o.z)]);
     facts.push(['Direction', dirName(o.l)]);
     if (o.name !== 'Sagittarius A*') facts.push(['Galactic l / b', `${o.l.toFixed(1)}° / ${signed(o.b)}°`]);
     if (o.gal && o.diam && !o.noWidth) facts.push(['Width', fmtLy(o.diam)]);
@@ -2673,6 +2673,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=8c12a890" data-place="header" defer></script>
+<script src="../music/music.js?v=53f47a3d" data-place="header" defer></script>
 </body>
 </html>
