@@ -230,9 +230,9 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=fe2c3239"></script>
-<script src="../shared/clock.js?v=fe2c3239"></script>
-<script src="../shared/galaxy-volume.js?v=fe2c3239"></script>
+<script src="../shared/frame.js?v=eaa720eb"></script>
+<script src="../shared/clock.js?v=eaa720eb"></script>
+<script src="../shared/galaxy-volume.js?v=eaa720eb"></script>
 <script>
 (() => {
 'use strict';
@@ -888,8 +888,7 @@ const starMat = new THREE.ShaderMaterial({
 {
   const bin = atob(STARS_B64), n = bin.length / 16, bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   const dv = new DataView(bytes.buffer), pos = new Float32Array(n * 3), col = new Float32Array(n * 3), mag = new Float32Array(n), on = new Float32Array(n), v = new THREE.Vector3();
-  const BV = [[-0.4, 155, 176, 255], [0, 202, 215, 255], [0.4, 248, 247, 255], [0.65, 255, 244, 232], [0.9, 255, 222, 180], [1.2, 255, 204, 142], [1.6, 255, 172, 110], [2.2, 255, 140, 90]];
-  const bv = c => { if (c <= BV[0][0]) return BV[0].slice(1); for (let i = 1; i < BV.length; i++) if (c <= BV[i][0]) { const a = BV[i - 1], b = BV[i], t = (c - a[0]) / (b[0] - a[0]); return [1, 2, 3].map(k => a[k] + (b[k] - a[k]) * t); } return BV[BV.length - 1].slice(1); };
+  const bv = c => window.UAS_FRAME.starRGB(window.UAS_FRAME.bvToT(c));   // shared/frame.js: B−V → temperature → colour
   for (let i = 0; i < n; i++) {
     const o = i * 16; galToScene(dv.getFloat32(o, true), dv.getFloat32(o + 4, true), dv.getFloat32(o + 8, true), v);
     pos.set([v.x, v.y, v.z], i * 3); STARPOS.push(v.clone()); mag[i] = dv.getInt16(o + 12, true) / 100;
@@ -2106,6 +2105,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=fe2c3239" data-place="header" defer></script>
+<script src="../music/music.js?v=eaa720eb" data-place="header" defer></script>
 </body>
 </html>
