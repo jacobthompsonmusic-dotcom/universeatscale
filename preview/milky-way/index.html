@@ -67,15 +67,18 @@
   #results small { color: var(--muted); margin-left: auto; white-space: nowrap; }
   .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 
-  #t1panel, #acpanel, #qpanel { right: 84px; bottom: 16px; width: 330px; padding: 14px 16px; font-size: 13.5px; }
-  #t1panel h3, #acpanel h3, #qpanel h3 { margin: 0 0 8px; font-size: 16px; }
+  #t1panel, #acpanel, #qpanel, #ppanel { right: 84px; bottom: 16px; width: 330px; padding: 14px 16px; font-size: 13.5px; }
+  #t1panel h3, #acpanel h3, #qpanel h3, #ppanel h3 { margin: 0 0 8px; font-size: 16px; }
   #t1panel table, #acpanel table { width: 100%; border-collapse: collapse; font-family: "UAS Num", "IM Fell English", Georgia, serif; font-variant-numeric: tabular-nums; }
   #t1panel th, #acpanel th { text-align: left; font-weight: 400; color: var(--muted); font-size: 12.5px; padding: 0 4px 4px 0; }
   #t1panel td, #acpanel td { padding: 2px 4px 2px 0; } #t1panel tr.hz td, #acpanel tr.hz td { color: #b6e3c6; } #t1panel td:first-child, #acpanel td:first-child { font-family: "IM Fell English", Georgia, serif; font-size: 15px; }
-  #t1panel p, #acpanel p, #qpanel p { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+  #t1panel p, #acpanel p, #qpanel p, #ppanel p { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.35; }
   #acpanel { width: 350px; } #acpanel td { white-space: nowrap; } #acpanel td:first-child { font-size: 14px; } #acpanel p.src { font-size: 11.5px; } #acpanel.compact .more { display: none; } #acpanel table.more { margin-top: 8px; }
   #qpanel { width: 360px; } #qpanel table { width: 100%; border-collapse: collapse; } #qpanel td { padding: 3px 6px 3px 0; vertical-align: top; } #qpanel td:first-child { color: var(--muted); white-space: nowrap; font-size: 13px; } #qpanel td .src, #qpanel .src { font-size: 11.5px; } #qpanel.compact .more { display: none; }
-  #t1panel[hidden], #acpanel[hidden], #qpanel[hidden] { display: none; }
+  #ppanel { width: 370px; } #ppanel table { width: 100%; border-collapse: collapse; } #ppanel td { padding: 3px 6px 3px 0; vertical-align: top; } #ppanel td:first-child { color: var(--muted); white-space: nowrap; font-size: 13px; } #ppanel.compact .more { display: none; }
+  #psr-blip { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #e6f6ff; box-shadow: 0 0 10px #bfe8ff; vertical-align: middle; margin-left: 6px; }
+  #psr-listen { font: inherit; font-style: italic; color: #f3e7c6; background: rgba(255,230,170,0.08); border: 1px solid rgba(255,230,170,0.35); border-radius: 999px; padding: 5px 14px; cursor: pointer; } #psr-listen.on { background: rgba(255,226,122,0.25); }
+  #t1panel[hidden], #acpanel[hidden], #qpanel[hidden], #ppanel[hidden] { display: none; }
   #info { top: 16px; right: 84px; width: 330px; padding: 18px; display: none; max-height: calc(100vh - 32px); overflow-y: auto; }
   #info .close { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 8px;
     border: 0; background: none; color: var(--muted); font-size:18px; cursor: pointer; }
@@ -89,7 +92,7 @@
   #info dd.src { color: #a9b0c6; font-size:14px; }
   #info .blurb { margin: 0; color: #c9cee0; font-size:13.5px; }
   canvas#bh { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
-  #bhnote { position: fixed; left: 50%; bottom: 64px; transform: translateX(-50%); display: none; max-width: min(620px, calc(100% - 32px)); text-align: center;
+  #bhnote { position: fixed; left: 50%; bottom: 118px; transform: translateX(-50%); display: none; max-width: min(620px, calc(100% - 32px)); text-align: center;
     font: 400 13px/1.45 "IM Fell English", Georgia, serif; color: rgba(214,218,232,0.78); text-shadow: 0 1px 3px #000; pointer-events: none; }
   #bhnote b { color: #ffd9a0; font-weight: 600; }
   #gc { position: fixed; left: 0; top: 0; z-index: 4; display: none; padding: 3px 10px 3px 8px; border-radius: 999px; border: 1px solid rgba(201,182,255,0.45);
@@ -162,9 +165,9 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=53f47a3d"></script>
-<script src="../shared/clock.js?v=53f47a3d"></script>
-<script src="../shared/galaxy-volume.js?v=53f47a3d"></script>
+<script src="../shared/frame.js?v=29cc2147"></script>
+<script src="../shared/clock.js?v=29cc2147"></script>
+<script src="../shared/galaxy-volume.js?v=29cc2147"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -256,6 +259,7 @@ void main() {
 <div id="t1panel" class="panel" hidden></div>
 <div id="acpanel" class="panel" hidden></div>
 <div id="qpanel" class="panel" hidden></div>
+<div id="ppanel" class="panel" hidden></div>
 <div id="info" class="panel">
   <button class="close" aria-label="Close">×</button>
   <div class="chip"><span class="dot" id="info-dot"></span><span id="info-type"></span></div>
@@ -359,12 +363,13 @@ const TYPES = {
   dwarf:    { label: 'Dwarf galaxy',       color: '#8fa6e0' },
   gcluster: { label: 'Galaxy cluster',     color: '#d8c4ff' },
   quasar:   { label: 'Quasar',             color: '#7ff0ff' },
+  pulsar:   { label: 'Pulsar',             color: '#c8f4ff' },
   region:   { label: 'Large-scale structure', color: '#c9b6ff' },
   field:    { label: 'Star',               color: '#dfe6ff' },
   void:     { label: 'Cosmic void',        color: '#8b93ff' },
 };
 // measured distance (ly), galactic longitude & latitude (°), and how the distance was measured
-const POS = {"Alpha Centauri": [4.3652, 315.7398, -0.6856, "Barycentre: Kervella et al. 2017 (parallax 747.17 mas)"], "Barnard's Star": [5.96, 31.01, 14.06, "Gaia DR3 parallax"], "Wolf 359": [7.86, 244.06, 56.12, "Gaia DR3 parallax"], "Lalande 21185": [8.3, 185.12, 65.43, "Gaia DR3 parallax"], "Epsilon Eridani": [10.5, 195.84, -48.05, "Gaia DR3 parallax"], "Procyon": [11.46, 213.7, 13.02, "Hipparcos parallax"], "Altair": [16.73, 47.74, -8.91, "Hipparcos parallax"], "Fomalhaut": [25.1, 20.49, -64.91, "Hipparcos parallax"], "Pollux": [33.8, 192.23, 23.41, "Hipparcos parallax"], "Denebola": [35.9, 250.64, 70.8, "Hipparcos parallax"], "Arcturus": [36.7, 15.07, 69.11, "Hipparcos parallax"], "Porrima": [38.1, 297.83, 61.33, "Hipparcos parallax"], "55 Cancri": [41.1, 196.79, 37.7, "Gaia DR3 parallax"], "Capella": [42.8, 162.59, 4.57, "Hipparcos parallax"], "Rasalhague": [48.6, 35.89, 22.57, "Hipparcos parallax"], "Alderamin": [49.0, 101.0, 9.17, "Hipparcos parallax"], "51 Pegasi": [50.6, 90.06, -34.73, "Gaia DR3 parallax"], "Castor": [50.9, 187.44, 22.48, "Hipparcos parallax"], "Caph": [54.7, 117.53, -3.28, "Hipparcos parallax"], "Menkent": [58.8, 319.45, 24.08, "Hipparcos parallax"], "Aldebaran": [66.6, 180.97, -20.25, "Hipparcos parallax"], "Hamal": [65.8, 144.58, -36.21, "Hipparcos parallax"], "Alphecca": [75.0, 41.87, 53.77, "Hipparcos parallax"], "Regulus": [79.3, 226.43, 48.93, "Hipparcos parallax"], "Mizar": [85.8, 113.11, 61.58, "Hipparcos parallax"], "Gacrux": [88.6, 300.17, 5.65, "Hipparcos parallax"], "Algol": [89.9, 148.98, -14.9, "Hipparcos parallax"], "Alpheratz": [97.0, 111.73, -32.84, "Hipparcos parallax"], "Achernar": [139.4, 290.84, -58.79, "Hipparcos parallax"], "Eltanin": [154.3, 79.05, 29.22, "Hipparcos parallax"], "Alphard": [180.3, 241.49, 29.05, "Hipparcos parallax"], "Peacock": [178.8, 340.9, -35.19, "Hipparcos parallax"], "Mirach": [197.4, 127.11, -27.1, "Hipparcos parallax"], "Izar": [202.6, 39.38, 64.78, "Hipparcos parallax"], "Nunki": [227.8, 9.56, -12.44, "Hipparcos parallax"], "Schedar": [228.2, 121.42, -6.3, "Hipparcos parallax"], "Spica": [249.7, 316.11, 50.84, "Hipparcos parallax"], "Bellatrix": [252.4, 196.93, -15.95, "Hipparcos parallax"], "Mimosa": [278.5, 302.46, 3.18, "Hipparcos parallax"], "Mira": [299.0, 167.76, -57.98, "Hipparcos parallax"], "Canopus": [309.2, 261.21, -25.29, "Hipparcos parallax"], "Acrux": [322.0, 300.13, -0.36, "Hipparcos parallax"], "Almach": [393.0, 136.96, -18.56, "Hipparcos parallax"], "Rasalgethi": [359.6, 35.53, 27.82, "Hipparcos parallax"], "Hadar": [392.0, 311.77, 1.25, "Hipparcos parallax"], "Atria": [390.6, 321.54, -15.26, "Hipparcos parallax"], "Vega": [25.0, 67.45, 19.24, "Hipparcos parallax"], "Sirius": [8.6, 227.23, -8.89, "Hipparcos parallax"], "Deneb": [2615.8, 84.28, 2.0, "Spectroscopic modelling (Schiller & Przybilla 2008)"], "Betelgeuse": [547.9, 199.79, -8.96, "Asteroseismology (Joyce et al. 2020)"], "Antares": [553.7, 351.95, 15.06, "Hipparcos parallax"], "Rigel": [861.1, 209.24, -25.25, "Gaia DR2 parallax of Rigel B"], "Polaris": [446.5, 123.28, 26.46, "Gaia DR3 parallax of Polaris B"], "61 Cygni": [11.4, 82.32, -5.82, "Gaia DR3 parallax"], "Tau Ceti": [11.91, 173.1, -73.44, "Gaia DR3 parallax"], "Epsilon Indi": [11.87, 336.19, -48.04, "Gaia DR3 parallax"], "Beta Pictoris": [64.0, 258.36, -30.61, "Gaia DR3 parallax"], "Zeta Ophiuchi": [366.1, 6.28, 23.59, "Hipparcos parallax"], "Sagittarius A*": [26989.0, 359.94, -0.05, "S2 orbit (GRAVITY Collab. 2021)"], "TRAPPIST-1": [40.66, 69.71, -56.64, "Gaia DR3 parallax"], "Orion Nebula": [1272.0, 209.01, -19.38, "Gaia parallaxes of member stars"], "Carina Nebula": [7665.0, 287.69, -0.79, "Gaia EDR3 (Göppl & Preibisch 2022)"], "Eagle Nebula": [5577.0, 16.97, 0.8, "Gaia DR2 (Kuhn et al. 2019)"], "Crab Nebula": [6523.0, 184.56, -5.78, "Expansion parallax"], "Omega Centauri": [17710.0, 309.1, 14.97, "Gaia EDR3 (Baumgardt & Vasiliev 2021)"], "Cygnus X-1": [7241.0, 71.34, 3.07, "VLBA radio parallax (Miller-Jones 2021)"], "Cassiopeia A": [11089.0, 111.73, -2.13, "Expansion kinematics"], "Pleiades": [441.0, 166.64, -23.46, "Gaia DR2 cluster parallax"], "Lagoon Nebula": [4338.0, 5.96, -1.17, "Gaia DR2 cluster parallax"], "Westerlund 1": [13209.0, 339.55, -0.4, "Gaia EDR3 + eclipsing binary (Navarete 2022)"], "Rosette Nebula": [5055.0, 206.31, -2.07, "Gaia EDR3 cluster parallax"], "Double Cluster": [7502.0, 134.82, -3.67, "Gaia cluster parallax"], "Hercules Cluster (M13)": [24201.0, 59.01, 40.91, "Gaia EDR3 (Baumgardt & Vasiliev 2021)"], "M4": [6034.0, 350.97, 15.97, "Gaia EDR3 (Baumgardt & Vasiliev 2021)"], "Kepler's Supernova": [16634.0, 4.53, 6.82, "Shock-speed modelling"], "Tycho's Supernova": [8154.0, 120.08, 1.42, "Light-echo & shock studies"], "Vela Pulsar": [936.0, 263.55, -2.79, "VLBI radio parallax (Dodson 2003)"], "Ring Nebula": [2567.0, 63.17, 13.98, "Gaia DR3 parallax of central star"], "Cat's Eye Nebula": [3262.0, 96.47, 29.95, "Gaia parallax of central star"], "Helix Nebula": [652.0, 36.16, -57.12, "Gaia DR3 parallax of central star"], "Hyades": [155.0, 180.06, -22.34, "Gaia DR2 cluster parallax"], "Horsehead Nebula": [1375, 206.96, -16.77, "literature distance (Orion B cloud)"], "Trifid Nebula": [4100, 7.0, -0.25, "literature distance"], "North America Nebula": [2590, 85.67, -0.89, "Gaia (Kuhn et al. 2020, 795 pc)"], "Dumbbell Nebula": [1360, 60.84, -3.7, "literature distance"], "Butterfly Nebula": [3400, 349.51, 1.06, "literature distance"], "Owl Nebula": [2030, 148.49, 57.05, "literature distance"], "Heart Nebula": [7500, 134.73, 0.92, "literature distance"], "Christmas Tree Cluster": [2350, 202.93, 2.19, "Gaia cluster parallax (~720 pc)"], "Tarantula Nebula": [161000, 279.47, -31.67, "LMC distance (Pietrzyński et al. 2019)"], "Rho Ophiuchi Cloud": [450, 353.69, 17.68, "VLBA parallaxes (Ortiz-León et al. 2018, 137 pc)"]};
+const POS = {"Alpha Centauri": [4.3652, 315.7398, -0.6856, "Barycentre: Kervella et al. 2017 (parallax 747.17 mas)"], "Barnard's Star": [5.96, 31.01, 14.06, "Gaia DR3 parallax"], "Wolf 359": [7.86, 244.06, 56.12, "Gaia DR3 parallax"], "Lalande 21185": [8.3, 185.12, 65.43, "Gaia DR3 parallax"], "Epsilon Eridani": [10.5, 195.84, -48.05, "Gaia DR3 parallax"], "Procyon": [11.46, 213.7, 13.02, "Hipparcos parallax"], "Altair": [16.73, 47.74, -8.91, "Hipparcos parallax"], "Fomalhaut": [25.1, 20.49, -64.91, "Hipparcos parallax"], "Pollux": [33.8, 192.23, 23.41, "Hipparcos parallax"], "Denebola": [35.9, 250.64, 70.8, "Hipparcos parallax"], "Arcturus": [36.7, 15.07, 69.11, "Hipparcos parallax"], "Porrima": [38.1, 297.83, 61.33, "Hipparcos parallax"], "55 Cancri": [41.1, 196.79, 37.7, "Gaia DR3 parallax"], "Capella": [42.8, 162.59, 4.57, "Hipparcos parallax"], "Rasalhague": [48.6, 35.89, 22.57, "Hipparcos parallax"], "Alderamin": [49.0, 101.0, 9.17, "Hipparcos parallax"], "51 Pegasi": [50.6, 90.06, -34.73, "Gaia DR3 parallax"], "Castor": [50.9, 187.44, 22.48, "Hipparcos parallax"], "Caph": [54.7, 117.53, -3.28, "Hipparcos parallax"], "Menkent": [58.8, 319.45, 24.08, "Hipparcos parallax"], "Aldebaran": [66.6, 180.97, -20.25, "Hipparcos parallax"], "Hamal": [65.8, 144.58, -36.21, "Hipparcos parallax"], "Alphecca": [75.0, 41.87, 53.77, "Hipparcos parallax"], "Regulus": [79.3, 226.43, 48.93, "Hipparcos parallax"], "Mizar": [85.8, 113.11, 61.58, "Hipparcos parallax"], "Gacrux": [88.6, 300.17, 5.65, "Hipparcos parallax"], "Algol": [89.9, 148.98, -14.9, "Hipparcos parallax"], "Alpheratz": [97.0, 111.73, -32.84, "Hipparcos parallax"], "Achernar": [139.4, 290.84, -58.79, "Hipparcos parallax"], "Eltanin": [154.3, 79.05, 29.22, "Hipparcos parallax"], "Alphard": [180.3, 241.49, 29.05, "Hipparcos parallax"], "Peacock": [178.8, 340.9, -35.19, "Hipparcos parallax"], "Mirach": [197.4, 127.11, -27.1, "Hipparcos parallax"], "Izar": [202.6, 39.38, 64.78, "Hipparcos parallax"], "Nunki": [227.8, 9.56, -12.44, "Hipparcos parallax"], "Schedar": [228.2, 121.42, -6.3, "Hipparcos parallax"], "Spica": [249.7, 316.11, 50.84, "Hipparcos parallax"], "Bellatrix": [252.4, 196.93, -15.95, "Hipparcos parallax"], "Mimosa": [278.5, 302.46, 3.18, "Hipparcos parallax"], "Mira": [299.0, 167.76, -57.98, "Hipparcos parallax"], "Canopus": [309.2, 261.21, -25.29, "Hipparcos parallax"], "Acrux": [322.0, 300.13, -0.36, "Hipparcos parallax"], "Almach": [393.0, 136.96, -18.56, "Hipparcos parallax"], "Rasalgethi": [359.6, 35.53, 27.82, "Hipparcos parallax"], "Hadar": [392.0, 311.77, 1.25, "Hipparcos parallax"], "Atria": [390.6, 321.54, -15.26, "Hipparcos parallax"], "Vega": [25.0, 67.45, 19.24, "Hipparcos parallax"], "Sirius": [8.6, 227.23, -8.89, "Hipparcos parallax"], "Deneb": [2615.8, 84.28, 2.0, "Spectroscopic modelling (Schiller & Przybilla 2008)"], "Betelgeuse": [547.9, 199.79, -8.96, "Asteroseismology (Joyce et al. 2020)"], "Antares": [553.7, 351.95, 15.06, "Hipparcos parallax"], "Rigel": [861.1, 209.24, -25.25, "Gaia DR2 parallax of Rigel B"], "Polaris": [446.5, 123.28, 26.46, "Gaia DR3 parallax of Polaris B"], "61 Cygni": [11.4, 82.32, -5.82, "Gaia DR3 parallax"], "Tau Ceti": [11.91, 173.1, -73.44, "Gaia DR3 parallax"], "Epsilon Indi": [11.87, 336.19, -48.04, "Gaia DR3 parallax"], "Beta Pictoris": [64.0, 258.36, -30.61, "Gaia DR3 parallax"], "Zeta Ophiuchi": [366.1, 6.28, 23.59, "Hipparcos parallax"], "Sagittarius A*": [26989.0, 359.94, -0.05, "S2 orbit (GRAVITY Collab. 2021)"], "TRAPPIST-1": [40.66, 69.71, -56.64, "Gaia DR3 parallax"], "Orion Nebula": [1272.0, 209.01, -19.38, "Gaia parallaxes of member stars"], "Carina Nebula": [7665.0, 287.69, -0.79, "Gaia EDR3 (Göppl & Preibisch 2022)"], "Eagle Nebula": [5577.0, 16.97, 0.8, "Gaia DR2 (Kuhn et al. 2019)"], "Crab Nebula": [6523.0, 184.56, -5.78, "Expansion parallax"], "Omega Centauri": [17710.0, 309.1, 14.97, "Gaia EDR3 (Baumgardt & Vasiliev 2021)"], "Cygnus X-1": [7241.0, 71.34, 3.07, "VLBA radio parallax (Miller-Jones 2021)"], "Cassiopeia A": [11089.0, 111.73, -2.13, "Expansion kinematics"], "Pleiades": [441.0, 166.64, -23.46, "Gaia DR2 cluster parallax"], "Lagoon Nebula": [4338.0, 5.96, -1.17, "Gaia DR2 cluster parallax"], "Westerlund 1": [13209.0, 339.55, -0.4, "Gaia EDR3 + eclipsing binary (Navarete 2022)"], "Rosette Nebula": [5055.0, 206.31, -2.07, "Gaia EDR3 cluster parallax"], "Double Cluster": [7502.0, 134.82, -3.67, "Gaia cluster parallax"], "Hercules Cluster (M13)": [24201.0, 59.01, 40.91, "Gaia EDR3 (Baumgardt & Vasiliev 2021)"], "M4": [6034.0, 350.97, 15.97, "Gaia EDR3 (Baumgardt & Vasiliev 2021)"], "Kepler's Supernova": [16634.0, 4.53, 6.82, "Shock-speed modelling"], "Tycho's Supernova": [8154.0, 120.08, 1.42, "Light-echo & shock studies"], "Vela Supernova Remnant": [936.0, 263.55, -2.79, "VLBI radio parallax of its pulsar (Dodson 2003)"], "Vela Pulsar": [936.0, 263.552, -2.787, "VLBI radio parallax (Dodson et al. 2003)"], "Crab Pulsar": [6523.0, 184.557, -5.784, "Expansion parallax of the Crab Nebula"], "PSR B1919+21": [1000.0, 55.777, 3.501, "Estimated from radio dispersion (~300 pc; uncertain by a factor of a few)"], "PSR J0437-4715": [511.9, 253.394, -41.963, "Pulsar-timing parallax (Reardon et al. 2024)"], "Double Pulsar": [2398.0, 245.236, -4.505, "Pulsar-timing parallax, 1.36 mas (Kramer et al. 2021)"], "Ring Nebula": [2567.0, 63.17, 13.98, "Gaia DR3 parallax of central star"], "Cat's Eye Nebula": [3262.0, 96.47, 29.95, "Gaia parallax of central star"], "Helix Nebula": [652.0, 36.16, -57.12, "Gaia DR3 parallax of central star"], "Hyades": [155.0, 180.06, -22.34, "Gaia DR2 cluster parallax"], "Horsehead Nebula": [1375, 206.96, -16.77, "literature distance (Orion B cloud)"], "Trifid Nebula": [4100, 7.0, -0.25, "literature distance"], "North America Nebula": [2590, 85.67, -0.89, "Gaia (Kuhn et al. 2020, 795 pc)"], "Dumbbell Nebula": [1360, 60.84, -3.7, "literature distance"], "Butterfly Nebula": [3400, 349.51, 1.06, "literature distance"], "Owl Nebula": [2030, 148.49, 57.05, "literature distance"], "Heart Nebula": [7500, 134.73, 0.92, "literature distance"], "Christmas Tree Cluster": [2350, 202.93, 2.19, "Gaia cluster parallax (~720 pc)"], "Tarantula Nebula": [161000, 279.47, -31.67, "LMC distance (Pietrzyński et al. 2019)"], "Rho Ophiuchi Cloud": [450, 353.69, 17.68, "VLBA parallaxes (Ortiz-León et al. 2018, 137 pc)"]};
 const OBJ = [
   ['Sun', 'sun', 0, 0, 0, '—', 'Our star, about 27,000 light-years from the centre of the galaxy and about 68 light-years above the middle of its disc, sitting on the inner edge of the Orion Spur. It takes roughly 230 million years to go once around the galaxy, bobbing up and down through the disc as it goes.'],
   ['Sagittarius A*', 'bh', 26989, 0, 0, 'Sagittarius', 'A black hole about four million times the mass of the Sun, sitting at the exact centre of the galaxy. The Event Horizon Telescope photographed its shadow in 2022, and timing the star S2\'s orbit around it gives the most precise distance to the centre we have.', true],
@@ -384,7 +389,12 @@ const OBJ = [
   ['M4', 'globular', 7200, 351.0, 3, 'Scorpius', 'One of the closest globular clusters to us, sitting right next to Antares in the sky.'],
   ['Kepler\'s Supernova', 'remnant', 17000, 4.5, 3, 'Ophiuchus', 'The last supernova in our galaxy seen with the naked eye, in 1604.'],
   ['Tycho\'s Supernova', 'remnant', 8000, 120.1, 3, 'Cassiopeia', 'Exploded in 1572. Tycho Brahe\'s observations of it helped prove the heavens could change.'],
-  ['Vela Pulsar', 'remnant', 940, 263.6, 3, 'Vela', 'The spinning neutron star left by a supernova about 11,000 years ago. It turns roughly 11 times a second.'],
+  ['Vela Supernova Remnant', 'remnant', 940, 263.6, 3, 'Vela', 'The expanding wreckage of a star that exploded about 11,000 years ago, now 100 light-years across. The Vela Pulsar, its collapsed core, spins at its heart.'],
+  ['Crab Pulsar', 'pulsar', 6523, 184.557, -5.784, 'Taurus', 'The collapsed core of the star that exploded in 1054 AD: a ball about 24 km wide, heavier than the Sun, spinning 30 times a second. Its wind of particles lights up the whole Crab Nebula. Zoom in to watch its beams sweep round.'],
+  ['Vela Pulsar', 'pulsar', 936, 263.552, -2.787, 'Vela', 'A neutron star spinning 11 times a second, left by a supernova about 11,000 years ago, and the brightest steady source of gamma rays in the sky. Zoom in to watch its beams sweep round.'],
+  ['PSR B1919+21', 'pulsar', 1000, 55.777, 3.501, 'Vulpecula', 'The first pulsar ever found, spotted by Jocelyn Bell Burnell in 1967 as a bit of “scruff” on her chart recorder. Its pulses come every 1.337 seconds, so regular it was nicknamed LGM-1, for “little green men”. A plot of its pulses later became the cover of Joy Division’s Unknown Pleasures.'],
+  ['PSR J0437-4715', 'pulsar', 511.9, 253.394, -41.963, 'Pictor', 'The nearest and brightest millisecond pulsar: an old neutron star spun up to 174 turns a second by feeding off its companion, now a cool white dwarf it circles every 5.7 days. NASA’s NICER telescope measured its width, about 23 km.'],
+  ['Double Pulsar', 'pulsar', 2398, 245.236, -4.505, 'Puppis', 'The only known pair of pulsars circling each other: two neutron stars closer together than the width of the Sun, going round every 2 hours 27 minutes. Timing them has tested Einstein’s general relativity to about one part in ten thousand.'],
   ['Deneb', 'star', 2600, 84.3, 3, 'Cygnus', 'One of the most luminous stars visible to the eye, tens of thousands of times brighter than the Sun. Top corner of the Summer Triangle. It is so far away that its parallax is barely measurable, so its distance comes from modelling its light instead.'],
   ['Betelgeuse', 'star', 550, 199.8, 3, 'Orion', 'The red supergiant at Orion\'s shoulder. It will go supernova sometime in the next 100,000 years or so, and dimmed dramatically in 2019–20.'],
   ['Antares', 'star', 550, 351.9, 3, 'Scorpius', 'The red supergiant heart of Scorpius — roughly 700 times wider than the Sun.'],
@@ -871,6 +881,7 @@ const setupView = () => {
   CY = Math.cos(view.yaw); SY = Math.sin(view.yaw); CT = Math.cos(view.tilt); ST = Math.sin(view.tilt);
   const span = Math.min(Wd, Ht) / view.s, dGC = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z);
   PT = TAN20 * (1 - sstep(Math.log(span), Math.log(25000), Math.log(400000))) * sstep(Math.log(Math.max(dGC, 0.2 * span, 1e-9)), Math.log(30), Math.log(600));   // flattens gradually as you close in on Sgr A*
+  if (typeof PSR !== 'undefined' && PSR) for (const p of PSR.list) { const dp = Math.hypot(view.x - p.x, view.y - p.y, view.z - p.z); if (dp < 1e-3) PT *= sstep(Math.log(Math.max(dp, 0.2 * span, 1e-14)), Math.log(p.zone * 2), Math.log(p.zone * 20)); }   // and near a pulsar
   if (typeof QSO !== 'undefined' && QSO) for (const q of QSO.list) { const dq = Math.hypot(view.x - q.x, view.y - q.y, view.z - q.z); if (dq < 1e4 * q.Rs) PT *= sstep(Math.log(Math.max(dq, 0.2 * span, 1e-12)), Math.log(300 * q.Rs), Math.log(3000 * q.Rs)); }   // and on a quasar's black hole (the ray tracer is drawn flat)
   PD = PT > 1e-4 ? (Ht / 2 / view.s) / PT : Infinity;
 };
@@ -885,6 +896,8 @@ const farOut = () => view.s < fitScale() * 0.22;
 function zoomLimit(x, y, z) {
   let lim = Math.min(6, 1.5 * Math.hypot(x - GCO.x, y - GCO.y, z - GCO.z));
   { const t = OBJ.find(q => q.name === 'TRAPPIST-1'); if (t) { const d = Math.hypot(x - t.x, y - t.y, z - t.z); if (d < 1) lim = Math.min(lim, Math.max(8e-8, d * 1.5)); } }   // down to TRAPPIST-1's planets
+  if (typeof PSR !== 'undefined' && PSR) for (const p of PSR.list) { let d = Math.hypot(x - p.x, y - p.y, z - p.z); if (d > 1) continue;   // down to a neutron star
+    if (p.bin) { const s1 = psrBinPos(p, CK.year()).s1; d = Math.min(d, Math.hypot(x - p.x - s1[0] * PSR.KM, y - p.y - s1[1] * PSR.KM, z - p.z - s1[2] * PSR.KM)); } lim = Math.min(lim, Math.max(8e-11, d * 1.2)); }
   if (typeof QSO !== 'undefined' && QSO) for (const q of QSO.list) { const d = Math.hypot(x - q.x, y - q.y, z - q.z); if (d < 1e6) lim = Math.min(lim, Math.max(2.2 * q.Rs, d * 1.2)); }   // all the way down a quasar
   if (ACEN && ACEN.pos.A) { const S = ACEN.sys; if (Math.hypot(x - S.x, y - S.y, z - S.z) < 1) { let dm = Infinity;   // down to Alpha Centauri's stars and planets
     for (const k of ['A', 'B', 'P']) { const q = ACEN.pos[k]; dm = Math.min(dm, Math.hypot(x - q[0], y - q[1], z - q[2])); } lim = Math.min(lim, Math.max(6e-8, dm * 1.5)); } }
@@ -894,8 +907,9 @@ function zoomLimit(x, y, z) {
 const maxScale = () => Math.min(Wd, Ht) / zoomLimit(view.x, view.y, view.z);
 const clampS = s => Math.max(minScale(), Math.min(maxScale(), s));
 // screen position [X, Y, depth toward the viewer, local magnification]; points behind the camera come back as NaN
+const VO = [0, 0, 0];   // a small, exact offset of the camera from view.x/y/z (see psrTrack)
 function proj(x, y, z) {
-  const dx = x - view.x, dy = y - view.y, dz = z - view.z;
+  const dx = x - view.x - VO[0], dy = y - view.y - VO[1], dz = z - view.z - VO[2];
   const ry = dx * SY + dy * CY, sx = dx * CY - dy * SY, sy = ry * CT - dz * ST, sz = ry * ST + dz * CT;
   if (PD === Infinity) return [Wd / 2 + sx * view.s, Ht / 2 + sy * view.s, sz, 1];
   const den = PD - sz; if (den < PD * 0.01) return [NaN, NaN, sz, 0];
@@ -951,7 +965,8 @@ function render(t) {
     view.yaw = f.yaw + angDiff(f.yaw, to.yaw) * e; view.tilt = clampTilt(f.tilt + angDiff(f.tilt, to.tilt) * e);
     if (k >= 1) { const done = anim.done; anim = null; if (done) done(); } else draw();
   }
-  if (ACEN) { acenUpdate(CK.year()); acenTrack(); }   // Alpha Centauri's stars move: ride along with a selected one
+  if (ACEN) { acenUpdate(CK.year()); acenTrack(); }
+  if (PSR) { PSR.yr = CK.year(); psrTrack(); }   // one date for the whole frame: a binary's stars move fast
   setupView();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = '#04050a'; ctx.fillRect(0, 0, Wd, Ht);
@@ -968,10 +983,11 @@ function render(t) {
   drawNebulae();
   // Inside another star system, as inside ours, the galaxy steps back: the sky goes darker, the nebulae, gas and other galaxies fade
   // and the background stars dim, so the system's own stars and planets take over
-  T1A = t1Vis(); ACEN.IN = acenIn(); qsoScan(); SYSIN = Math.max(T1A, ACEN.IN, QSO.IN); t1Panel(T1A > 0.5);
+  T1A = t1Vis(); ACEN.IN = acenIn(); qsoScan(); psrScan(); SYSIN = Math.max(T1A, ACEN.IN, QSO.IN, PSR.IN); t1Panel(T1A > 0.5);
   if (SYSIN > 0.002) { ctx.fillStyle = `rgba(0,0,0,${(0.82 * SYSIN).toFixed(3)})`; ctx.fillRect(0, 0, Wd, Ht); }
   drawField();
   const qbh = qsoDraw();
+  psrDraw();
   drawObjects();
   gcTick();
   const nb = drawGCNear(), s2a = drawS2(), bhOn = drawBH(), t1a = drawTrappist(), aca = drawAcen(); GCT.on = nb > 0 || s2a > 0;
@@ -979,7 +995,8 @@ function render(t) {
   if (!bhOn && !qOn && bhCv.style.display !== 'none') { bhCv.style.display = 'none'; bhNote.style.display = 'none'; }
   acenPanel(ACEN.IN > 0.5, acenClock());
   qsoPanel(QSO.active && QSO.IN > 0.5 ? QSO.active : null, qsoClock());
-  if ((s2a > 0 || nb > 0 || bhOn || t1a > 0 || aca > 0 || qOn || QSO.IN > 0.05) && !anim) draw();   // keep S2 and the flow moving
+  psrPanel(PSR.active && PSR.IN > 0.5 ? PSR.active : null, psrClock());
+  if ((s2a > 0 || nb > 0 || bhOn || t1a > 0 || aca > 0 || qOn || QSO.IN > 0.05 || PSR.list.some(p => p.vis > 0)) && !anim) draw();   // keep S2 and the flow moving
   updateScale();
   updateGC();
   const tb = document.getElementById('go3d'), lab = Math.abs(view.tilt) > 0.05 ? '3D' : 'TOP';
@@ -1293,7 +1310,7 @@ let screenPts = [];
 // and licence). Pictures load from Wikimedia Commons only when the object is near enough to fill part of the screen, and are
 // feathered at the edges and added as light, so their black sky drops away.
 // var: zoomLimit() may look before this line has run
-var NEB = {"Orion Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg/960px-Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg", "w": 10, "c": "NASA, ESA, M. Robberto (STScI/ESA) & the Hubble Orion Treasury team", "l": "public domain", "f": "Orion Nebula - Hubble 2006 mosaic 18000.jpg"}, "Carina Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Carina_Nebula_by_ESO.jpg/960px-Carina_Nebula_by_ESO.jpg", "w": 200, "c": "ESO", "l": "CC BY 4.0", "f": "Carina Nebula by ESO.jpg"}, "Eagle Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/ESO-The_Eagle_Nebula.jpg/960px-ESO-The_Eagle_Nebula.jpg", "w": 60, "c": "ESO", "l": "CC BY 4.0", "f": "ESO-The Eagle Nebula.jpg"}, "Lagoon Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/VST_images_the_Lagoon_Nebula.jpg/960px-VST_images_the_Lagoon_Nebula.jpg", "w": 110, "c": "ESO/VPHAS+ team", "l": "CC BY 4.0", "f": "VST images the Lagoon Nebula.jpg"}, "Rosette Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Rosette_nebula_s.jpg/960px-Rosette_nebula_s.jpg", "w": 185, "c": "Nick Wright (UCL)", "l": "public domain", "f": "Rosette nebula s.jpg"}, "Crab Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/960px-Crab_Nebula.jpg", "w": 13, "c": "NASA, ESA, J. Hester & A. Loll (Arizona State Univ.)", "l": "public domain", "f": "Crab Nebula.jpg"}, "Cassiopeia A": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Cassiopeia_A_Spitzer_Crop.jpg/960px-Cassiopeia_A_Spitzer_Crop.jpg", "w": 16, "c": "NASA/JPL-Caltech, O. Krause (Steward Observatory)", "l": "public domain", "f": "Cassiopeia A Spitzer Crop.jpg"}, "Kepler's Supernova": {"u": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Keplers_supernova.jpg", "w": 17.5, "c": "NASA/ESA/JHU/R. Sankrit & W. Blair", "l": "public domain", "f": "Keplers supernova.jpg"}, "Tycho's Supernova": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Tycho-supernova-xray.jpg/960px-Tycho-supernova-xray.jpg", "w": 24, "c": "NASA/CXC/Rutgers/J. Warren & J. Hughes", "l": "public domain", "f": "Tycho-supernova-xray.jpg"}, "Vela Pulsar": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Vela_supernova_-_VST_-_Eso2214a.jpg/960px-Vela_supernova_-_VST_-_Eso2214a.jpg", "w": 150, "c": "ESO/VPHAS+ team & M. Kornmesser", "l": "CC BY 4.0", "f": "Vela supernova - VST - Eso2214a.jpg"}, "Ring Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Hubble_image_of_the_Ring_Nebula_%28Messier_57%29.jpg/960px-Hubble_image_of_the_Ring_Nebula_%28Messier_57%29.jpg", "w": 1.9, "c": "NASA, ESA & C. Robert O'Dell (Vanderbilt Univ.)", "l": "public domain", "f": "Hubble image of the Ring Nebula (Messier 57).jpg"}, "Cat's Eye Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/NGC6543.jpg/960px-NGC6543.jpg", "w": 0.5, "c": "J.P. Harrington & K.J. Borkowski (Univ. of Maryland), NASA", "l": "public domain", "f": "NGC6543.jpg"}, "Helix Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/NGC7293_%282004%29.jpg/960px-NGC7293_%282004%29.jpg", "w": 5, "c": "NASA, ESA, C.R. O'Dell (Vanderbilt Univ.) et al.", "l": "public domain", "f": "NGC7293 (2004).jpg"}, "Pleiades": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Pleiades_large.jpg/960px-Pleiades_large.jpg", "w": 16, "c": "NASA, ESA, AURA/Caltech, Palomar Observatory", "l": "public domain", "f": "Pleiades large.jpg"}, "Omega Centauri": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Omega_Centauri_by_ESO.jpg/960px-Omega_Centauri_by_ESO.jpg", "w": 180, "c": "ESO", "l": "CC BY 4.0", "f": "Omega Centauri by ESO.jpg"}, "Hercules Cluster (M13)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Heart_of_M13_Hercules_Globular_Cluster.jpg/960px-Heart_of_M13_Hercules_Globular_Cluster.jpg", "w": 20, "c": "NASA, ESA & the Hubble Heritage Team (STScI/AURA)", "l": "public domain", "f": "Heart of M13 Hercules Globular Cluster.jpg"}, "M4": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Messier_4_HST.jpg/960px-Messier_4_HST.jpg", "w": 7, "c": "ESA/Hubble & NASA", "l": "CC BY 3.0", "f": "Messier 4 HST.jpg"}, "Double Cluster": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Double_cluster_t%C3%B5rva.jpg/960px-Double_cluster_t%C3%B5rva.jpg", "w": 260, "c": "Taavi Niittee", "l": "CC BY-SA 4.0", "f": "Double cluster tõrva.jpg"}, "Westerlund 1": {"u": "https://upload.wikimedia.org/wikipedia/commons/9/94/Westerlund_1.jpg", "w": 18, "c": "2MASS/UMass/IPAC-Caltech/NASA/NSF", "l": "public domain", "f": "Westerlund 1.jpg"}, "Hyades": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/The_Hyades_star_cluster_%28noirlab2018e%29.jpg/960px-The_Hyades_star_cluster_%28noirlab2018e%29.jpg", "w": 30, "c": "NOIRLab/NSF/AURA/Digitized Sky Survey 2", "l": "CC BY 4.0", "f": "The Hyades star cluster (noirlab2018e).jpg"}, "Large Magellanic Cloud": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/LMC_snapped_by_the_ESO_1-metre_Schmidt_telescope.jpg/960px-LMC_snapped_by_the_ESO_1-metre_Schmidt_telescope.jpg", "fill": 0.8, "c": "ESO", "l": "CC BY 4.0", "f": "LMC snapped by the ESO 1-metre Schmidt telescope.jpg"}, "Small Magellanic Cloud": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Small_Magellanic_Cloud.jpg/960px-Small_Magellanic_Cloud.jpg", "fill": 0.45, "c": "Martin Bernardi", "l": "CC BY-SA 4.0", "f": "Small Magellanic Cloud.jpg"}, "Andromeda Galaxy (M31)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Andromeda_Galaxy_%28with_h-alpha%29.jpg/960px-Andromeda_Galaxy_%28with_h-alpha%29.jpg", "fill": 0.9, "c": "Adam Evans", "l": "CC BY 2.0", "f": "Andromeda Galaxy (with h-alpha).jpg"}, "Triangulum Galaxy (M33)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/VST_snaps_a_very_detailed_view_of_the_Triangulum_Galaxy.jpg/960px-VST_snaps_a_very_detailed_view_of_the_Triangulum_Galaxy.jpg", "fill": 0.6, "c": "ESO", "l": "CC BY 4.0", "f": "VST snaps a very detailed view of the Triangulum Galaxy.jpg"}, "IC 1613": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Dwarf_galaxy_IC_1613.jpg/960px-Dwarf_galaxy_IC_1613.jpg", "fill": 0.6, "c": "ESO", "l": "CC BY 4.0", "f": "Dwarf galaxy IC 1613.jpg"}, "WLM": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Wolf-Lundmark-Melotte_-_Noao-wlm.jpg/960px-Wolf-Lundmark-Melotte_-_Noao-wlm.jpg", "fill": 0.3, "c": "Local Group Survey Team / NOIRLab / NSF / AURA", "l": "CC BY 4.0", "f": "Wolf-Lundmark-Melotte - Noao-wlm.jpg"}, "Maffei 1": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Maffei_1_and_2_cropped.jpg/960px-Maffei_1_and_2_cropped.jpg", "fill": 0.25, "c": "NASA/JPL-Caltech/UCLA (WISE, infrared)", "l": "public domain", "f": "Maffei 1 and 2 cropped.jpg"}, "IC 342": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Spiral_Galaxy_IC_342_%28noao0703a%29.jpg/960px-Spiral_Galaxy_IC_342_%28noao0703a%29.jpg", "fill": 0.6, "c": "NOIRLab/NSF/AURA/T.A. Rector", "l": "CC BY 4.0", "f": "Spiral Galaxy IC 342 (noao0703a).jpg"}, "Sculptor Galaxy": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Sculptor_Galaxy%2C_NGC_253_%28noao-ngc-253%29.jpg/960px-Sculptor_Galaxy%2C_NGC_253_%28noao-ngc-253%29.jpg", "fill": 0.95, "c": "SSRO/PROMPT/CTIO/NOIRLab/NSF/AURA", "l": "CC BY 4.0", "f": "Sculptor Galaxy, NGC 253 (noao-ngc-253).jpg"}, "Cigar Galaxy (M82)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/M82_HST_ACS_2006-14-a-large_web.jpg/960px-M82_HST_ACS_2006-14-a-large_web.jpg", "fill": 0.8, "c": "NASA, ESA & the Hubble Heritage Team (STScI/AURA)", "l": "public domain", "f": "M82 HST ACS 2006-14-a-large web.jpg"}, "Centaurus A": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/ESO_Centaurus_A_LABOCA.jpg/960px-ESO_Centaurus_A_LABOCA.jpg", "fill": 0.6, "c": "ESO/WFI (optical); MPIfR/ESO/APEX (submm); NASA/CXC (X-ray)", "l": "CC BY 4.0", "f": "ESO Centaurus A LABOCA.jpg"}, "Southern Pinwheel (M83)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Messier83_-_Heic1403a.jpg/960px-Messier83_-_Heic1403a.jpg", "fill": 0.95, "c": "NASA, ESA & the Hubble Heritage Team", "l": "public domain", "f": "Messier83 - Heic1403a.jpg"}, "Pinwheel Galaxy (M101)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/M101_hires_STScI-PRC2006-10a.jpg/960px-M101_hires_STScI-PRC2006-10a.jpg", "fill": 0.9, "c": "ESA/Hubble & NASA", "l": "CC BY 4.0", "f": "M101 hires STScI-PRC2006-10a.jpg"}, "Whirlpool Galaxy (M51)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Messier51_sRGB.jpg/960px-Messier51_sRGB.jpg", "fill": 0.55, "c": "NASA & ESA", "l": "public domain", "f": "Messier51 sRGB.jpg"}, "Sombrero Galaxy (M104)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/M104_ngc4594_sombrero_galaxy_hi-res.jpg/960px-M104_ngc4594_sombrero_galaxy_hi-res.jpg", "fill": 0.75, "c": "NASA/ESA & the Hubble Heritage Team", "l": "public domain", "f": "M104 ngc4594 sombrero galaxy hi-res.jpg"}, "Leo Triplet": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Leo_triplet_t%C3%B5rva.jpg/960px-Leo_triplet_t%C3%B5rva.jpg", "fill": 0.9, "c": "Taavi Niittee", "l": "CC BY-SA 4.0", "f": "Leo triplet tõrva.jpg"}, "Horsehead Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Barnard_33.jpg/960px-Barnard_33.jpg", "w": 10, "c": "Ken Crawford", "l": "CC BY-SA 3.0", "f": "Barnard 33.jpg"}, "Trifid Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Messier_20_Nebulosa_Trifida_en_LRGB.jpg/960px-Messier_20_Nebulosa_Trifida_en_LRGB.jpg", "w": 50, "c": "Cappellettiariel", "l": "CC BY-SA 4.0", "f": "Messier 20 Nebulosa Trifida en LRGB.jpg"}, "North America Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Nord_america.jpg/960px-Nord_america.jpg", "w": 130, "c": "Luc Viatour", "l": "CC BY-SA 3.0", "f": "Nord america.jpg"}, "Dumbbell Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/M27%2C_NGC_6853%2C_Dumbbell_Nebula_%28noao-02184%29.jpg/960px-M27%2C_NGC_6853%2C_Dumbbell_Nebula_%28noao-02184%29.jpg", "w": 7, "c": "Bill Schoening, Nigel Sharp/NOIRLab/NSF/AURA", "l": "CC BY 4.0", "f": "M27, NGC 6853, Dumbbell Nebula (noao-02184).jpg"}, "Butterfly Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/NGC_6302_Hubble_2009.full.jpg/960px-NGC_6302_Hubble_2009.full.jpg", "w": 3, "c": "NASA, ESA & the Hubble SM4 ERO Team", "l": "public domain", "f": "NGC 6302 Hubble 2009.full.jpg"}, "Owl Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Owl_Nebula%2C_M97%2C_NGC_3587_%28noao0310a%29.jpg/960px-Owl_Nebula%2C_M97%2C_NGC_3587_%28noao0310a%29.jpg", "w": 4, "c": "Karen Kwitter (Williams College), Ron Downes (STScI), You-Hua Chu (Univ. of Illinois)/NOIRLab/NSF/AURA", "l": "CC BY 4.0", "f": "Owl Nebula, M97, NGC 3587 (noao0310a).jpg"}, "Heart Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Heart_Nebula_IC_1805_NGC_896.jpg/960px-Heart_Nebula_IC_1805_NGC_896.jpg", "w": 330, "c": "Hunter Wilson", "l": "CC BY 3.0", "f": "Heart Nebula IC 1805 NGC 896.jpg"}, "Christmas Tree Cluster": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/NGC_2264_Christmas_Tree_Nebula.jpg/960px-NGC_2264_Christmas_Tree_Nebula.jpg", "w": 45, "c": "Dylan O’Donnell", "l": "CC0", "f": "NGC 2264 Christmas Tree Nebula.jpg"}, "Tarantula Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/A_New_View_of_the_Tarantula_Nebula.jpg/960px-A_New_View_of_the_Tarantula_Nebula.jpg", "w": 1000, "c": "NASA, ESA, CSA, STScI (Webb)", "l": "public domain", "f": "A New View of the Tarantula Nebula.jpg"}, "Rho Ophiuchi Cloud": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Rho_Ophiuchi_imaged_with_a_61mm_refractor_at_the_Kchi_Waasa_Debaabing_Dome_of_the_Killarney_Provincial_Park_Observatory_Complex.jpg/960px-Rho_Ophiuchi_imaged_with_a_61mm_refractor_at_the_Kchi_Waasa_Debaabing_Dome_of_the_Killarney_Provincial_Park_Observatory_Complex.jpg", "w": 60, "c": "Bruce Waters", "l": "CC BY-SA 4.0", "f": "Rho Ophiuchi imaged with a 61mm refractor at the Kchi Waasa Debaabing Dome of the Killarney Provincial Park Observatory Complex.jpg"}};
+var NEB = {"Orion Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg/960px-Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg", "w": 10, "c": "NASA, ESA, M. Robberto (STScI/ESA) & the Hubble Orion Treasury team", "l": "public domain", "f": "Orion Nebula - Hubble 2006 mosaic 18000.jpg"}, "Carina Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Carina_Nebula_by_ESO.jpg/960px-Carina_Nebula_by_ESO.jpg", "w": 200, "c": "ESO", "l": "CC BY 4.0", "f": "Carina Nebula by ESO.jpg"}, "Eagle Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/ESO-The_Eagle_Nebula.jpg/960px-ESO-The_Eagle_Nebula.jpg", "w": 60, "c": "ESO", "l": "CC BY 4.0", "f": "ESO-The Eagle Nebula.jpg"}, "Lagoon Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/VST_images_the_Lagoon_Nebula.jpg/960px-VST_images_the_Lagoon_Nebula.jpg", "w": 110, "c": "ESO/VPHAS+ team", "l": "CC BY 4.0", "f": "VST images the Lagoon Nebula.jpg"}, "Rosette Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Rosette_nebula_s.jpg/960px-Rosette_nebula_s.jpg", "w": 185, "c": "Nick Wright (UCL)", "l": "public domain", "f": "Rosette nebula s.jpg"}, "Crab Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/960px-Crab_Nebula.jpg", "w": 13, "c": "NASA, ESA, J. Hester & A. Loll (Arizona State Univ.)", "l": "public domain", "f": "Crab Nebula.jpg"}, "Cassiopeia A": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Cassiopeia_A_Spitzer_Crop.jpg/960px-Cassiopeia_A_Spitzer_Crop.jpg", "w": 16, "c": "NASA/JPL-Caltech, O. Krause (Steward Observatory)", "l": "public domain", "f": "Cassiopeia A Spitzer Crop.jpg"}, "Kepler's Supernova": {"u": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Keplers_supernova.jpg", "w": 17.5, "c": "NASA/ESA/JHU/R. Sankrit & W. Blair", "l": "public domain", "f": "Keplers supernova.jpg"}, "Tycho's Supernova": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Tycho-supernova-xray.jpg/960px-Tycho-supernova-xray.jpg", "w": 24, "c": "NASA/CXC/Rutgers/J. Warren & J. Hughes", "l": "public domain", "f": "Tycho-supernova-xray.jpg"}, "Vela Supernova Remnant": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Vela_supernova_-_VST_-_Eso2214a.jpg/960px-Vela_supernova_-_VST_-_Eso2214a.jpg", "w": 150, "c": "ESO/VPHAS+ team & M. Kornmesser", "l": "CC BY 4.0", "f": "Vela supernova - VST - Eso2214a.jpg"}, "Ring Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Hubble_image_of_the_Ring_Nebula_%28Messier_57%29.jpg/960px-Hubble_image_of_the_Ring_Nebula_%28Messier_57%29.jpg", "w": 1.9, "c": "NASA, ESA & C. Robert O'Dell (Vanderbilt Univ.)", "l": "public domain", "f": "Hubble image of the Ring Nebula (Messier 57).jpg"}, "Cat's Eye Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/NGC6543.jpg/960px-NGC6543.jpg", "w": 0.5, "c": "J.P. Harrington & K.J. Borkowski (Univ. of Maryland), NASA", "l": "public domain", "f": "NGC6543.jpg"}, "Helix Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/NGC7293_%282004%29.jpg/960px-NGC7293_%282004%29.jpg", "w": 5, "c": "NASA, ESA, C.R. O'Dell (Vanderbilt Univ.) et al.", "l": "public domain", "f": "NGC7293 (2004).jpg"}, "Pleiades": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Pleiades_large.jpg/960px-Pleiades_large.jpg", "w": 16, "c": "NASA, ESA, AURA/Caltech, Palomar Observatory", "l": "public domain", "f": "Pleiades large.jpg"}, "Omega Centauri": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Omega_Centauri_by_ESO.jpg/960px-Omega_Centauri_by_ESO.jpg", "w": 180, "c": "ESO", "l": "CC BY 4.0", "f": "Omega Centauri by ESO.jpg"}, "Hercules Cluster (M13)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Heart_of_M13_Hercules_Globular_Cluster.jpg/960px-Heart_of_M13_Hercules_Globular_Cluster.jpg", "w": 20, "c": "NASA, ESA & the Hubble Heritage Team (STScI/AURA)", "l": "public domain", "f": "Heart of M13 Hercules Globular Cluster.jpg"}, "M4": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Messier_4_HST.jpg/960px-Messier_4_HST.jpg", "w": 7, "c": "ESA/Hubble & NASA", "l": "CC BY 3.0", "f": "Messier 4 HST.jpg"}, "Double Cluster": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Double_cluster_t%C3%B5rva.jpg/960px-Double_cluster_t%C3%B5rva.jpg", "w": 260, "c": "Taavi Niittee", "l": "CC BY-SA 4.0", "f": "Double cluster tõrva.jpg"}, "Westerlund 1": {"u": "https://upload.wikimedia.org/wikipedia/commons/9/94/Westerlund_1.jpg", "w": 18, "c": "2MASS/UMass/IPAC-Caltech/NASA/NSF", "l": "public domain", "f": "Westerlund 1.jpg"}, "Hyades": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/The_Hyades_star_cluster_%28noirlab2018e%29.jpg/960px-The_Hyades_star_cluster_%28noirlab2018e%29.jpg", "w": 30, "c": "NOIRLab/NSF/AURA/Digitized Sky Survey 2", "l": "CC BY 4.0", "f": "The Hyades star cluster (noirlab2018e).jpg"}, "Large Magellanic Cloud": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/LMC_snapped_by_the_ESO_1-metre_Schmidt_telescope.jpg/960px-LMC_snapped_by_the_ESO_1-metre_Schmidt_telescope.jpg", "fill": 0.8, "c": "ESO", "l": "CC BY 4.0", "f": "LMC snapped by the ESO 1-metre Schmidt telescope.jpg"}, "Small Magellanic Cloud": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Small_Magellanic_Cloud.jpg/960px-Small_Magellanic_Cloud.jpg", "fill": 0.45, "c": "Martin Bernardi", "l": "CC BY-SA 4.0", "f": "Small Magellanic Cloud.jpg"}, "Andromeda Galaxy (M31)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Andromeda_Galaxy_%28with_h-alpha%29.jpg/960px-Andromeda_Galaxy_%28with_h-alpha%29.jpg", "fill": 0.9, "c": "Adam Evans", "l": "CC BY 2.0", "f": "Andromeda Galaxy (with h-alpha).jpg"}, "Triangulum Galaxy (M33)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/VST_snaps_a_very_detailed_view_of_the_Triangulum_Galaxy.jpg/960px-VST_snaps_a_very_detailed_view_of_the_Triangulum_Galaxy.jpg", "fill": 0.6, "c": "ESO", "l": "CC BY 4.0", "f": "VST snaps a very detailed view of the Triangulum Galaxy.jpg"}, "IC 1613": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Dwarf_galaxy_IC_1613.jpg/960px-Dwarf_galaxy_IC_1613.jpg", "fill": 0.6, "c": "ESO", "l": "CC BY 4.0", "f": "Dwarf galaxy IC 1613.jpg"}, "WLM": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Wolf-Lundmark-Melotte_-_Noao-wlm.jpg/960px-Wolf-Lundmark-Melotte_-_Noao-wlm.jpg", "fill": 0.3, "c": "Local Group Survey Team / NOIRLab / NSF / AURA", "l": "CC BY 4.0", "f": "Wolf-Lundmark-Melotte - Noao-wlm.jpg"}, "Maffei 1": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Maffei_1_and_2_cropped.jpg/960px-Maffei_1_and_2_cropped.jpg", "fill": 0.25, "c": "NASA/JPL-Caltech/UCLA (WISE, infrared)", "l": "public domain", "f": "Maffei 1 and 2 cropped.jpg"}, "IC 342": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Spiral_Galaxy_IC_342_%28noao0703a%29.jpg/960px-Spiral_Galaxy_IC_342_%28noao0703a%29.jpg", "fill": 0.6, "c": "NOIRLab/NSF/AURA/T.A. Rector", "l": "CC BY 4.0", "f": "Spiral Galaxy IC 342 (noao0703a).jpg"}, "Sculptor Galaxy": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Sculptor_Galaxy%2C_NGC_253_%28noao-ngc-253%29.jpg/960px-Sculptor_Galaxy%2C_NGC_253_%28noao-ngc-253%29.jpg", "fill": 0.95, "c": "SSRO/PROMPT/CTIO/NOIRLab/NSF/AURA", "l": "CC BY 4.0", "f": "Sculptor Galaxy, NGC 253 (noao-ngc-253).jpg"}, "Cigar Galaxy (M82)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/M82_HST_ACS_2006-14-a-large_web.jpg/960px-M82_HST_ACS_2006-14-a-large_web.jpg", "fill": 0.8, "c": "NASA, ESA & the Hubble Heritage Team (STScI/AURA)", "l": "public domain", "f": "M82 HST ACS 2006-14-a-large web.jpg"}, "Centaurus A": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/ESO_Centaurus_A_LABOCA.jpg/960px-ESO_Centaurus_A_LABOCA.jpg", "fill": 0.6, "c": "ESO/WFI (optical); MPIfR/ESO/APEX (submm); NASA/CXC (X-ray)", "l": "CC BY 4.0", "f": "ESO Centaurus A LABOCA.jpg"}, "Southern Pinwheel (M83)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Messier83_-_Heic1403a.jpg/960px-Messier83_-_Heic1403a.jpg", "fill": 0.95, "c": "NASA, ESA & the Hubble Heritage Team", "l": "public domain", "f": "Messier83 - Heic1403a.jpg"}, "Pinwheel Galaxy (M101)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/M101_hires_STScI-PRC2006-10a.jpg/960px-M101_hires_STScI-PRC2006-10a.jpg", "fill": 0.9, "c": "ESA/Hubble & NASA", "l": "CC BY 4.0", "f": "M101 hires STScI-PRC2006-10a.jpg"}, "Whirlpool Galaxy (M51)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Messier51_sRGB.jpg/960px-Messier51_sRGB.jpg", "fill": 0.55, "c": "NASA & ESA", "l": "public domain", "f": "Messier51 sRGB.jpg"}, "Sombrero Galaxy (M104)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/M104_ngc4594_sombrero_galaxy_hi-res.jpg/960px-M104_ngc4594_sombrero_galaxy_hi-res.jpg", "fill": 0.75, "c": "NASA/ESA & the Hubble Heritage Team", "l": "public domain", "f": "M104 ngc4594 sombrero galaxy hi-res.jpg"}, "Leo Triplet": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Leo_triplet_t%C3%B5rva.jpg/960px-Leo_triplet_t%C3%B5rva.jpg", "fill": 0.9, "c": "Taavi Niittee", "l": "CC BY-SA 4.0", "f": "Leo triplet tõrva.jpg"}, "Horsehead Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Barnard_33.jpg/960px-Barnard_33.jpg", "w": 10, "c": "Ken Crawford", "l": "CC BY-SA 3.0", "f": "Barnard 33.jpg"}, "Trifid Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Messier_20_Nebulosa_Trifida_en_LRGB.jpg/960px-Messier_20_Nebulosa_Trifida_en_LRGB.jpg", "w": 50, "c": "Cappellettiariel", "l": "CC BY-SA 4.0", "f": "Messier 20 Nebulosa Trifida en LRGB.jpg"}, "North America Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Nord_america.jpg/960px-Nord_america.jpg", "w": 130, "c": "Luc Viatour", "l": "CC BY-SA 3.0", "f": "Nord america.jpg"}, "Dumbbell Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/M27%2C_NGC_6853%2C_Dumbbell_Nebula_%28noao-02184%29.jpg/960px-M27%2C_NGC_6853%2C_Dumbbell_Nebula_%28noao-02184%29.jpg", "w": 7, "c": "Bill Schoening, Nigel Sharp/NOIRLab/NSF/AURA", "l": "CC BY 4.0", "f": "M27, NGC 6853, Dumbbell Nebula (noao-02184).jpg"}, "Butterfly Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/NGC_6302_Hubble_2009.full.jpg/960px-NGC_6302_Hubble_2009.full.jpg", "w": 3, "c": "NASA, ESA & the Hubble SM4 ERO Team", "l": "public domain", "f": "NGC 6302 Hubble 2009.full.jpg"}, "Owl Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Owl_Nebula%2C_M97%2C_NGC_3587_%28noao0310a%29.jpg/960px-Owl_Nebula%2C_M97%2C_NGC_3587_%28noao0310a%29.jpg", "w": 4, "c": "Karen Kwitter (Williams College), Ron Downes (STScI), You-Hua Chu (Univ. of Illinois)/NOIRLab/NSF/AURA", "l": "CC BY 4.0", "f": "Owl Nebula, M97, NGC 3587 (noao0310a).jpg"}, "Heart Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Heart_Nebula_IC_1805_NGC_896.jpg/960px-Heart_Nebula_IC_1805_NGC_896.jpg", "w": 330, "c": "Hunter Wilson", "l": "CC BY 3.0", "f": "Heart Nebula IC 1805 NGC 896.jpg"}, "Christmas Tree Cluster": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/NGC_2264_Christmas_Tree_Nebula.jpg/960px-NGC_2264_Christmas_Tree_Nebula.jpg", "w": 45, "c": "Dylan O’Donnell", "l": "CC0", "f": "NGC 2264 Christmas Tree Nebula.jpg"}, "Tarantula Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/A_New_View_of_the_Tarantula_Nebula.jpg/960px-A_New_View_of_the_Tarantula_Nebula.jpg", "w": 1000, "c": "NASA, ESA, CSA, STScI (Webb)", "l": "public domain", "f": "A New View of the Tarantula Nebula.jpg"}, "Rho Ophiuchi Cloud": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Rho_Ophiuchi_imaged_with_a_61mm_refractor_at_the_Kchi_Waasa_Debaabing_Dome_of_the_Killarney_Provincial_Park_Observatory_Complex.jpg/960px-Rho_Ophiuchi_imaged_with_a_61mm_refractor_at_the_Kchi_Waasa_Debaabing_Dome_of_the_Killarney_Provincial_Park_Observatory_Complex.jpg", "w": 60, "c": "Bruce Waters", "l": "CC BY-SA 4.0", "f": "Rho Ophiuchi imaged with a 61mm refractor at the Kchi Waasa Debaabing Dome of the Killarney Provincial Park Observatory Complex.jpg"}};
 for (const g of GALAXIES) { const e = NEB[g.name]; if (e && e.fill) e.w = g.diam / e.fill; }   // galaxy pictures: width from the galaxy's measured width
 const NEBI = {};
 function nebImg(name) {
@@ -1330,6 +1347,7 @@ function drawObjects() {
     if (!o.gal && o.type !== 'sun' && o !== selected && o.d * view.s < 18) continue;   // too close to the Sun to separate at this zoom
     if (o === ACEN.sys && ACEN.show > 0.3) continue;   // its three stars are drawn in their own right
     if (o.qso && o.qso.vis > 0.3) continue;            // a quasar you can see the insides of
+    if (o.psr && o.psr.vis > 0.3) continue;            // a pulsar drawn in its own right
     const [X, Y, dep] = proj(o.x, o.y, o.z);
     if (!isFinite(X) || X < -40 || X > Wd + 40 || Y < -40 || Y > Ht + 40) continue;
     vis.push({ o, X, Y, dep });
@@ -1409,6 +1427,7 @@ function drawObjects() {
 function updateScale() {
   let ly = niceStep(130 / view.s), label = fmtLy(ly);
   if (130 / view.s < 0.03) { const au = niceStep(130 / view.s * AU_PER_LY); ly = au / AU_PER_LY; label = (au < 1 ? +au.toPrecision(2) : au.toLocaleString('en-CA')) + ' AU'; }
+  if (130 / view.s * FRM.LY_KM < 3e6) { const km = niceStep(130 / view.s * FRM.LY_KM); ly = km / FRM.LY_KM; label = (km < 1 ? +km.toPrecision(2) : km.toLocaleString('en-CA')) + ' km'; }   // neutron stars and their neighbourhoods
   document.getElementById('scale-bar').style.width = ly * view.s + 'px';
   document.getElementById('scale-label').textContent = label;
 }
@@ -1866,7 +1885,7 @@ function acenPanel(show, r) {
 // ===================================================================
 // a point at base + offset, projected without losing the offset to rounding (these objects sit billions of light-years out)
 function projO(b, o) {
-  const dx = (b.x - view.x) + o[0], dy = (b.y - view.y) + o[1], dz = (b.z - view.z) + o[2];
+  const dx = (b.x - view.x) + o[0] - VO[0], dy = (b.y - view.y) + o[1] - VO[1], dz = (b.z - view.z) + o[2] - VO[2];
   const ry = dx * SY + dy * CY, sx = dx * CY - dy * SY, sy = ry * CT - dz * ST, sz = ry * ST + dz * CT;
   if (PD === Infinity) return [Wd / 2 + sx * view.s, Ht / 2 + sy * view.s, sz, 1];
   const den = PD - sz; if (den < PD * 0.01) return [NaN, NaN, sz, 0];
@@ -2070,6 +2089,183 @@ function drawCross() {
   }
   if (opts.labels && sep > 120) { ctx.globalCompositeOperation = 'source-over'; ctx.font = 'italic 14px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(238,226,196,${0.75 * a})`; ctx.fillText('Einstein Cross — four images of one quasar 16 billion ly behind, as seen from Earth', X, Y + sep * 0.75 + 18); }
   ctx.restore();
+}
+// ===================================================================
+//  Pulsars: spinning neutron stars, down to the star itself
+//  Measured: position, distance, spin period; for the Crab and Vela, the direction of the spin axis (from the X-ray torus, Ng & Romani
+//  2004); for J0437−4715, mass, radius (NICER) and orbit (Reardon et al. 2024); for the Double Pulsar, the orbit (Kramer et al. 2021).
+//  Illustrated: the magnetic field (a plain dipole), the tilt of the magnetic axis (chosen so the beam sweeps Earth, as it must for us
+//  to see pulses), the beams' width, and the spin itself, slowed to about one turn in two seconds where the real one is a blur.
+// ===================================================================
+var PSR = (() => {
+  const KM = 1 / FRM.LY_KM, C_KM = 299792.458;
+  const list = [
+    { name: 'Crab Pulsar', ra: 83.63308, de: 22.0145, P: 0.0337, R: 12, M: 1.4, psi: 124.0, zeta: 63.0, alpha: 58, axisTxt: 'spin axis from its X-ray torus (Ng & Romani 2004)',
+      torus: { r: 1.344, txt: 'X-ray torus 2.7 ly across (Chandra)' } },
+    { name: 'Vela Pulsar', ra: 128.83588, de: -45.17636, P: 0.08933, R: 12, M: 1.4, psi: 130.6, zeta: 63.6, alpha: 72, axisTxt: 'spin axis from its X-ray torus (Ng & Romani 2004)',
+      torus: { r: 0.097, txt: 'X-ray rings 0.2 ly across (Chandra)' } },
+    { name: 'PSR B1919+21', ra: 290.43673, de: 21.88396, P: 1.3373, R: 12, M: 1.4, psi: 40, zeta: 60, alpha: 55, axisTxt: 'its spin axis direction is illustrative' },
+    { name: 'PSR J0437-4715', ra: 69.31625, de: -47.2525, P: 0.005757, R: 11.36, M: 1.418, psi: 0, zeta: 137.5, alpha: 40, axisTxt: 'spin axis taken square to its orbit (tilt 137.5°, Reardon et al. 2024); the orbit’s turn on the sky is illustrative',
+      bin: { Pb: 5.7410, e: 0, i: 137.5, m1: 1.418, m2: 0.224, R2: 16700, T2: 3950, name: 'white dwarf' } },
+    { name: 'Double Pulsar', ra: 114.46353, de: -30.66131, P: 0.022699, R: 12, M: 1.338, psi: 0, zeta: 89.35, alpha: 88, axisTxt: 'orbit seen almost exactly edge-on (89.35°, Kramer et al. 2021); its turn on the sky is illustrative',
+      bin: { Pb: 0.1022515593, e: 0.0878, i: 89.35, m1: 1.338, m2: 1.249, P2: 2.7735, R2: 12, name: 'pulsar B' } },
+  ];
+  for (const p of list) {
+    const o = OBJ.find(g => g.name === p.name); p.o = o; o.psr = p; Object.assign(p, { x: o.x, y: o.y, z: o.z });
+    p.lc = C_KM * p.P / (2 * Math.PI);                         // light-cylinder radius, km: where the field would have to spin at light speed
+    p.Pvis = p.P >= 1 ? p.P : 2;                               // shown turn time, s
+    const a = p.ra * DEG, d = p.de * DEG;
+    const away = eqToGal([Math.cos(d) * Math.cos(a), Math.cos(d) * Math.sin(a), Math.sin(d)]), east = eqToGal([-Math.sin(a), Math.cos(a), 0]),
+      north = eqToGal([-Math.sin(d) * Math.cos(a), -Math.sin(d) * Math.sin(a), Math.cos(d)]);
+    const sky = pa => [0, 1, 2].map(k => Math.cos(pa * DEG) * north[k] + Math.sin(pa * DEG) * east[k]);
+    const z = p.zeta * DEG, sd = sky(p.psi);
+    const s = norm3([0, 1, 2].map(k => -Math.cos(z) * away[k] + Math.sin(z) * sd[k]));   // spin axis; ζ is its angle from the direction to Earth
+    const u1 = norm3(cross3(s, away)), u2 = cross3(s, u1);
+    p.w = { s: galDirToWorld(s), u1: galDirToWorld(u1), u2: galDirToWorld(u2), earth: galDirToWorld(away.map(v => -v)) };
+    // binaries: the orbit lies square to the spin axis
+    if (p.bin) { const b = p.bin, Mt = b.m1 + b.m2; b.a = Math.cbrt(Mt * Math.pow(b.Pb / 365.25, 2)) * 149597870.7; b.a1 = b.a * b.m2 / Mt; b.a2 = b.a * b.m1 / Mt; b.lc2 = b.P2 ? C_KM * b.P2 / (2 * Math.PI) : 0; }
+    p.zone = (p.bin ? p.bin.a * 2.5 : p.lc * 4) * KM;          // the region the zoom-in view is about, ly
+  }
+  return { list, by: Object.fromEntries(list.map(p => [p.name, p])), KM, IN: 0, active: null, audio: null };
+})();
+// the magnetic axis at wall-clock time t (s): tilted by α from the spin axis, turning with the star
+function psrMag(p, t, w = p.w, alpha = p.alpha, Pv = p.Pvis, ph0 = 0) {
+  const f = 2 * Math.PI * (t / Pv) + ph0, c = Math.cos(alpha * DEG), sn = Math.sin(alpha * DEG);
+  return [0, 1, 2].map(k => c * w.s[k] + sn * (Math.cos(f) * w.u1[k] + Math.sin(f) * w.u2[k]));
+}
+// is a beam pointing at Earth right now? (the pulse we'd record)
+function psrPulse(p, t) { const m = psrMag(p, t), c = dot3(m, p.w.earth); return Math.max(0, (Math.abs(c) - Math.cos(14 * DEG)) / (1 - Math.cos(14 * DEG))); }
+function psrIn(p) {
+  const d = Math.hypot(view.x - p.x, view.y - p.y, view.z - p.z), R = p.zone, span = viewSpan();
+  return (1 - sstep(d, 2 * R, 5 * R)) * (1 - sstep(Math.log(span), Math.log(4 * R), Math.log(14 * R)));
+}
+function psrBinPos(p, yr) {   // the two stars' offsets from the centre of mass, km (orbit square to the spin axis)
+  const b = p.bin, M = 2 * Math.PI * (((yr * 365.25 / b.Pb) % 1 + 1) % 1); let E = M + b.e * Math.sin(M); for (let k = 0; k < 8; k++) E -= (E - b.e * Math.sin(E) - M) / (1 - b.e * Math.cos(E));
+  const cx = Math.cos(E) - b.e, cy = Math.sqrt(1 - b.e * b.e) * Math.sin(E), w = p.w;
+  const dir = [0, 1, 2].map(k => cx * w.u1[k] + cy * w.u2[k]);
+  return { s1: dir.map(v => -v * b.a1), s2: dir.map(v => v * b.a2) };
+}
+function drawPulsar(p, yr, t) {
+  const [X, Y, , f] = projO(p, [0, 0, 0]); if (!isFinite(X)) return 0;
+  const S = view.s * f, K = PSR.KM, big = Math.max(Wd, Ht), w = p.w, reach = p.bin ? p.bin.a * K * S : 0;
+  if (X < -2 * big - reach || X > 3 * big + reach || Y < -2 * big - reach || Y > 3 * big + reach) return 0;
+  const P = o => projO(p, o), km = v => v.map(c => c * K);
+  let shown = 0;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const glow = (x, y, r, col, a) => { if (a <= 0.003 || r < 0.5 || !isFinite(x)) return; const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(0.35, `rgba(${col},${a * 0.3})`); g.addColorStop(1, `rgba(${col},0)`); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); };
+  const pulse = psrPulse(p, t);
+  // from afar: a point that flashes with each pulse (slowed), as a radio telescope records it
+  const lcPx = p.lc * K * S, zonePx = p.zone * S, farA = 1 - sstep(zonePx, 4, 30);
+  if (farA > 0 && viewSpan() < 3000) { glow(X, Y, 6 + 10 * pulse, '205,240,255', farA * (0.25 + 0.75 * pulse)); shown = Math.max(shown, 0.01); }
+  // the wind nebula's X-ray torus and jets (Crab, Vela), lying in the spin equator
+  if (p.torus) { const r = p.torus.r * S, a = sstep(r, 8, 40) * (1 - sstep(r, 3 * big, 10 * big));
+    if (a > 0) { for (const [rr, al] of [[1, 0.14], [0.85, 0.07], [1.15, 0.06]]) { ctx.beginPath(); for (let j = 0; j <= 96; j++) { const ph = 2 * Math.PI * j / 96, [x, y] = P([0, 1, 2].map(k => p.torus.r * rr * (Math.cos(ph) * w.u1[k] + Math.sin(ph) * w.u2[k]))); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+        ctx.strokeStyle = `rgba(175,205,255,${al * a})`; ctx.lineWidth = Math.max(1.5, 0.09 * r); ctx.stroke(); }
+      for (const sg of [1, -1]) for (let i = 1; i <= 12; i++) { const L = p.torus.r * 0.9 * i / 12, [x, y] = P(w.s.map(v => v * L * sg)); glow(x, y, Math.max(2, 0.07 * r), '190,215,255', (sg > 0 ? 0.25 : 0.12) * a * (1 - i / 14)); }
+      shown = Math.max(shown, a); } }
+  // binaries: the orbit and the companion
+  let pos1 = [0, 0, 0];
+  if (p.bin) { const b = p.bin, oPx = b.a * K * S, a = sstep(oPx, 6, 30) * (1 - sstep(oPx, 6 * big, 30 * big));
+    const bp = psrBinPos(p, yr); pos1 = bp.s1;
+    if (a > 0) {
+      for (const [rad, col] of [[b.a1, '200,235,255'], [b.a2, b.T2 ? FRM.starRGB(b.T2).join(',') : '200,235,255']]) {
+        ctx.beginPath(); for (let j = 0; j <= 120; j++) { const E = 2 * Math.PI * j / 120, q = [Math.cos(E) - b.e, Math.sqrt(1 - b.e * b.e) * Math.sin(E)]; const sgn = rad === b.a1 ? -1 : 1, [x, y] = P(km([0, 1, 2].map(k => sgn * rad * (q[0] * w.u1[k] + q[1] * w.u2[k])))); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+        ctx.strokeStyle = `rgba(${col},${0.3 * a})`; ctx.lineWidth = 1; ctx.stroke(); }
+      const [x2, y2] = P(km(bp.s2)), r2 = Math.max(2.5, b.R2 * K * S);
+      if (b.T2) { const c = FRM.starRGB(b.T2).join(','); glow(x2, y2, r2 * 3 + 6, c, 0.5 * a); ctx.fillStyle = `rgba(${c},${a})`; ctx.beginPath(); ctx.arc(x2, y2, r2, 0, 7); ctx.fill(); }
+      else { glow(x2, y2, 8, '205,240,255', 0.7 * a); }
+      if (opts.labels && oPx > 40) { ctx.globalCompositeOperation = 'source-over'; ctx.font = 'italic 14px "IM Fell English", Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = `rgba(238,226,196,${0.8 * a})`; ctx.fillText(b.name, x2 + r2 + 6, y2 + 4); ctx.globalCompositeOperation = 'lighter'; }
+      shown = Math.max(shown, a);
+    }
+  }
+  // the neutron star, its field and beams (and for the Double Pulsar, B's too, once it's big enough)
+  const stars = [[pos1, p.P, p.alpha, p.Pvis, p.lc, 0]];
+  if (p.bin && p.bin.P2) { const bp = psrBinPos(p, yr); stars.push([bp.s2, p.bin.P2, 60, p.bin.P2, p.bin.lc2, 1.3]); }
+  for (const [c0, Ptrue, alpha, Pv, lc, ph0] of stars) {
+    const ns = p.R * K * S, lcp = lc * K * S, a = sstep(lcp, 10, 40);
+    if (p.bin && a < 1) { const [dx, dy] = P(km(c0)), da = sstep(p.bin.a * K * S, 6, 30) * (1 - a); glow(dx, dy, 7, '210,240,255', 0.8 * da); glow(dx, dy, 2.2, '255,255,255', da);
+      if (opts.labels && p.bin.a * K * S > 40 && ph0 === 0) { ctx.globalCompositeOperation = 'source-over'; ctx.font = 'italic 14px "IM Fell English", Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = `rgba(238,226,196,${0.8 * da})`; ctx.fillText(p.bin.P2 ? 'pulsar A' : 'pulsar', dx + 8, dy + 4); ctx.globalCompositeOperation = 'lighter'; } }
+    if (a <= 0) continue;
+    const at = v => P(km([0, 1, 2].map(k => c0[k] + v[k]))), m = psrMag(p, t, w, alpha, Pv, ph0);
+    const perp1 = norm3(cross3(m, Math.abs(dot3(m, w.u1)) > 0.9 ? w.u2 : w.u1)), perp2 = cross3(m, perp1);
+    // closed magnetic field lines (a dipole: r = L sin²θ), out to the light cylinder
+    ctx.lineWidth = 1;
+    for (const L of [0.25, 0.45, 0.7, 1.0]) for (let az = 0; az < 6; az++) {
+      const ca = Math.cos(az * Math.PI / 3), sa = Math.sin(az * Math.PI / 3); ctx.beginPath(); let on = false;
+      for (let j = 1; j < 60; j++) { const th = Math.PI * j / 60, r = L * lc * Math.sin(th) ** 2; if (r < p.R) { on = false; continue; }
+        const v = [0, 1, 2].map(k => r * (Math.cos(th) * m[k] + Math.sin(th) * (ca * perp1[k] + sa * perp2[k]))), [x, y] = at(v); if (!isFinite(x)) { on = false; continue; } on ? ctx.lineTo(x, y) : ctx.moveTo(x, y); on = true; }
+      ctx.strokeStyle = `rgba(120,200,255,${0.16 * a})`; ctx.stroke(); }
+    // the light cylinder, in the spin equator
+    ctx.setLineDash([4, 6]); ctx.beginPath(); for (let j = 0; j <= 96; j++) { const ph = 2 * Math.PI * j / 96, [x, y] = at([0, 1, 2].map(k => lc * (Math.cos(ph) * w.u1[k] + Math.sin(ph) * w.u2[k]))); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.strokeStyle = `rgba(200,190,255,${0.3 * a})`; ctx.stroke(); ctx.setLineDash([]);
+    // the two beams, from the magnetic poles
+    for (const sg of [1, -1]) { const ax = m.map(v => v * sg), L = 2.2 * lc, rho = 12 * DEG, [x0, y0] = at(ax.map(v => v * p.R)), rim = [];
+      for (let j = 0; j < 24; j++) { const ph = 2 * Math.PI * j / 24, d = [0, 1, 2].map(k => Math.cos(rho) * ax[k] + Math.sin(rho) * (Math.cos(ph) * perp1[k] + Math.sin(ph) * perp2[k])); rim.push(at(d.map(v => v * L))); }
+      if (!isFinite(x0)) continue;
+      const [xe, ye] = at(ax.map(v => v * L)), g = ctx.createLinearGradient(x0, y0, isFinite(xe) ? xe : x0, isFinite(ye) ? ye : y0); g.addColorStop(0, `rgba(215,200,255,${0.5 * a})`); g.addColorStop(1, 'rgba(215,200,255,0)');
+      ctx.fillStyle = g; for (let j = 0; j < 24; j++) { const r1 = rim[j], r2 = rim[(j + 1) % 24]; if (!isFinite(r1[0]) || !isFinite(r2[0])) continue; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(r1[0], r1[1]); ctx.lineTo(r2[0], r2[1]); ctx.closePath(); ctx.fill(); } }
+    // the star: about the size of a city, hot (a million degrees) and blue-white; its magnetic poles glow hottest
+    const [sx, sy] = at([0, 0, 0]), rs = Math.max(2, ns);
+    glow(sx, sy, rs * 4 + 6, '200,225,255', 0.6 * a);
+    ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = `rgba(214,230,255,${a})`; ctx.beginPath(); ctx.arc(sx, sy, rs, 0, 7); ctx.fill(); ctx.globalCompositeOperation = 'lighter';
+    if (ns > 6) for (const sg of [1, -1]) { const [hx, hy, hz] = at(m.map(v => v * p.R * sg)); glow(hx, hy, ns * 0.35, '255,255,255', 0.8 * a); }
+    shown = Math.max(shown, a);
+  }
+  ctx.restore();
+  return shown;
+}
+function psrScan() { let best = null, bin = 0; for (const p of PSR.list) { const i = psrIn(p); if (i > bin) { bin = i; best = p; } } PSR.IN = bin; PSR.active = bin > 0.3 ? best : null; }
+function psrDraw() { const yr = PSR.yr, t = performance.now() / 1000; for (const p of PSR.list) p.vis = drawPulsar(p, yr, t); }
+// a binary's orbit plays out in about twenty seconds while you're watching it
+function psrClock() {
+  const p = PSR.active, oPx = p && p.bin ? p.bin.a * PSR.KM * view.s : 0; if (!p || !p.bin || PSR.IN < 0.5 || oPx < 30) { CK.unboost('psr'); return null; }
+  const rate = oPx < 6 * Math.max(Wd, Ht) ? p.bin.Pb * 86400 / 20 : 1;   // the whole orbit in ~20 s; zoomed in on one star, real time
+  if (!CK.boosted || CK.rate !== rate) CK.boost(rate, 'psr');
+  return rate;
+}
+const NOTE_NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
+function noteOf(f) { const m = 69 + 12 * Math.log2(f / 440), n = Math.round(m), c = Math.round((m - n) * 100); return `${NOTE_NAMES[(n % 12 + 12) % 12]}${Math.floor(n / 12) - 1}${c ? ` ${c > 0 ? '+' : '−'}${Math.abs(c)} cents` : ''}`; }
+// hear it: one click per turn, at the real rate, as radio astronomers play pulsars
+function psrListen(p) {
+  const A = PSR.audio;
+  if (A && A.src) { A.src.stop(); A.src = null; const same = A.name === p.name; A.name = null; psrBtn(); if (same) return; }
+  const ctxA = (PSR.audio = PSR.audio || {}).ctx || (PSR.audio.ctx = new (window.AudioContext || window.webkitAudioContext)());
+  ctxA.resume(); const sr = ctxA.sampleRate, n = Math.max(32, Math.round(p.P * sr)), buf = ctxA.createBuffer(1, n, sr), d = buf.getChannelData(0);
+  const wdt = Math.max(0.0004, 0.03 * p.P) * sr, c0 = n / 2; let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647 - 0.5;
+  for (let i = 0; i < n; i++) { const g = Math.exp(-0.5 * ((i - c0) / (wdt / 2.355)) ** 2); d[i] = g * (0.75 * Math.sin(2 * Math.PI * i / (wdt * 0.9)) + 0.5 * rnd()); }
+  const src = ctxA.createBufferSource(), gain = ctxA.createGain(); src.buffer = buf; src.loop = true; gain.gain.value = 0.32; src.connect(gain).connect(ctxA.destination); src.start();
+  PSR.audio.src = src; PSR.audio.name = p.name; psrBtn();
+}
+function psrBtn() { const b = document.getElementById('psr-listen'); if (!b) return; const on = PSR.audio && PSR.audio.src && PSR.audio.name === b.dataset.p; b.textContent = on ? '■ Stop' : '▶ Listen at its true speed'; b.classList.toggle('on', !!on); }
+function psrPanel(p, rate) {
+  const el = document.getElementById('ppanel');
+  if (!p) { if (!el.hidden) { el.hidden = true; if (PSR.audio && PSR.audio.src) psrListen({ name: PSR.audio.name }); } return; }
+  if (el.dataset.p !== p.name) {
+    const f = 1 / p.P, row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`, slow = p.Pvis / p.P;
+    el.innerHTML = `<h3>${p.name} <span id="psr-blip"></span></h3><table class="more">` +
+      row('Spins', `${f >= 10 ? f.toFixed(1) : f.toFixed(3)} times a second · ${p.P < 1 ? (p.P * 1000).toFixed(p.P < 0.01 ? 3 : 1) + ' ms' : p.P.toFixed(4) + ' s'} a turn`) +
+      row('As a note', f >= 20 ? noteOf(f) : 'too slow to hear as a note: a ticking') +
+      row('Neutron star', `${(2 * p.R).toFixed(0)} km wide, ${p.M} × the Sun’s mass${p.name === 'PSR J0437-4715' ? ' (NICER, 2024)' : ' (typical)'}`) +
+      row('Light cylinder', `${Math.round(p.lc).toLocaleString('en-CA')} km out — where the field would have to move at light speed`) +
+      (p.torus ? row('Wind nebula', p.torus.txt) : '') +
+      (p.bin ? row('Orbit', p.bin.P2 ? `2 h 27 min, ${Math.round(p.bin.a).toLocaleString('en-CA')} km apart; pulsar B turns every 2.77 s (its beam has pointed away from us since 2009)` : `5.74 days around a ${p.bin.name}, ${(p.bin.a / 1e6).toFixed(1)} million km apart`) : '') +
+      `</table><p class="more">${slow > 1.05 ? `Spin shown ${Math.round(slow).toLocaleString('en-CA')}× slower than real. ` : 'Spin shown at its real speed. '}Field lines and beams are illustrated (a simple dipole; the beam tilt is chosen so it sweeps Earth, as it must for us to see pulses); ${p.axisTxt}.</p>` +
+      `<p><button id="psr-listen" data-p="${p.name}">▶ Listen at its true speed</button> <span id="psr-rate"></span></p>`;
+    el.dataset.p = p.name; document.getElementById('psr-listen').onclick = () => psrListen(p); psrBtn();
+  }
+  const bl = document.getElementById('psr-blip'), pu = psrPulse(p, performance.now() / 1000); bl.style.opacity = (0.15 + 0.85 * pu).toFixed(2);
+  const r = document.getElementById('psr-rate'), s = rate > 1 ? `Orbit shown ${Math.round(rate).toLocaleString('en-CA')}× faster.` : rate === 1 ? 'Orbit in real time.' : ''; if (r.textContent !== s) r.textContent = s;
+  const card = document.getElementById('info').style.display === 'block'; if (el.classList.contains('compact') !== card) el.classList.toggle('compact', card);
+  if (el.hidden) el.hidden = false;
+}
+// riding along with a selected pulsar when zoomed right in. The camera stays exactly on the system's catalogue position and a small,
+// precise offset (VO) carries it to the moving neutron star: world coordinates out here only resolve to ~70 km, too coarse for a star 24 km wide
+function psrTrack() {
+  const o = selected, p = o && o.psr;
+  if (!p || anim || viewSpan() > p.zone * 30) { if (VO[0] || VO[1] || VO[2]) { view.x += VO[0]; view.y += VO[1]; view.z += VO[2]; VO[0] = VO[1] = VO[2] = 0; } return; }
+  view.x = p.x; view.y = p.y; view.z = p.z;
+  if (p.bin && viewSpan() < p.bin.a1 * PSR.KM * 0.6) { const s1 = psrBinPos(p, PSR.yr).s1; for (let k = 0; k < 3; k++) VO[k] = s1[k] * PSR.KM; }
+  else VO[0] = VO[1] = VO[2] = 0;
 }
 function acenFacts(k) {
   const st = ACEN.ST[k];
@@ -2359,9 +2555,10 @@ function orient(yaw, tilt, dur = 900) {
 // Physical sizes (ly) of the named objects in the galaxy, from the literature, so a flight arrives with the object filling most of the screen
 const OBJ_SIZE = { 'Orion Nebula': 24, 'Carina Nebula': 230, 'Eagle Nebula': 70, 'Crab Nebula': 11, 'Omega Centauri': 150, 'Cassiopeia A': 10,
   'Pleiades': 43, 'Lagoon Nebula': 110, 'Westerlund 1': 10, 'Rosette Nebula': 130, 'Double Cluster': 140, 'Hercules Cluster (M13)': 145, 'M4': 75,
-  'Ring Nebula': 1.3, 'Helix Nebula': 2.9, "Kepler's Supernova": 14, "Tycho's Supernova": 19, 'Vela Pulsar': 130, "Cat's Eye Nebula": 0.3, 'Hyades': 20, "Horsehead Nebula": 3.5, "Trifid Nebula": 40, "North America Nebula": 100, "Dumbbell Nebula": 2.5, "Butterfly Nebula": 2, "Owl Nebula": 2, "Heart Nebula": 200, "Christmas Tree Cluster": 30, "Tarantula Nebula": 650, "Rho Ophiuchi Cloud": 50, 'Cygnus X-1': 0 };
+  'Ring Nebula': 1.3, 'Helix Nebula': 2.9, "Kepler's Supernova": 14, "Tycho's Supernova": 19, 'Vela Supernova Remnant': 130, "Cat's Eye Nebula": 0.3, 'Hyades': 20, "Horsehead Nebula": 3.5, "Trifid Nebula": 40, "North America Nebula": 100, "Dumbbell Nebula": 2.5, "Butterfly Nebula": 2, "Owl Nebula": 2, "Heart Nebula": 200, "Christmas Tree Cluster": 30, "Tarantula Nebula": 650, "Rho Ophiuchi Cloud": 50, 'Cygnus X-1': 0 };
 function spanFor(o) {
   if (o.span) return o.span;   // set for Alpha Centauri's stars
+  if (o.psr) return o.psr.torus ? o.psr.torus.r * 3 : o.psr.bin ? o.psr.bin.a * 3 * PSR.KM : 0.5;   // its wind nebula, its orbit, or just its neighbourhood
   if (o.name === 'Alpha Centauri') return 3.3 * ACEN.R;   // the whole triple: A and B with Proxima's orbit
   if (o.type === 'region' || o.type === 'void') return o.r * 2.6;
   if (o.mw) return 108000;
@@ -2451,6 +2648,7 @@ function select(o, fly) {
     blurb = ds.text;
   } else {
     const gc = Math.hypot(o.x, o.y, o.z);
+    if (o.psr) { const p = o.psr; facts.push(['Spins', `${(1 / p.P) >= 10 ? (1 / p.P).toFixed(1) : (1 / p.P).toFixed(3)} times a second`]); }
     if (o.qso) { const q = o.qso; facts.push(['Black hole', `${q.Mtxt} <span class="src">(${q.Msrc})</span>`]); if (q.L) facts.push(['Shines like', q.L]); facts.push(['Seen as it was', `when the universe was ${(13.8 - q.lt).toFixed(1)} billion years old`]); }
     if (o.acen) facts.push(...acenFacts(o.acen));
     else if (MULT[o.name]) facts.push(['Star system', MULT[o.name]]);
@@ -2470,9 +2668,9 @@ function select(o, fly) {
   document.getElementById('info-facts').innerHTML = facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
   document.getElementById('info-blurb').textContent = blurb || '';
   { const go = document.getElementById('info-go'), bh = o === GCO, sun = o.type === 'sun' && (!EMBED || ssReady);
-    go.style.display = bh || sun || o.qso ? 'inline-block' : 'none';
-    go.textContent = bh || o.qso ? 'Fly down to the black hole' : 'Dive into the Solar System';
-    go.onclick = o.qso ? () => flyTo(o.x, o.y, o.z, 60 * o.qso.Rs, { raw: true }) : bh ? () => { select(null); flyTo(GCO.x, GCO.y, GCO.z, 1.4e-5, { raw: true }); } : diveToSun; }
+    go.style.display = bh || sun || o.qso || o.psr ? 'inline-block' : 'none';
+    go.textContent = o.psr ? 'Fly down to the neutron star' : bh || o.qso ? 'Fly down to the black hole' : 'Dive into the Solar System';
+    go.onclick = o.psr ? () => flyTo(o.x, o.y, o.z, Math.max(9e-11, o.psr.lc * 3 * PSR.KM), { raw: true }) : o.qso ? () => flyTo(o.x, o.y, o.z, 60 * o.qso.Rs, { raw: true }) : bh ? () => { select(null); flyTo(GCO.x, GCO.y, GCO.z, 1.4e-5, { raw: true }); } : diveToSun; }
   info.style.display = 'block';
   if (fly) flyTo(o.x, o.y, o.z || 0, spanFor(o));
 }
@@ -2604,7 +2802,7 @@ if (EMBED) {
   });
   parent.postMessage({ src: 'uas-mw', ready: true }, '*');
 }
-if (/[?&]debug=1/.test(location.search)) window.__mw = { QSO, ACEN, ACEN_A, fieldObj, get selected() { return selected; }, spanFor, GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, gcScale, drawGCNear, drawS2, drawBH, GC, get following() { return following; }, get ssReady() { return ssReady; } };
+if (/[?&]debug=1/.test(location.search)) window.__mw = { PSR, QSO, ACEN, ACEN_A, fieldObj, get selected() { return selected; }, spanFor, GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, gcScale, drawGCNear, drawS2, drawBH, GC, get following() { return following; }, get ssReady() { return ssReady; } };
 
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
@@ -2619,7 +2817,7 @@ addEventListener('keydown', e => {
   if (e.key === 'Escape') select(null);
 });
 
-document.getElementById('legend-rows').innerHTML = ['nebula', 'cluster', 'globular', 'star', 'remnant', 'pn', 'bh', 'planets', 'galaxy', 'dwarf', 'gcluster', 'quasar']
+document.getElementById('legend-rows').innerHTML = ['nebula', 'cluster', 'globular', 'star', 'remnant', 'pn', 'bh', 'planets', 'galaxy', 'dwarf', 'gcluster', 'quasar', 'pulsar']
   .map(k => `<div class="row"><span class="dot" style="background:${TYPES[k].color}"></span>${TYPES[k].label}</div>`).join('')
   + `<div class="row"><span class="dot" style="background:linear-gradient(90deg,#9bb0ff,#fff4e8,#ffac6e)"></span>${NF.toLocaleString('en-CA')} catalogued stars</div>`
   + `<div class="row"><span class="dot" style="background:#05050f;box-shadow:0 0 0 1.5px #8b93ff"></span>Cosmic void (measured)</div>`
@@ -2673,6 +2871,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=53f47a3d" data-place="header" defer></script>
+<script src="../music/music.js?v=29cc2147" data-place="header" defer></script>
 </body>
 </html>
