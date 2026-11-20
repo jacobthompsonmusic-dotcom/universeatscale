@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=e32d2ef1"></script>
-<script src="../shared/clock.js?v=e32d2ef1"></script>
-<script src="../shared/fold.js?v=e32d2ef1"></script>
-<script src="../shared/galaxy-volume.js?v=e32d2ef1"></script>
+<script src="../shared/frame.js?v=252a0c96"></script>
+<script src="../shared/clock.js?v=252a0c96"></script>
+<script src="../shared/fold.js?v=252a0c96"></script>
+<script src="../shared/galaxy-volume.js?v=252a0c96"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1005,7 +1005,10 @@ const angDiff = (a, b) => { let d = (b - a) % (2 * Math.PI); if (d > Math.PI) d 
 const PROF = /[?&]debug=1/.test(location.search) ? (window.__slow = []) : null;
 const pf = (n, f) => { if (!PROF) return f(); const t = performance.now(), r = f(); if (PROF.flush) ctx.getImageData(0, 0, 1, 1); const d = performance.now() - t; if (d > 100) PROF.push(`${n} ${Math.round(d)} ms span ${Math.round(Ht / view.s)}`); return r; };
 function render(t) {
+  const ck = PROF ? [['start', performance.now()]] : null, C = n => { if (ck) ck.push([n, performance.now()]); };
+  if (PROF && render.end && performance.now() - render.end > 1000) PROF.push(`idle before frame ${Math.round(performance.now() - render.end)} ms (anim ${!!anim})`);
   raf = 0;
+  C('raf = 0;');
   if (anim) {
     const k = Math.min(1, (t - anim.t0) / anim.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
     const f = anim.from, to = anim.to;
@@ -1023,44 +1026,80 @@ function render(t) {
       const rate = anim.through && v ? RHO * (v.flat ? 1 : Math.abs(Math.tanh(RHO * v.S + v.r0))) * v.S * Math.PI / (2 * anim.dur) : 0;
       anim = null; if (done) done(rate); } else draw();
   }
+  C('}');
   if (ACEN) { acenUpdate(CK.year()); acenTrack(); }
+  C('if (ACEN) { acenUpdate(CK.ye');
   if (PSR) { PSR.yr = CK.year(); psrTrack(); }   // one date for the whole frame: a binary's stars move fast
   pf('setup', setupView);
+  C('pf(setup, setupView);');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  C('ctx.setTransform(dpr, 0, 0, ');
   ctx.fillStyle = '#04050a'; ctx.fillRect(0, 0, Wd, Ht);
+  C('ctx.fillStyle = #04050a; c');
   ctx.globalAlpha = 0.9; ctx.drawImage(sky, 0, 0, Wd, Ht); ctx.globalAlpha = 1;
+  C('ctx.globalAlpha = 0.9; ctx.d');
 
   if (!pf('galaxy3D', drawGalaxy3D)) { drawHaze(); drawDisc(); }
+  C('if (!pf(galaxy3D, drawGala');
   if (opts.grid) drawGrid();
+  C('if (opts.grid) drawGrid();');
   if (opts.arms) drawArms();
+  C('if (opts.arms) drawArms();');
   drawVoids();
+  C('drawVoids();');
   pf('galaxies', drawGalaxies);
+  C('pf(galaxies, drawGalaxies)');
   drawBubble();
+  C('drawBubble();');
   drawOort();
+  C('drawOort();');
   if (opts.zodiac) drawZodiac();
+  C('if (opts.zodiac) drawZodiac(');
   pf('nebulae', drawNebulae);
+  C('pf(nebulae, drawNebulae);');
   // Inside another star system, as inside ours, the galaxy steps back: the sky goes darker, the nebulae, gas and other galaxies fade
   // and the background stars dim, so the system's own stars and planets take over
   T1A = t1Vis(); ACEN.IN = acenIn(); qsoScan(); psrScan(); SYSIN = Math.max(T1A, ACEN.IN, QSO.IN, PSR.IN); t1Panel(T1A > 0.5);
+  C('T1A = t1Vis(); ACEN.IN = ace');
   if (SYSIN > 0.002) { ctx.fillStyle = `rgba(0,0,0,${(0.82 * SYSIN).toFixed(3)})`; ctx.fillRect(0, 0, Wd, Ht); }
+  C('if (SYSIN > 0.002) { ctx.fil');
   pf('field', drawField);
+  C('pf(field, drawField);');
   const qbh = pf('qso', qsoDraw);
+  C('const qbh = pf(qso, qsoDra');
   pf('psr', psrDraw);
+  C('pf(psr, psrDraw);');
   pf('objects', drawObjects);
+  C('pf(objects, drawObjects);');
   gcTick();
+  C('gcTick();');
   const nb = pf('gcnear', drawGCNear), s2a = pf('s2', drawS2), bhOn = pf('bh', drawBH), t1a = drawTrappist(), aca = drawAcen(); GCT.on = nb > 0 || s2a > 0;
+  C('const nb = pf(gcnear, draw');
   const qOn = !bhOn && qbh ? drawQBH(qbh) : false;
+  C('const qOn = !bhOn && qbh ? d');
   if (!bhOn && !qOn && bhCv.style.display !== 'none') { bhCv.style.display = 'none'; bhNote.style.display = 'none'; }
+  C('if (!bhOn && !qOn && bhCv.st');
   acenPanel(ACEN.IN > 0.5, acenClock());
+  C('acenPanel(ACEN.IN > 0.5, ace');
   qsoPanel(QSO.active && QSO.IN > 0.5 ? QSO.active : null, qsoClock());
+  C('qsoPanel(QSO.active && QSO.I');
   psrPanel(PSR.active && PSR.IN > 0.5 ? PSR.active : null, psrClock());
+  C('psrPanel(PSR.active && PSR.I');
   if ((s2a > 0 || nb > 0 || bhOn || t1a > 0 || aca > 0 || qOn || QSO.IN > 0.05 || PSR.list.some(p => p.vis > 0)) && !anim) draw();   // keep S2 and the flow moving
   updateScale();
+  C('updateScale();');
   updateGC();
+  C('updateGC();');
   const tb = document.getElementById('go3d'), lab = Math.abs(view.tilt) > 0.05 ? '3D' : 'TOP';
+  C('const tb = document.getEleme');
   if (tb.textContent !== lab) tb.textContent = lab;
+  C('if (tb.textContent !== lab) ');
   const td = Math.round(view.tilt / DEG); document.getElementById('r-tilt').textContent = Math.abs(td) > 90 ? `${td}° (from below)` : td + '°';
+  C('const td = Math.round(view.t');
   if (EMBED && !following) { const sp = Ht / view.s; if (sp !== render.sp) { render.sp = sp; parent.postMessage({ src: 'uas-mw', span: viewSpan() }, '*'); } }
+  C('if (EMBED && !following) { c');
+  if (PROF) render.end = performance.now();
+  if (ck) { const tot = ck[ck.length - 1][1] - ck[0][1]; if (tot > 300) PROF.push('render ' + Math.round(tot) + ': ' + ck.slice(1).map((c, i) => [c[0], Math.round(c[1] - ck[i][1])]).filter(c => c[1] > 30).map(c => c.join('=')).join(' | ')); }
 }
 
 // Zoomed in near the Sun you are inside the disc, so it shows only as a faint glow, brighter toward the galactic centre;
@@ -2962,6 +3001,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=e32d2ef1" data-place="info" defer></script>
+<script src="../music/music.js?v=252a0c96" data-place="info" defer></script>
 </body>
 </html>
