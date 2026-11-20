@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=364c1469"></script>
-<script src="../shared/clock.js?v=364c1469"></script>
-<script src="../shared/fold.js?v=364c1469"></script>
-<script src="../shared/galaxy-volume.js?v=364c1469"></script>
+<script src="../shared/frame.js?v=ab02c248"></script>
+<script src="../shared/clock.js?v=ab02c248"></script>
+<script src="../shared/fold.js?v=ab02c248"></script>
+<script src="../shared/galaxy-volume.js?v=ab02c248"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1112,13 +1112,15 @@ function niceStep(target) {
 
 function drawGrid() {
   // rings and spokes lie in the plane through the Sun, parallel to the disc
-  const [sx, sy] = proj(SUNW.x, SUNW.y, SUNW.z);
-  const step = niceStep(140 / view.s), aC = Math.abs(CT), ctf = Math.max(aC, 0.12);
+  const [sx, sy, , sf] = proj(SUNW.x, SUNW.y, SUNW.z);
+  // ring spacing from the scale at the Sun, not at the view centre: in perspective, far from the centre, they differ a lot
+  const sS = view.s * (isFinite(sf) && sf > 0 ? sf : 1), step = niceStep(140 / sS), aC = Math.abs(CT), ctf = Math.max(aC, 0.12);
   let maxR = 0;
-  for (const [cx, cy] of [[0, 0], [Wd, 0], [0, Ht], [Wd, Ht]]) maxR = Math.max(maxR, Math.hypot((cx - sx) / view.s, (cy - sy) / (view.s * ctf)));
+  for (const [cx, cy] of [[0, 0], [Wd, 0], [0, Ht], [Wd, Ht]]) maxR = Math.max(maxR, Math.hypot((cx - sx) / sS, (cy - sy) / (sS * ctf)));
   maxR = Math.min(maxR, 2e11);
   ctx.lineWidth = 1; ctx.font = 'italic 14px UAS Num, IM Fell English, Georgia, serif'; ctx.textAlign = 'left';
   const ra = Math.min(1, (aC - 0.06) * 4);   // rings flatten into lines side-on, so fade them out
+  let lastL = null;
   for (let r = step, i = 0; ra > 0 && r < maxR && i < 40; r += step, i++) {
     const R = r * view.s;
     ctx.strokeStyle = `rgba(255,255,255,${0.075 * ra})`;
@@ -1128,7 +1130,8 @@ function drawGrid() {
     ctx.stroke(); ctx.setLineDash([]);
     if (aC > 0.25) {
       ctx.fillStyle = 'rgba(200,205,225,0.45)';
-      const [lx, ly] = proj(SUNW.x + r * 0.7071, SUNW.y - r * 0.7071, SUNW.z); if (isFinite(lx)) ctx.fillText(fmtLy(r), lx + 4, ly - 4);
+      const [lx, ly] = proj(SUNW.x + r * 0.7071, SUNW.y - r * 0.7071, SUNW.z);
+      if (isFinite(lx) && (!lastL || Math.hypot(lx - lastL[0], ly - lastL[1]) > 60)) { ctx.fillText(fmtLy(r), lx + 4, ly - 4); lastL = [lx, ly]; }   // never let labels pile up
     }
   }
   if (ra < 1 && sy > 0 && sy < Ht) {   // side-on: the disc plane through the Sun becomes one line
@@ -2881,6 +2884,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=364c1469" data-place="header" defer></script>
+<script src="../music/music.js?v=ab02c248" data-place="header" defer></script>
 </body>
 </html>
