@@ -232,10 +232,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=349528b2"></script>
-<script src="../shared/clock.js?v=349528b2"></script>
-<script src="../shared/fold.js?v=349528b2"></script>
-<script src="../shared/galaxy-volume.js?v=349528b2"></script>
+<script src="../shared/frame.js?v=378fa70f"></script>
+<script src="../shared/clock.js?v=378fa70f"></script>
+<script src="../shared/fold.js?v=378fa70f"></script>
+<script src="../shared/galaxy-volume.js?v=378fa70f"></script>
 <script>
 (() => {
 'use strict';
@@ -1110,7 +1110,48 @@ for (const P of PROBES) {
   P.line = new THREE.Line(g, new THREE.LineBasicMaterial({ color: P.color, transparent: true, opacity: 0, depthWrite: false })); P.line.frustumCulled = false; FAR.add(P.line);
   const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3), 3));
   P.dot = new THREE.Points(dg, new THREE.PointsMaterial({ size: 5, sizeAttenuation: false, color: P.color, transparent: true, opacity: 0, depthWrite: false })); P.dot.frustumCulled = false; FAR.add(P.dot);
-  P.pos = new THREE.Vector3();   // scene position (ecliptic → scene axes)
+  P.pos = P.abs = new THREE.Vector3();   // scene position (ecliptic → scene axes)
+  P.sunDir = new THREE.Vector3(); P.pr = 1;
+  P.R = P.key === 'nh' ? 1.6e-6 : 2.4e-6;   // ~1.6 m / 2.4 m: how close the camera may come (scene unit = 1,000 km)
+  P.model = probeModel(P.key); P.model.visible = false; space.add(P.model);
+}
+// The craft themselves, to scale (metres; built facing +Z, the high-gain dish's axis, which points home — from out there, at the Sun).
+// Simplified shapes from the published dimensions: Voyager's 3.66 m dish on a ten-sided bus, three RTGs on one boom, the science
+// boom with its scan platform on the other, and the 13 m magnetometer boom; New Horizons' triangular, gold-foiled body, 2.1 m dish
+// and single RTG.
+function probeModel(key) {
+  const g = new THREE.Group(), M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: o.r ?? 0.55, metalness: o.m ?? 0.3, side: o.ds ? THREE.DoubleSide : THREE.FrontSide });
+  const add = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); g.add(m); return m; };
+  const rod = (a, b, r, mat) => { const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), L = A.distanceTo(B), m = add(new THREE.CylinderGeometry(r, r, L, 8), mat);
+    m.position.copy(A).add(B).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()); return m; };
+  const dish = (D, depth, z, mat) => { const pts = []; for (let i = 0; i <= 16; i++) { const r = D / 2 * i / 16; pts.push(new THREE.Vector2(r, depth * (r / (D / 2)) ** 2)); }
+    const m = add(new THREE.LatheGeometry(pts, 48), mat, 0, 0, z); m.rotation.x = Math.PI / 2; return m; };   // the bowl opens toward +Z
+  const white = M(0xe9e6dc, { r: 0.45, m: 0.15, ds: true }), grey = M(0x8a8c90), dark = M(0x2c2c30, { r: 0.7 }), gold = M(0xc9a248, { r: 0.35, m: 0.85 }), boom = M(0x9a9da3, { r: 0.6 });
+  if (key === 'nh') {
+    const sh = new THREE.Shape(); sh.moveTo(-1.35, -0.7); sh.lineTo(1.35, -0.7); sh.lineTo(0, 1.4); sh.closePath();
+    add(new THREE.ExtrudeGeometry(sh, { depth: 0.7, bevelEnabled: false }), gold, 0, 0, -0.35);
+    dish(2.1, 0.32, 0.36, white); rod([0, 0, 0.36], [0, 0, 1.1], 0.03, grey);
+    add(new THREE.CylinderGeometry(0.08, 0.08, 0.12, 12), grey, 0, 0, 1.12).rotation.x = Math.PI / 2;
+    const A = [0.95, -0.55, 0], B = [1.75, -1.02, 0]; rod(A, B, 0.21, dark);   // the RTG, sticking out from one corner
+    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3, n = [-0.5 * Math.sin(a), -0.87 * Math.sin(a), Math.cos(a)].map(v => v * 0.27);
+      rod(A.map((v, j) => v + n[j]), B.map((v, j) => v + n[j]), 0.012, dark); }
+    add(new THREE.CylinderGeometry(0.11, 0.11, 0.5, 16), dark, -0.55, 0.35, 0.1).rotation.z = Math.PI / 2;   // LORRI's telescope barrel
+  } else {
+    add(new THREE.CylinderGeometry(0.89, 0.89, 0.47, 10), gold).rotation.x = Math.PI / 2;
+    dish(3.66, 0.48, 0.24, white);
+    for (const a of [0, 2.1, 4.2]) rod([0, 0, 1.25], [1.55 * Math.cos(a), 1.55 * Math.sin(a), 0.62], 0.012, grey);   // the feed's struts
+    add(new THREE.CylinderGeometry(0.1, 0.1, 0.25, 12), grey, 0, 0, 1.3).rotation.x = Math.PI / 2;
+    rod([-0.85, 0, -0.1], [-3.3, 0, -0.35], 0.03, boom);                                          // RTG boom
+    for (let i = 0; i < 3; i++) { const x0 = -1.35 - i * 0.65, z0 = -0.15 - i * 0.07; rod([x0, 0, z0], [x0 - 0.5, 0, z0 - 0.05], 0.2, dark);
+      for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; rod([x0, 0.3 * Math.cos(a), z0 + 0.3 * Math.sin(a)], [x0 - 0.5, 0.3 * Math.cos(a), z0 - 0.05 + 0.3 * Math.sin(a)], 0.01, dark); } }
+    rod([0.85, 0, -0.1], [3.1, 0, -0.3], 0.035, boom);                                            // science boom
+    add(new THREE.BoxGeometry(0.55, 0.6, 0.5), grey, 3.2, 0, -0.3);                              // scan platform: cameras and spectrometers
+    add(new THREE.CylinderGeometry(0.09, 0.09, 0.55, 12), dark, 3.2, -0.35, -0.3).rotation.x = Math.PI / 2;
+    rod([0, -0.85, -0.2], [0, -13.5, -1.2], 0.025, boom);                                         // the 13 m magnetometer boom
+    rod([-0.3, 0.6, -0.25], [-5.8, 7.6, -1.5], 0.008, grey); rod([0.3, 0.6, -0.25], [5.8, 7.6, -1.5], 0.008, grey);   // the two 10 m plasma-wave antennas
+  }
+  g.scale.setScalar(U / 1000);   // metres → scene units
+  return g;
 }
 // heliocentric ecliptic position in AU at a given time (null before the craft settled into its straight-line cruise)
 function probeAU(P, ms) {
@@ -1123,7 +1164,10 @@ function updateProbes(camD) {
   const pxs0 = innerHeight / 2 / TAN20, W = innerWidth, H = innerHeight;
   for (const P of PROBES) {
     const q = probeAU(P, simMs), on = opts.orbits && q;
-    const R = (q ? Math.hypot(...q) : 100) * AUS / camD * pxs0, a = on ? sstep(R, 25, 70) * (1 - sstep(R, 9000, 20000)) : 0;
+    const near = q ? camera.position.distanceTo(relOf(P, _pp)) : 1e9, mpx = P.R / near * pxs0;   // the craft's own size on screen
+    P.model.visible = !!q && mpx > 0.4;
+    // the dot and name: in the overview, and up close for the one you're visiting until the craft itself is big enough to see
+    const R = (q ? Math.hypot(...q) : 100) * AUS / camD * pxs0, a = on ? Math.max(sstep(R, 25, 70) * (1 - sstep(R, 9000, 20000)), (focus === P || selected === P ? 1 : 0) * (1 - sstep(mpx, 1.5, 4))) : 0;
     P.line.visible = P.dot.visible = a > 0.01; P.au = q;
     if (a <= 0.01) { if (P.el) P.el.style.display = 'none'; continue; }
     const rr = Math.hypot(...q), arr = P.line.geometry.attributes.position.array; let k = 0;
@@ -1601,6 +1645,7 @@ function relOf(o, out = new THREE.Vector3()) {      // …and as the camera sees
 }
 const radiusOf = o => o.kind === 'moon' ? Math.max(o.r * U, 0.0008) : o.R;
 const giantOf = o => o ? (o.kind === 'giant' ? o : o.kind === 'moon' && o.parent.kind === 'giant' ? o.parent : null) : null;
+const _ZP = new THREE.Vector3(0, 0, 1);
 function updateWorld() {
   const T = T_of(simMs);
   for (const b of PLANETS) { if (DWARF_ORB[b.key]) helioDwarf(b.key, simMs, b.abs); else helio(b.key, T, b.abs); b.root.position.copy(b.abs); b.sunDir.copy(b.abs).negate().normalize(); if (b.place) b.place();
@@ -1613,6 +1658,9 @@ function updateWorld() {
     if (g.arcs) g.arcs.rotation.y = (simMs / 86400000) / g.arcs.userData.P * TAU;
     placeMoons(g);
   }
+  for (const P of PROBES) { const q = probeAU(P, simMs); P.au = q; if (!q) continue;   // the spacecraft coast on (and keep their dish on home)
+    P.abs.set(q[0] * AUS, q[2] * AUS, -q[1] * AUS); P.sunDir.copy(P.abs).negate().normalize();
+    P.model.position.copy(P.abs); P.model.quaternion.setFromUnitVectors(_ZP, P.sunDir); }
   space.position.copy(origin).negate(); scene.updateMatrixWorld();
   // re-centre on whatever we're looking at; the camera's position is relative to it, so it rides along
   origin.copy(relLocal(focus).add(origin)); space.position.copy(origin).negate(); scene.updateMatrixWorld();
@@ -1622,7 +1670,7 @@ function setFocus(o) {
   const fa = relLocal(o).add(origin), delta = fa.clone().sub(origin).applyQuaternion(scene.quaternion);
   camera.position.sub(delta); controls.target.sub(delta);
   origin.copy(fa); space.position.copy(origin).negate(); scene.updateMatrixWorld();
-  focus = o;
+  focus = o; controls.minDistance = o.kind === 'probe' ? o.R * 1.2 : 0.0002;
   const hk = o.isSun ? 'sun' : o.kind === 'moon' ? o.parent.key : o.key;
   document.querySelectorAll('.switch button').forEach(b => b.classList.toggle('on', b.dataset.go === hk));
   try { history.replaceState(null, '', o.isPlanet ? '#' + o.key : location.pathname); } catch (e) {}
@@ -1634,6 +1682,7 @@ function setFocus(o) {
 function defaultDist(o) {
   if (o.kind === 'giant') return o.cf.start.dist;
   if (o.isSun) return 9000;
+  if (o.kind === 'probe') return o.R * 7;
   if (o.kind === 'dwarf') return o.key === 'pluto' || o.key === 'eris' ? o.defDist : o.key === 'haumea' ? 10 : o.R * 8; // Pluto & Eris framed with their big moon; Haumea close enough for its shape and ring
   if (o.kind === 'planet') return o.key === 'earth' ? 45 : o.key === 'mars' ? 30 : o.R * 8;
   return Math.max(radiusOf(o) * 7, 0.05);
@@ -1694,9 +1743,10 @@ function stepFly(t) {
   if (k >= 1) fly = null;
 }
 const ALLBODIES = () => [SUN, ...PLANETS, ...MOONS];
+const SOLIDS = () => focus.kind === 'probe' ? [...ALLBODIES(), focus] : ALLBODIES();
 function keepOutside() { // never let the camera sink inside anything
   const p = new THREE.Vector3();
-  for (const o of ALLBODIES()) {
+  for (const o of SOLIDS()) {
     relOf(o, p); const r = radiusOf(o) * 1.12, d = camera.position.distanceTo(p);
     if (d < r) { let dir = camera.position.clone().sub(p); if (dir.lengthSq() < 1e-12) dir = camera.position.clone().sub(controls.target); if (dir.lengthSq() < 1e-12) dir.set(0, 0.3, 1); camera.position.copy(p).add(dir.normalize().multiplyScalar(r)); }
   }
@@ -1769,7 +1819,7 @@ function select(o) {
   }
   document.getElementById('info-facts').innerHTML = f.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
   document.getElementById('info-blurb').textContent = o.blurb;
-  const go = document.getElementById('info-go'); go.style.display = isRing || o.kind === 'probe' ? 'none' : 'inline-block';
+  const go = document.getElementById('info-go'); go.style.display = isRing || (o.kind === 'probe' && !o.au) ? 'none' : 'inline-block';
   go.textContent = focus === o ? 'Centred here' : 'Fly here'; go.classList.toggle('on', focus === o);
   info.style.display = 'block';
   if (typeof infoFold !== 'undefined' && infoFold) { if (o !== prevSel) infoFold.set(false); else infoFold.relabel(); }   // a new pick opens its card
@@ -1792,7 +1842,7 @@ function makeLabels() {
     el.addEventListener('dblclick', ev => { ev.stopPropagation(); flyTo(o); });
   }
   for (const P of PROBES) { const el = document.createElement('div'); el.className = 'lab probe'; el.textContent = P.name; el.style.setProperty('--c', P.color); el.style.display = 'none'; labelBox.appendChild(el); P.el = el;
-    el.addEventListener('click', ev => { ev.stopPropagation(); select(P); }); }
+    el.addEventListener('click', ev => { ev.stopPropagation(); select(P); }); el.addEventListener('dblclick', ev => { ev.stopPropagation(); if (P.au) flyTo(P); }); }
   for (const m of MARKS) { const el = document.createElement('div'); el.className = 'lab mark'; el.textContent = m.name; el.style.display = 'none'; labelBox.appendChild(el); m.el = el; }
 }
 // the way to the centre of the Milky Way — Sagittarius A*, 26,990 light-years off (GRAVITY 2021) at l = 359.944°, b = −0.046°
@@ -1961,14 +2011,14 @@ const collapse = c => { topPanel.classList.toggle('collapsed', c); aboutBtn.text
 aboutBtn.onclick = () => collapse(!topPanel.classList.contains('collapsed'));
 if (UAS_FOLD.phone.matches) collapse(true);   // on a phone the intro starts folded: just the search box and its i
 UAS_FOLD.foldable(document.getElementById('legend'), { title: 'Layers' });
-const kindLabel = o => o.isSun ? 'Star' : o.kind === 'giant' ? 'Giant planet' : o.kind === 'planet' ? 'Planet' : o.kind === 'dwarf' ? 'Dwarf planet' : `Moon of ${o.parent.name}`;
+const kindLabel = o => o.isSun ? 'Star' : o.kind === 'probe' ? 'Spacecraft' : o.kind === 'giant' ? 'Giant planet' : o.kind === 'planet' ? 'Planet' : o.kind === 'dwarf' ? 'Dwarf planet' : `Moon of ${o.parent.name}`;
 const sIn = document.getElementById('search'), sRes = document.getElementById('results'); let hits = [], active = 0;
 // On the joined page the search box also finds things in the Milky Way map (asked through the page that holds both maps)
 const sepRow = t => `<div style="padding:6px 12px 3px;font:italic 13px IM Fell English, Georgia, serif;letter-spacing:.09em;text-transform:uppercase;color:rgba(200,205,222,.55)">${t}</div>`;
 function renderHits() { let firstExt = true; sRes.innerHTML = hits.map((o, i) => (o.ext && firstExt && !(firstExt = false) ? sepRow('In the Milky Way and beyond') : '') + `<button data-i="${i}" class="${i === active ? 'active' : ''}"><span class="dot" style="background:${o.color}"></span>${o.name}<small>${o.ext ? o.sub : kindLabel(o)}</small></button>`).join(''); sRes.style.display = hits.length ? 'block' : 'none'; }
 let localHits = [], extHits = [], searchId = 0;
 function chooseHit(o) { if (!o) return; sRes.style.display = 'none'; sIn.blur(); if (o.ext) { sIn.value = ''; hits = []; } if (o.ext) parent.postMessage({ src: 'uas-ss', pick: { map: 'mw', name: o.name } }, '*'); else flyTo(o); }
-sIn.addEventListener('input', () => { const q = sIn.value.trim().toLowerCase(); active = 0; localHits = q ? LIST.filter(o => o.name.toLowerCase().includes(q)).sort((a, b) => (a.name.toLowerCase().startsWith(q) ? 0 : 1) - (b.name.toLowerCase().startsWith(q) ? 0 : 1) || a.pr - b.pr).slice(0, 10) : []; extHits = [];
+sIn.addEventListener('input', () => { const q = sIn.value.trim().toLowerCase(); active = 0; localHits = q ? [...LIST, ...PROBES.filter(P => probeAU(P, simMs))].filter(o => o.name.toLowerCase().includes(q)).sort((a, b) => (a.name.toLowerCase().startsWith(q) ? 0 : 1) - (b.name.toLowerCase().startsWith(q) ? 0 : 1) || a.pr - b.pr).slice(0, 10) : []; extHits = [];
   hits = localHits; renderHits(); searchId++; if (EMBED && q.length >= 2) parent.postMessage({ src: 'uas-ss', search: q, id: searchId }, '*'); });
 sIn.addEventListener('keydown', e => { if (e.key === 'ArrowDown') { active = Math.min(active + 1, hits.length - 1); renderHits(); } if (e.key === 'ArrowUp') { active = Math.max(active - 1, 0); renderHits(); } if (e.key === 'Enter' && hits[active]) chooseHit(hits[active]); });
 sRes.addEventListener('click', e => { const b = e.target.closest('button'); if (b) chooseHit(hits[+b.dataset.i]); });
@@ -1983,6 +2033,7 @@ function updateScale(camD) {
   let val, txt;
   if (want > LYKM * 0.08) { val = nice(want / LYKM); txt = `${+val.toPrecision(2)} light-year${val === 1 ? '' : 's'}`; val *= LYKM; }
   else if (want > AU * 0.05) { val = nice(want / AU); txt = `${val >= 1 ? val.toLocaleString('en-CA') : val} AU`; val *= AU; }
+  else if (want < 1) { val = nice(want * 1000); txt = `${val.toLocaleString('en-CA')} m`; val /= 1000; }
   else { val = nice(want); txt = val >= 1e6 ? `${(val / 1e6).toLocaleString('en-CA')} million km` : `${val.toLocaleString('en-CA')} km`; }
   document.getElementById('scale-bar').style.width = (val / kmPerPx).toFixed(0) + 'px';
   document.getElementById('scale-txt').textContent = txt;
@@ -2058,7 +2109,7 @@ function frame(t) {
   // the camera the picture is actually drawn with (the controls keep working with the plain 40° one)
   camNom.copy(camera.position);
   if (deep.p > 0) camera.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target);
-  camera.fov = deep.fov; camera.far = camD > 1e7 ? 1e15 : 2e8; camera.updateProjectionMatrix(); camera.updateMatrixWorld();
+  camera.fov = deep.fov; camera.far = camD > 1e7 ? 1e15 : 2e8; camera.near = Math.min(0.0005, Math.max(1e-9, camD * 0.02)); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
 
   renderer.clear();
   // the stars are drawn from where the camera really is among them, in light-years from the Sun
@@ -2109,11 +2160,11 @@ function enterFrom(s, yaw, tilt) {
 if (EMBED) addEventListener('message', e => {
   const m = e.data; if (!m || m.to !== 'uas-ss') return;
   if (m.cmd === 'search') {   // the galaxy map's search box asking what's here
-    const q = m.q, items = LIST.filter(o => o.name.toLowerCase().includes(q)).sort((a, b) => (a.name.toLowerCase().startsWith(q) ? 0 : 1) - (b.name.toLowerCase().startsWith(q) ? 0 : 1) || a.pr - b.pr).slice(0, 6).map(o => ({ name: o.name, color: o.color, sub: kindLabel(o) }));
+    const q = m.q, items = [...LIST, ...PROBES.filter(P => probeAU(P, simMs))].filter(o => o.name.toLowerCase().includes(q)).sort((a, b) => (a.name.toLowerCase().startsWith(q) ? 0 : 1) - (b.name.toLowerCase().startsWith(q) ? 0 : 1) || a.pr - b.pr).slice(0, 6).map(o => ({ name: o.name, color: o.color, sub: kindLabel(o) }));
     parent.postMessage({ src: 'uas-ss', results: items, id: m.id }, '*'); return;
   }
   if (m.cmd === 'results') { if (m.id !== searchId || !sIn.value.trim()) return; extHits = m.results.map(r => ({ ...r, ext: true })); hits = [...localHits.slice(0, Math.max(4, 10 - extHits.length)), ...extHits]; renderHits(); return; }
-  if (m.cmd === 'pick') { const o = LIST.find(x => x.name === m.name); if (o) { wake(); flyTo(o); select(o); } return; }
+  if (m.cmd === 'pick') { const o = [...LIST, ...PROBES].find(x => x.name === m.name); if (o) { wake(); flyTo(o); select(o); } return; }
   if (m.cmd === 'pause') paused = true;
   else if (m.cmd === 'resume') wake();
   else if (m.cmd === 'enter') { enterFrom(m.s, m.yaw, m.tilt); entry = m.rate ? { rate: m.rate, t: performance.now() } : null; wake(); }
@@ -2141,6 +2192,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=349528b2" data-place="header" defer></script>
+<script src="../music/music.js?v=378fa70f" data-place="header" defer></script>
 </body>
 </html>
