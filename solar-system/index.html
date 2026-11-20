@@ -71,6 +71,8 @@
   #info dl { margin:0 0 12px; display:grid; grid-template-columns:auto 1fr; gap:5px 14px; font-size:13px; }
   #info dt { color:var(--muted); } #info dd { margin:0; font-variant-numeric:tabular-nums; }
   #info .blurb { margin:0; color:#d6d0c6; font-size:13.5px; }
+  #info-seenote { margin:10px 0 0; font-size:12.5px; line-height:1.45; color:rgba(232,226,212,0.62); }
+  #info .go + .go { margin-left:6px; }
   #info .go { margin-top:14px; padding:7px 12px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--text); font:italic 14px "IM Fell English", Georgia, serif; cursor:pointer; }
   #info .go.on { background:rgba(240,181,106,0.18); border-color:rgba(240,181,106,0.45); cursor:default; }
 
@@ -195,6 +197,8 @@
   <dl id="info-facts"></dl>
   <p class="blurb" id="info-blurb"></p>
   <button class="go" id="info-go">Fly here</button>
+  <button class="go" id="info-see" style="display:none"></button>
+  <p id="info-seenote" class="more" style="display:none"></p>
 </div>
 
 <div id="legend" class="panel">
@@ -234,10 +238,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=bdcf3cc1"></script>
-<script src="../shared/clock.js?v=bdcf3cc1"></script>
-<script src="../shared/fold.js?v=bdcf3cc1"></script>
-<script src="../shared/galaxy-volume.js?v=bdcf3cc1"></script>
+<script src="../shared/frame.js?v=8a798d61"></script>
+<script src="../shared/clock.js?v=8a798d61"></script>
+<script src="../shared/fold.js?v=8a798d61"></script>
+<script src="../shared/galaxy-volume.js?v=8a798d61"></script>
 <script>
 (() => {
 'use strict';
@@ -1359,7 +1363,7 @@ for (const [key, name, Rkm, color, dia, year, blurb] of INNER) {
     b.clouds = new THREE.Mesh(new THREE.SphereGeometry(b.R * 1.006, 128, 64), cloudMaterial(b.sunDir)); b.clouds.renderOrder = 1; b.tilt.add(b.clouds);
     b.tilt.add(rimGlow(b.R * 1.02, 0x6aa8ff, 0.9, b.sunDir));
   }
-  if (key === 'venus') b.tilt.add(rimGlow(b.R * 1.015, 0xf2deb0, 0.6, b.sunDir));
+  if (key === 'venus') b.tilt.add(b.atm = rimGlow(b.R * 1.015, 0xf2deb0, 0.6, b.sunDir));
   if (key === 'mars') b.tilt.add(rimGlow(b.R * 1.01, 0xe8a070, 0.35, b.sunDir));
   b.dot = marker(color, 5); b.root.add(b.dot);
   b.orbit = orbitLine(key, color, 0.22);
@@ -1596,7 +1600,7 @@ function buildGiant(key) {
     } else if (o.haze) mat = new THREE.MeshStandardMaterial({ color: 0xc08038, roughness: 1 });
     else mat = new THREE.MeshStandardMaterial({ map: moonTexture(o, idx + 3), roughness: 1 });
     o.mesh = new THREE.Mesh(geo, mat); o.mesh.castShadow = r > 100; o.mesh.receiveShadow = true; o.tilt.add(o.mesh);
-    if (o.haze) o.mesh.add(rimGlow(rad * 1.07, 0xf29a40, 1.0, g.sunDir));
+    if (o.haze) o.mesh.add(o.atm = rimGlow(rad * 1.07, 0xf29a40, 1.0, g.sunDir));
     const pts = []; for (let i = 0; i <= 256; i++) { const p = orbitPoint(o, i / 256 * TAU, cf.cw); pts.push(new THREE.Vector3(p[0], 0, p[1])); }
     const big = o.group === sys.bigGroup;
     o.baseOpacity = big ? 0.35 : 0.2;
@@ -1916,7 +1920,7 @@ function select(o) {
   }
   document.getElementById('info-facts').innerHTML = f.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
   document.getElementById('info-blurb').textContent = o.blurb;
-  const go = document.getElementById('info-go'); go.style.display = isRing || (o.kind === 'probe' && !o.au) ? 'none' : 'inline-block';
+  const go = document.getElementById('info-go'); go.style.display = isRing || (o.kind === 'probe' && !o.au) ? 'none' : 'inline-block'; showSee(o);
   go.textContent = focus === o ? 'Centred here' : 'Fly here'; go.classList.toggle('on', focus === o);
   info.style.display = 'block';
   if (typeof infoFold !== 'undefined' && infoFold) { if (o !== prevSel) infoFold.set(false); else infoFold.relabel(); }   // a new pick opens its card
@@ -1924,6 +1928,36 @@ function select(o) {
 // the card's × folds it to a tab named after what's selected; the selection stays (click empty space to let go of it)
 var infoFold = UAS_FOLD.foldable(document.getElementById('info'), { closeBtn: document.querySelector('#info .close'), title: () => selected ? (selected.name || document.getElementById('info-nm').textContent) : 'Info', startFolded: false, arrow: '▾' });
 document.getElementById('info-go').onclick = () => { if (selected && focus !== selected) flyTo(selected); };
+// ---- seeing through the clouds: the surfaces under Venus's and Titan's atmospheres have been mapped from orbit (Earth's clouds can simply be cleared)
+const SURF = {
+  venus: { u: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Cylindrical_Map_of_Venus.jpg/1920px-Cylindrical_Map_of_Venus.jpg', tint: 0xffffff,
+    note: 'Surface: Magellan’s radar map (1990–94), which saw through the clouds. The colours are false — brighter means rougher ground to the radar, tinted orange after what the Venera landers saw. NASA/JPL.' },
+  Titan: { u: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/PIA22770-SaturnMoon-Titan-Surface-20181206.jpg/1920px-PIA22770-SaturnMoon-Titan-Surface-20181206.jpg', tint: 0xe2b27a,
+    note: 'Surface: Cassini’s mosaic of 9,873 near-infrared images (938 nm, where the haze thins), 2004–17; dark areas are mostly dune fields. Brightness is real; the orange tint is added. NASA/JPL-Caltech/SSI.' },
+  earth: { note: 'Clouds cleared. The surface is from NASA’s Blue Marble.' },
+};
+const seeKey = o => o && (o.key === 'venus' || o.key === 'earth' ? o.key : o.name === 'Titan' ? 'Titan' : null);
+const surfTex = {};
+function setSee(o, on) {
+  const k = seeKey(o); if (!k) return; o.see = on;
+  if (k === 'earth') o.clouds.visible = !on;
+  else {
+    const m = o.mesh.material;
+    if (on && !surfTex[k]) { surfTex[k] = new THREE.TextureLoader().setCrossOrigin('anonymous').load(SURF[k].u, () => { if (o.see) { m.needsUpdate = true; } }); surfTex[k].encoding = THREE.sRGBEncoding; surfTex[k].anisotropy = 8; }
+    if (o.origMap === undefined) { o.origMap = m.map; o.origColor = m.color.getHex(); }
+    m.map = on ? surfTex[k] : o.origMap; m.color.setHex(on ? SURF[k].tint : o.origColor); m.needsUpdate = true;
+    if (o.atm) o.atm.visible = !on;
+  }
+  showSee(o);
+}
+function showSee(o) {
+  const k = seeKey(o), b = document.getElementById('info-see'), n = document.getElementById('info-seenote');
+  b.style.display = k ? 'inline-block' : 'none'; n.style.display = k && o.see ? 'block' : 'none';
+  if (!k) return;
+  b.textContent = o.see ? (k === 'earth' ? 'Bring back the clouds' : 'Bring back the atmosphere') : (k === 'earth' ? 'Clear the clouds' : 'See the surface');
+  n.textContent = SURF[k].note;
+}
+document.getElementById('info-see').onclick = () => { if (selected) setSee(selected, !selected.see); };
 
 // ===================================================================
 //  labels
@@ -2292,6 +2326,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=bdcf3cc1" data-place="header" defer></script>
+<script src="../music/music.js?v=8a798d61" data-place="header" defer></script>
 </body>
 </html>
