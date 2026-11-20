@@ -10,7 +10,7 @@
     '.uas-fold:hover, .uas-fold:focus-visible { color: #ffcf6e; outline: none; }',
     '.uas-tab { display: none; }',
     '.uas-foldable-pad { padding-top: 26px !important; }',
-    '.uas-folded { padding: 0 !important; width: auto !important; min-width: 0 !important; max-height: none !important; overflow: visible !important; }',
+    '.uas-folded.uas-folded { padding: 0 !important; width: auto !important; min-width: 0 !important; max-height: none !important; overflow: visible !important; }',
     '.uas-folded > :not(.uas-tab) { display: none !important; }',
     '.uas-folded > .uas-tab { display: block; border: 0; background: none; color: #f3e7c6; font: italic 15px "IM Fell English", Georgia, serif; letter-spacing: 0.02em; padding: 8px 14px; cursor: pointer; white-space: nowrap; max-width: 62vw; overflow: hidden; text-overflow: ellipsis; }',
     '.uas-folded > .uas-tab:hover, .uas-folded > .uas-tab:focus-visible { color: #ffcf6e; outline: none; }',
