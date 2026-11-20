@@ -287,10 +287,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=01efdddf"></script>
-<script src="../shared/clock.js?v=01efdddf"></script>
-<script src="../shared/fold.js?v=01efdddf"></script>
-<script src="../shared/galaxy-volume.js?v=01efdddf"></script>
+<script src="../shared/frame.js?v=a8fe6b87"></script>
+<script src="../shared/clock.js?v=a8fe6b87"></script>
+<script src="../shared/fold.js?v=a8fe6b87"></script>
+<script src="../shared/galaxy-volume.js?v=a8fe6b87"></script>
 <script>
 (() => {
 'use strict';
@@ -1751,7 +1751,7 @@ function backlitDir(o, D) { // night side, with the Sun peeking just past the li
   return sd.clone().negate().multiplyScalar(Math.cos(th)).addScaledVector(off, Math.sin(th)).normalize();
 }
 function flyTo(o, dist, dir, dur) {
-  if (SKY.on) { skyOff(true); camera.position.copy(SKY.up).multiplyScalar(EARTH.R * 4); controls.target.set(0, 0, 0); }
+  if (SKY.on) { if (!SKY.launch) skyLaunch(o); return; }   // standing on Earth: lift off first, then fly
   setFocus(o);
   const cur = camera.position.clone().sub(controls.target).normalize();
   if (!dir) {
@@ -2094,7 +2094,7 @@ function updateLabels() {
     relOf(o, p); const v = p.clone().project(camera), dist = p.distanceTo(camera.position);
     o.ax = (v.x + 1) / 2 * W; o.ay = (1 - v.y) / 2 * H; o.px = radiusOf(o) / dist * pxs; o.ndc = v; o.dist = dist;
     o.onScreen = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1 && !(occ && o !== fg && o.kind === 'moon' && o.parent === fg && hiddenBy(p, occ, fg.R));
-    o.belowH = SKY.on && (o === EARTH || behindSkyline(p)); if (o.belowH) o.onScreen = false;
+    o.belowH = SKY.on && !SKY.lifted && (o === EARTH || behindSkyline(p)); if (o.belowH) o.onScreen = false;
     if (o.kind === 'moon') { const par = o.parent; if (Math.hypot(o.ax - par.ax, o.ay - par.ay) < 12 + par.px) o.onScreen = false; }
     else if (o.isPlanet && o !== selected && SUN.dist > 60 * AUS && Math.hypot(o.ax - SUN.ax, o.ay - SUN.ay) < 18) o.onScreen = false; // from far out the planets melt into the Sun
   }
@@ -2400,12 +2400,23 @@ function skyOn(hemi) {
   skyGround.visible = skyDome.visible = true; document.body.classList.add('sky'); skyPanel.hidden = false; skyWhere(); select(null);
 }
 function skyOff(keep) {
-  if (!SKY.on) return; SKY.on = false;
+  if (!SKY.on) return; SKY.on = false; SKY.launch = null; SKY.lifted = false; camera.up.set(0, 1, 0);
   controls.enabled = true; EARTH.mesh.visible = true; EARTH.clouds.visible = !EARTH.see; if (EARTH.atm) EARTH.atm.visible = true;
   skyGround.visible = skyDome.visible = false; document.body.classList.remove('sky'); skyPanel.hidden = true; document.getElementById('info').style.top = '';
   skyRoot.visible = bandRoot.visible = true; bandCam.fov = 40; SUN.glare.visible = SUN.corona.visible = true;
   if (SKY.saved) { opts.orbits = SKY.saved.orbits; if (!SKY.saved.constel && opts.constel) document.querySelector('.tg[data-k="constel"]').click(); SKY.saved = null; }
   if (!keep) { camera.position.copy(SKY.up).multiplyScalar(EARTH.R * 4); controls.target.set(0, 0, 0); controls.update(); flyTo(EARTH); }
+}
+// double-click a planet (or "Fly here") from the ground: turn to it, rise through the sky as the blue fades to black, then fly on
+function skyLaunch(o) {
+  SKY.launch = { o, t0: performance.now(), az0: SKY.az, alt0: SKY.alt, fov0: SKY.fov, e: 0 }; SKY.lifted = false;
+  document.body.classList.remove('sky'); skyPanel.hidden = true; document.getElementById('info').style.top = ''; select(o);
+}
+function skyLand() {
+  const o = SKY.launch.o, look = new THREE.Vector3(); camera.getWorldDirection(look);
+  SKY.launch = null; SKY.lifted = false; skyOff(true); camera.up.set(0, 1, 0);
+  controls.target.copy(camera.position).addScaledVector(look, EARTH.R * 2);   // the flight starts from where we're already looking
+  flyTo(o);
 }
 // put the camera on the ground and point it: called each frame, after the planets have moved
 function skyCamera() {
@@ -2415,24 +2426,37 @@ function skyCamera() {
   SKY.up.set(Math.cos(lon) * Math.cos(lat), Math.sin(lat), -Math.sin(lon) * Math.cos(lat)).transformDirection(m.matrixWorld);
   const pole = new THREE.Vector3(0, 1, 0).transformDirection(EARTH.tilt.matrixWorld);
   SKY.east.crossVectors(pole, SKY.up).normalize(); SKY.north.crossVectors(SKY.up, SKY.east);
+  let lift = EARTH.R * 0.0003, L = SKY.launch;
+  if (L) {   // taking off: turn to face the target, then climb, faster and faster, out of the atmosphere
+    const t = performance.now() - L.t0, obs = c.clone().addScaledVector(SKY.up, EARTH.R), d = relOf(L.o).sub(obs).normalize();
+    if (L.o !== EARTH) { const tAz = Math.atan2(d.dot(SKY.east), d.dot(SKY.north)) / DEG, tAlt = Math.asin(THREE.MathUtils.clamp(d.dot(SKY.up), -1, 1)) / DEG, k1 = sstep(t, 0, 1000);
+      SKY.az = L.az0 + ((((tAz - L.az0) % 360) + 540) % 360 - 180) * k1; SKY.alt = L.alt0 + (tAlt - L.alt0) * k1; }
+    const k2 = THREE.MathUtils.clamp((t - 800) / 3000, 0, 1); L.e = k2 * k2;
+    lift = EARTH.R * 0.0003 * Math.pow(3 / 0.0003, L.e);
+    SKY.fov = L.fov0 + (40 - L.fov0) * sstep(k2, 0, 0.8);
+    if (!SKY.lifted && lift > 0.015) {   // above ~15 km: the real globe takes over from the drawn ground
+      SKY.lifted = true; skyGround.visible = false; EARTH.mesh.visible = true; EARTH.clouds.visible = !EARTH.see; if (EARTH.atm) EARTH.atm.visible = true; }
+    if (k2 >= 1) return skyLand();
+  }
   const a = SKY.az * DEG, h = SKY.alt * DEG;
   const look = SKY.north.clone().multiplyScalar(Math.cos(a) * Math.cos(h)).addScaledVector(SKY.east, Math.sin(a) * Math.cos(h)).addScaledVector(SKY.up, Math.sin(h));
-  camera.position.copy(c).addScaledVector(SKY.up, EARTH.R * 1.0003);
+  camera.position.copy(c).addScaledVector(SKY.up, EARTH.R + lift);
   camera.up.copy(SKY.up); camera.lookAt(camera.position.clone().add(look));
   controls.target.copy(c);
 }
 // after the frame's own camera settings: the lens, the ground and sky, day and night
-function skyFrame() {
+function skyPaint() {
   camera.fov = SKY.fov; camera.near = 1e-5; camera.updateProjectionMatrix(); camera.updateMatrixWorld();
   bandCam.fov = SKY.fov;
   skyGround.position.copy(camera.position); skyDome.position.copy(camera.position);
   const gu = skyGround.material.uniforms; gu.up.value.copy(SKY.up); gu.north.value.copy(SKY.north); gu.east.value.copy(SKY.east); skyDome.material.uniforms.up.value.copy(SKY.up);
   const sp = relOf(SUN).sub(camera.position).normalize(), sAlt = Math.asin(THREE.MathUtils.clamp(sp.dot(SKY.up), -1, 1)) / DEG;
-  const day = sstep(sAlt, -8, 6), dusk = sstep(sAlt, -16, -2) * (1 - sstep(sAlt, 2, 10));
+  const thin = SKY.launch ? 1 - sstep(SKY.launch.e, 0.0, 0.32) : 1;   // climbing out: the blue thins away to black
+  const day = sstep(sAlt, -8, 6) * thin, dusk = sstep(sAlt, -16, -2) * (1 - sstep(sAlt, 2, 10)) * thin;
   skyDome.material.uniforms.sun.value.copy(sp); skyDome.material.uniforms.day.value = day; skyDome.material.uniforms.dusk.value = dusk;
   gu.day.value = day; gu.dusk.value = dusk; SKY.day = day;
   skyRoot.visible = bandRoot.visible = day < 0.55;   // the stars and the Milky Way vanish in daylight
-  SUN.glare.visible = SUN.corona.visible = !behindSkyline(relOf(SUN));   // the glare is drawn over everything: hide it once the Sun has set
+  SUN.glare.visible = SUN.corona.visible = SKY.lifted || !behindSkyline(relOf(SUN));   // the glare is drawn over everything: hide it once the Sun has set
   if (constel) constel.visible = opts.constel && day < 0.55;
   if (performance.now() - ZW.last > 150) { ZW.last = performance.now(); drawZodiac(); drawChinese();
     const zr = document.getElementById('zodwheel').getBoundingClientRect(); document.getElementById('info').style.top = (zr.bottom + 10) + 'px'; }
@@ -2566,7 +2590,7 @@ function frame(t) {
   camNom.copy(camera.position);
   if (deep.p > 0) camera.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target);
   camera.fov = deep.fov; camera.far = camD > 1e7 ? 1e15 : 2e8; camera.near = Math.min(0.0005, Math.max(1e-9, camD * 0.02)); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
-  if (SKY.on) skyFrame();
+  if (SKY.on) skyPaint();
 
   renderer.clear();
   // the stars are drawn from where the camera really is among them, in light-years from the Sun
@@ -2650,6 +2674,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=01efdddf" data-place="info" defer></script>
+<script src="../music/music.js?v=a8fe6b87" data-place="info" defer></script>
 </body>
 </html>
