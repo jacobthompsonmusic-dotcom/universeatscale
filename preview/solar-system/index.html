@@ -204,6 +204,7 @@
     <button class="tg on" data-k="faint">Faint rings</button>
     <button class="tg on" data-k="milky">Milky Way</button>
     <button class="tg" data-k="zodiac">Zodiac</button>
+    <button class="tg" data-k="constel">Constellations</button>
   </div>
   <div class="hint">Planets, moons, the Sun and every distance are to true scale. Double-click a name to fly there; click empty space to close a card. The stars behind are real, each at its measured distance. Earth imagery: <a href="https://www.solarsystemscope.com/textures/" style="color:inherit">Solar System Scope</a> (CC BY 4.0), from NASA data.</div>
 </div>
@@ -231,10 +232,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=0d76e21e"></script>
-<script src="../shared/clock.js?v=0d76e21e"></script>
-<script src="../shared/fold.js?v=0d76e21e"></script>
-<script src="../shared/galaxy-volume.js?v=0d76e21e"></script>
+<script src="../shared/frame.js?v=90fb8da2"></script>
+<script src="../shared/clock.js?v=90fb8da2"></script>
+<script src="../shared/fold.js?v=90fb8da2"></script>
+<script src="../shared/galaxy-volume.js?v=90fb8da2"></script>
 <script>
 (() => {
 'use strict';
@@ -975,6 +976,23 @@ const zodiac = new THREE.Group(); zodiac.visible = false; skyRoot.add(zodiac);
     x.fillText(c.n.toUpperCase().split('').join(String.fromCharCode(8202)), 256, 48);
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false, depthWrite: false }));
     galToScene(c.l[0] * c.d, c.l[1] * c.d, c.l[2] * c.d, sp.position); sp.scale.set(c.d * 0.13, c.d * 0.13 * 96 / 512, 1); zodiac.add(sp);
+  }
+}
+// well-known constellations beyond the zodiac: stick figures joined between the same real stars, each at its measured distance
+// (heliocentric galactic coordinates in ly, taken from the galaxy map's catalogue: Gaia DR3 / Hipparcos via AT-HYG v3.2)
+const CONSTEL = [{"n":"Orion","l":[-0.88251,-0.37845,-0.27922],"d":736.2,"p":[[[-1037.57,-279,-225.39],[-509.25,-183.24,-85.33],[-632.23,-314.3,-208.61],[-1709.47,-804,-581.71],[-603.73,-266.7,-209.48],[-232.17,-70.67,-69.36],[-1037.57,-279,-225.39]],[[-632.23,-314.3,-208.61],[-506.21,-347.7,-204.03]],[[-603.73,-266.7,-209.48],[-679.59,-380.43,-367.32]]]},{"n":"Ursa Major","l":[-0.32392,0.3771,0.86768],"d":83.2,"p":[[[-7.86,42.6,94.42],[-16.03,37.56,75.46],[-21.02,33.7,72.36],[-27.66,30.3,69.7],[-61.36,46.7,95.65],[-39.33,23.57,65.31],[-30.71,25.16,73.1],[-27.66,30.3,69.7]]]},{"n":"Ursa Minor","l":[-0.33982,0.7524,0.56428],"d":359.1,"p":[[[-219.34,334.17,198.95],[-78.38,140.2,86.5],[-119.27,256.8,170.8],[-111.97,269.2,209.58],[-38.09,91.9,85.1],[-117.69,354.9,323.6],[-26.15,75.16,56.5],[-111.97,269.2,209.58]]]},{"n":"Cassiopeia","l":[-0.55753,0.82906,-0.04261],"d":228.2,"p":[[[-25.24,48.43,-3.13],[-118.24,193.56,-25.04],[-303.55,457.1,-19.84],[-60.02,79.09,-3.93],[-298.27,357.4,14.15]]]},{"n":"Cygnus","l":[0.23761,0.97041,0.04294],"d":1832,"p":[[[260.55,2601.19,91.29],[376.15,1792,59.05],[169.37,319.9,28.47]],[[31.77,159,29.22],[376.15,1792,59.05],[17.54,70.18,-7.28]]]},{"n":"Lyra","l":[0.39503,0.87573,0.27759],"d":656.8,"p":[[[9.05,21.8,8.24],[59.32,138.5,47.05],[395.88,782.2,230.31],[287.96,572.3,144.88],[291.61,683.3,202.77],[59.32,138.5,47.05]]]},{"n":"Aquila","l":[0.71969,0.67998,-0.14028],"d":50.6,"p":[[[258.38,294.6,-49.35],[11.12,12.23,-2.59],[30.15,31.38,-8.62]],[[11.12,12.23,-2.59],[38.77,32.11,-5.51],[109.37,63.8,-12.47]]]},{"n":"Canis Major","l":[-0.55279,-0.81126,-0.19046],"d":492.6,"p":[[[-331.6,-343.8,-120.57],[-5.77,-6.24,-1.33],[-833.58,-1354,-228.91],[-909.56,-1755,-222.71]],[[-833.58,-1354,-228.91],[-199.8,-343.5,-79.1],[-174.29,-273.4,-113.86]]]},{"n":"Crux","l":[0.50302,-0.86264,0.0532],"d":322,"p":[[[161.63,-278.49,-2.02],[44.31,-76.23,8.72]],[[149.24,-234.63,15.45],[162.76,-303.2,22.39]]]},{"n":"Pegasus","l":[0.02592,0.77825,-0.62742],"d":133.3,"p":[[[2.78,101.5,-86.41],[-17.44,170.5,-95.16],[-30.17,75.71,-52.6],[-90.02,253.2,-284.47],[2.78,101.5,-86.41]],[[2.78,101.5,-86.41],[29.67,152.1,-133.27],[27.51,66.49,-57.8],[242.39,535.5,-360.51]]]},{"n":"Andromeda","l":[-0.49894,0.72939,-0.46803],"d":197.4,"p":[[[-30.17,75.71,-52.6],[-43.84,76,-54.49],[-106.02,140.14,-89.92],[-272.3,254.28,-125.09]]]},{"n":"Boötes","l":[0.28382,0.25537,0.92425],"d":120.4,"p":[[[10.89,1,35.52],[12.64,3.4,34.29],[66.73,54.77,183.29],[38.16,50.4,102.5],[45.21,108.5,203.49],[13.63,32.05,78.66],[42.48,45.6,151.99],[12.64,3.4,34.29]]]},{"n":"Perseus","l":[-0.85973,0.4861,-0.15674],"d":506.4,"p":[[[-191.05,148.9,-17.92],[-420.53,277.6,-50.64],[-451.53,257.6,-51.37],[-580.28,242,-110.34],[-686.54,219.1,-214.18]],[[-420.53,277.6,-50.64],[-74.45,44.77,-23.12]]]}];
+const constel = new THREE.Group(); constel.visible = false; skyRoot.add(constel);
+{
+  const seg = [], a = new THREE.Vector3(), b = new THREE.Vector3();
+  for (const c of CONSTEL) for (const l of c.p) for (let i = 1; i < l.length; i++) { galToScene(...l[i - 1], a); galToScene(...l[i], b); seg.push(...a.toArray(), ...b.toArray()); }
+  const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(seg, 3));
+  const cl = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0xe9d9b0, transparent: true, opacity: 0.32, depthTest: false, depthWrite: false })); cl.frustumCulled = false; constel.add(cl);
+  for (const c of CONSTEL) {   // name labels, floating at the typical distance of the figure's stars
+    const cv = document.createElement('canvas'), x = cv.getContext('2d'); cv.width = 512; cv.height = 96;
+    x.font = 'italic 47.5px "IM Fell English", Georgia, serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = 'rgba(236,222,186,0.62)';
+    x.fillText(c.n.toUpperCase().split('').join(String.fromCharCode(8202)), 256, 48);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false, depthWrite: false }));
+    galToScene(c.l[0] * c.d, c.l[1] * c.d, c.l[2] * c.d, sp.position); sp.scale.set(c.d * 0.13, c.d * 0.13 * 96 / 512, 1); constel.add(sp);
   }
 }
 {
@@ -1912,8 +1930,8 @@ addEventListener('wheel', e => {
 // ===================================================================
 //  UI
 // ===================================================================
-const opts = { orbits: true, labels: true, dots: true, faint: true, milky: true, zodiac: false };
-document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); for (const g of GIANTS) g.faint.visible = opts.faint; milky.visible = opts.milky; zodiac.visible = opts.zodiac;
+const opts = { orbits: true, labels: true, dots: true, faint: true, milky: true, zodiac: false, constel: false };
+document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); for (const g of GIANTS) g.faint.visible = opts.faint; milky.visible = opts.milky; zodiac.visible = opts.zodiac; constel.visible = opts.constel;
   if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-ss', opt: 'zodiac', on: opts.zodiac }, '*'); });
 const playBtn = document.getElementById('play'), speedIn = document.getElementById('speed');
 playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶'; };
@@ -2114,6 +2132,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=0d76e21e" data-place="header" defer></script>
+<script src="../music/music.js?v=90fb8da2" data-place="header" defer></script>
 </body>
 </html>
