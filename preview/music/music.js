@@ -20,6 +20,9 @@
     ' border-radius:999px;padding:6px 11px;cursor:pointer;white-space:nowrap;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:color .15s,border-color .15s}',
     '.uas-mu-btn:hover,.uas-mu-btn:focus-visible,.uas-mu-btn.open{color:#e9ecf5;border-color:rgba(255,207,110,.45);outline:none}',
     '.uas-mu-btn .n{color:#ffcf6e;margin-right:5px}',
+    /* open: a small × slides in after the word, saying a second press closes the player */
+    '.uas-mu-btn .x{display:inline-block;width:0;margin-left:0;opacity:0;overflow:hidden;vertical-align:-1px;font:13px/1 Georgia,serif;color:#ffcf6e;transition:width .18s,margin .18s,opacity .18s}',
+    '.uas-mu-btn.open .x{width:.75em;margin-left:7px;opacity:.9}',
     /* invitation: a soft gold glow that breathes on arrival, until the note is first opened (or after ~40 s) */
     '.uas-mu-btn.invite{color:#f3e6c8;border-color:rgba(255,207,110,.55);animation:uasglow 2.8s ease-in-out infinite}',
     '.uas-mu-btn.invite .n{text-shadow:0 0 8px rgba(255,207,110,.9)}',
@@ -55,7 +58,7 @@
   btn.className = 'uas-mu-btn';
   btn.setAttribute('aria-haspopup', 'dialog');
   btn.title = 'Soundtrack: First Time Again by Jacob Thompson';
-  btn.innerHTML = '<span class="n">♪</span>Soundtrack';
+  btn.innerHTML = '<span class="n">♪</span>Soundtrack<span class="x" aria-hidden="true">×</span>';
 
   var pop = document.createElement('div');
   pop.className = 'uas-mu-pop';
@@ -105,11 +108,11 @@
       if (!/(^|\.)universeatscale\.com$|\.github\.io$|^localhost$|^127\.0\.0\.1$/.test(location.hostname)) {
         var fr = pop.querySelector('.frame'); fr.classList.add('off');
         fr.innerHTML = '<a href="' + SPOTIFY + '" target="_blank" rel="noopener">▶ Listen on Spotify</a><span>The built-in player appears on universeatscale.com</span>';
-        pop.hidden = false; btn.classList.add('open'); position(); return;
+        pop.hidden = false; btn.classList.add('open'); btn.title = 'Close the player'; position(); return;
       }
       startPlayer(pop.querySelector('.frame'));
     }
-    pop.hidden = false; btn.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); position();
+    pop.hidden = false; btn.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); btn.title = 'Close the player'; position();
   }
   // The album in Spotify's player, starting on "The Last Time" and looping round the whole album for as long as the visitor leaves it playing.
   // Uses Spotify's iFrame API: each track is loaded in turn, and when one ends the next one starts.
@@ -142,7 +145,7 @@
     };
     var sc = document.createElement('script'); sc.src = 'https://open.spotify.com/embed/iframe-api/v1'; sc.async = true; document.head.appendChild(sc);
   }
-  function close() { pop.hidden = true; btn.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); }
+  function close() { pop.hidden = true; btn.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); btn.title = 'Soundtrack: First Time Again by Jacob Thompson'; }
 
   btn.addEventListener('click', function (e) { e.stopPropagation(); pop.hidden ? open() : close(); });
   document.addEventListener('pointerdown', function (e) { if (!pop.hidden && e.target !== btn && !btn.contains(e.target)) close(); });
