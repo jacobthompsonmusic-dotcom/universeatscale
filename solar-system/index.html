@@ -234,10 +234,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=a42df204"></script>
-<script src="../shared/clock.js?v=a42df204"></script>
-<script src="../shared/fold.js?v=a42df204"></script>
-<script src="../shared/galaxy-volume.js?v=a42df204"></script>
+<script src="../shared/frame.js?v=bdcf3cc1"></script>
+<script src="../shared/clock.js?v=bdcf3cc1"></script>
+<script src="../shared/fold.js?v=bdcf3cc1"></script>
+<script src="../shared/galaxy-volume.js?v=bdcf3cc1"></script>
 <script>
 (() => {
 'use strict';
@@ -1809,7 +1809,7 @@ function buildFields() {
   // (each line fades out between Mars and Saturn: further out the turns crowd too close together to read)
   const sMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending }), sc = new THREE.Color(0xffc46a);
   for (let j = 0; j < 8; j++) {
-    const ph0 = j / 8 * TAU, pts = [], col = [], r0 = 2.5 * SUN.R, rMax = 40 * AUS;
+    const ph0 = j / 8 * TAU, pts = [], col = [], r0 = 2.5 * SUN.R, rMax = 12 * AUS;
     for (let i = 0; i <= 2400; i++) { const r = r0 * Math.pow(rMax / r0, i / 2400), ph = ph0 - (r - r0) / k, w = 1 - sstep(Math.log(r / AUS), Math.log(1.6), Math.log(10));
       pts.push(new THREE.Vector3(r * Math.cos(ph), 0, -r * Math.sin(ph))); col.push(sc.r * w, sc.g * w, sc.b * w); }
     const g = new THREE.BufferGeometry().setFromPoints(pts); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
@@ -2292,6 +2292,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=a42df204" data-place="header" defer></script>
+<script src="../music/music.js?v=bdcf3cc1" data-place="header" defer></script>
 </body>
 </html>
