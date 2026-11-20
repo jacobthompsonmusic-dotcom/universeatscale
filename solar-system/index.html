@@ -232,10 +232,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=53a671c8"></script>
-<script src="../shared/clock.js?v=53a671c8"></script>
-<script src="../shared/fold.js?v=53a671c8"></script>
-<script src="../shared/galaxy-volume.js?v=53a671c8"></script>
+<script src="../shared/frame.js?v=4d2c74ef"></script>
+<script src="../shared/clock.js?v=4d2c74ef"></script>
+<script src="../shared/fold.js?v=4d2c74ef"></script>
+<script src="../shared/galaxy-volume.js?v=4d2c74ef"></script>
 <script>
 (() => {
 'use strict';
@@ -1664,15 +1664,24 @@ function flyTo(o, dist, dir, dur) {
       if (o.key === 'haumea') { const pl = o.pole.clone(); if (pl.y < 0) pl.negate(); dir.addScaledVector(pl, 0.4).normalize(); } // look down on the ring a little
     }
   }
-  const travel = controls.target.length();
-  fly = { o, t0: performance.now(), dur: dur || (travel > 2e4 ? 2600 : 1600), fromPos: camera.position.clone(), fromTgt: controls.target.clone(), dist: dist || defaultDist(o), dir, travel };
+  const travel = controls.target.length(), D1 = dist || defaultDist(o);
+  // long hauls (in from the stars) take longer, so the last stretch down to a planet isn't rushed: ~0.48 s per e-fold of distance
+  const L = Math.abs(Math.log(Math.max(camera.position.length(), 1e-4) / D1));
+  let T = dur || Math.max(travel > 2e4 ? 2600 : 1600, Math.min(9500, 480 * L)), m0 = 0;
+  // arriving from the galaxy map still moving: start at its speed instead of from a standstill
+  if (!dur && entry && performance.now() - entry.t < 1500 && L > 1) m0 = THREE.MathUtils.clamp(entry.rate * T / L, 0, 3);
+  entry = null;
+  fly = { o, t0: performance.now(), dur: T, m0, fromPos: camera.position.clone(), fromTgt: controls.target.clone(), dist: D1, dir, travel };
   select(o);
 }
 function preset(dir, dist) { fly = { o: focus, t0: performance.now(), dur: 1400, fromPos: camera.position.clone(), fromTgt: controls.target.clone(), dist: dist || camera.position.distanceTo(controls.target), dir: dir.clone().normalize(), travel: 0 }; }
 // The flight keeps its destination in the middle of the view the whole way: the eye turns to it in the first moment, then the camera
 // swings smoothly round it (along a great circle) while closing in, so the planet grows in place instead of arriving from the side.
+let entry = null;   // the zoom speed handed on by the galaxy map (e-folds per ms) and when
 function stepFly(t) {
-  const k = Math.min(1, (t - fly.t0) / fly.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+  const k = Math.min(1, (t - fly.t0) / fly.dur), m0 = fly.m0 || 0;
+  // eased in and out; or, carrying on from the galaxy map, starting at its speed (a Hermite curve with that initial slope) and easing out
+  const e = m0 ? m0 * (k * k * k - 2 * k * k + k) + 3 * k * k - 2 * k * k * k : k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
   if (!fly.q) {   // the path, in the frame centred on the destination (the scene is re-based on it every frame)
     const off = fly.fromPos.clone(); let d0 = off.length(); if (d0 < 1e-9) { off.copy(fly.dir); d0 = fly.dist; }
     fly.d0 = d0; fly.dir0 = off.normalize(); fly.q = new THREE.Quaternion().setFromUnitVectors(fly.dir0, fly.dir.clone().normalize());
@@ -2107,7 +2116,7 @@ if (EMBED) addEventListener('message', e => {
   if (m.cmd === 'pick') { const o = LIST.find(x => x.name === m.name); if (o) { wake(); flyTo(o); select(o); } return; }
   if (m.cmd === 'pause') paused = true;
   else if (m.cmd === 'resume') wake();
-  else if (m.cmd === 'enter') { enterFrom(m.s, m.yaw, m.tilt); wake(); }
+  else if (m.cmd === 'enter') { enterFrom(m.s, m.yaw, m.tilt); entry = m.rate ? { rate: m.rate, t: performance.now() } : null; wake(); }
   else if (m.cmd === 'fly') { wake(); if (m.key === 'all') document.getElementById('p-all').onclick(); else if (m.key === 'far') goFar(m.span); else if (byKey(m.key)) flyTo(byKey(m.key)); }
   else if (m.cmd === 'opt') { if (opts[m.k] !== m.on) document.querySelector(`.tg[data-k="${m.k}"]`).click(); }
 });
@@ -2132,6 +2141,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=53a671c8" data-place="header" defer></script>
+<script src="../music/music.js?v=4d2c74ef" data-place="header" defer></script>
 </body>
 </html>

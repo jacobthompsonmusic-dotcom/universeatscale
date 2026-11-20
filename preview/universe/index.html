@@ -108,7 +108,7 @@ function show() {   // which map is on top and takes the mouse
 }
 function runPending() { const p = st.pending; if (!p || p.map !== st.driver) return; st.pending = null; (p.map === 'ss' ? toSS : toMW)(p.cmd); }
 function toMap() { st.driver = 'mw'; show(); toSS({ cmd: 'pause' }); toMW({ cmd: 'release' }); runPending(); }
-function toSolar(m) { st.driver = 'ss'; ssEl.style.opacity = 0; show(); toSS({ cmd: 'enter', s: m.s, yaw: m.yaw, tilt: m.tilt }); setTimeout(runPending, 60); }
+function toSolar(m) { st.driver = 'ss'; ssEl.style.opacity = 0; show(); toSS({ cmd: 'enter', s: m.s, yaw: m.yaw, tilt: m.tilt, rate: m.rate || 0 }); setTimeout(runPending, 60); }
 
 function go(key) {
   const s = STOPS[key]; if (!s) return;
@@ -165,11 +165,11 @@ addEventListener('message', e => {
 });
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-const UAS_V = '53a671c8';
+const UAS_V = '4d2c74ef';
 mwEl.src = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
 ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 })();
 </script>
-<script src="../music/music.js?v=53a671c8" data-place="ladder" defer></script>
+<script src="../music/music.js?v=4d2c74ef" data-place="ladder" defer></script>
 </body>
 </html>

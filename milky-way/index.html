@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=53a671c8"></script>
-<script src="../shared/clock.js?v=53a671c8"></script>
-<script src="../shared/fold.js?v=53a671c8"></script>
-<script src="../shared/galaxy-volume.js?v=53a671c8"></script>
+<script src="../shared/frame.js?v=4d2c74ef"></script>
+<script src="../shared/clock.js?v=4d2c74ef"></script>
+<script src="../shared/fold.js?v=4d2c74ef"></script>
+<script src="../shared/galaxy-volume.js?v=4d2c74ef"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -996,14 +996,18 @@ function render(t) {
     const k = Math.min(1, (t - anim.t0) / anim.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
     const f = anim.from, to = anim.to;
     if (anim.vw) {   // along the zoom-and-pan path, easing in and out of it
-      const v = anim.vw, q = v.S * (0.5 - 0.5 * Math.cos(Math.PI * k)), { u, w } = k >= 1 ? { u: v.u1, w: v.w1 } : vwAt(v, q), a = v.flat || !v.u1 ? 0 : Math.min(1, u / v.u1);
+      // a through-flight eases in but not out: it reaches the end at full speed (the Solar System picks the speed up from there)
+      const v = anim.vw, q = v.S * (anim.through ? 1 - Math.cos(Math.PI * k / 2) : 0.5 - 0.5 * Math.cos(Math.PI * k)), { u, w } = k >= 1 ? { u: v.u1, w: v.w1 } : vwAt(v, q), a = v.flat || !v.u1 ? 0 : Math.min(1, u / v.u1);
       view.s = k >= 1 ? to.s : v.M / w; view.x = v.c0[0] + v.d[0] * a; view.y = v.c0[1] + v.d[1] * a; view.z = v.c0[2] + v.d[2] * a;
     } else {
       view.s = Math.exp(Math.log(f.s) + (Math.log(to.s) - Math.log(f.s)) * e);
       view.x = f.x + (to.x - f.x) * e; view.y = f.y + (to.y - f.y) * e; view.z = f.z + (to.z - f.z) * e;
     }
     view.yaw = f.yaw + angDiff(f.yaw, to.yaw) * e; view.tilt = clampTilt(f.tilt + angDiff(f.tilt, to.tilt) * e);
-    if (k >= 1) { const done = anim.done; anim = null; if (done) done(); } else draw();
+    if (k >= 1) { const done = anim.done, v = anim.vw;
+      // the zoom speed at the end, in e-folds of scale per ms (only a through-flight is still moving)
+      const rate = anim.through && v ? RHO * (v.flat ? 1 : Math.abs(Math.tanh(RHO * v.S + v.r0))) * v.S * Math.PI / (2 * anim.dur) : 0;
+      anim = null; if (done) done(rate); } else draw();
   }
   if (ACEN) { acenUpdate(CK.year()); acenTrack(); }
   if (PSR) { PSR.yr = CK.year(); psrTrack(); }   // one date for the whole frame: a binary's stars move fast
@@ -1531,10 +1535,10 @@ function zoomAnchor(X, Y) {
   return [X, Y];
 }
 // Joined with the Solar System map: zooming in on the Sun eases it to the middle of the screen, then hands over at the same scale and angle.
-function handOver(s, into) {
+function handOver(s, into, rate) {
   if (view.tilt < 0) { view.tilt = -view.tilt; view.yaw += Math.PI; }   // the same line of sight, the right way up
   view.x = SUNW.x; view.y = SUNW.y; view.z = SUNW.z; view.s = s; anim = null; following = true; draw();
-  parent.postMessage({ src: 'uas-mw', dive: true, into: !!into, s, yaw: view.yaw, tilt: view.tilt }, '*');   // into: carry on in to the planets
+  parent.postMessage({ src: 'uas-mw', dive: true, into: !!into, s, rate: rate || 0, yaw: view.yaw, tilt: view.tilt }, '*');   // into: carry on in to the planets
 }
 function sunDive(X, Y, f) {
   if (!EMBED || !ssReady || f <= 1 || viewSpan() > 60) return false;
@@ -1556,7 +1560,9 @@ function sunDive(X, Y, f) {
 function diveToSun() {   // fly to the Sun, then hand over to the Solar System (on its own page, open it)
   const M = Math.min(Wd, Ht); select(null);
   if (EMBED && !ssReady) return flyTo(SUNW.x, SUNW.y, SUNW.z, DIVE * 1.05, { raw: true });
-  flyTo(SUNW.x, SUNW.y, SUNW.z, DIVE * 1.05, { raw: true, done: () => EMBED ? handOver(M / 5.4, true) : (location.href = '../universe/') });
+  if (!EMBED) return flyTo(SUNW.x, SUNW.y, SUNW.z, DIVE * 1.05, { raw: true, done: () => (location.href = '../universe/') });
+  // joined page: arrive still moving (no braking at the Sun) and hand the speed on, so the Solar System carries on at the same pace
+  flyTo(SUNW.x, SUNW.y, SUNW.z, 5.4, { raw: true, through: true, done: rate => handOver(M / 5.4, true, rate) });
 }
 const zoomTo = (X, Y, f, viaWheel) => {
   if (f > 1 && selected && steerIn(X, Y, f, viaWheel)) return;
@@ -2586,7 +2592,7 @@ function flyTo(x, y, z, span, o = {}) {
   }
   const dur = o.dur || Math.min(o.max || 12500, Math.max(2200, 1800 + 1400 * S));   // never longer than 12.5 s
   anim = { vw: { c0, d, u1, w0, w1, S, r0, flat, M }, from: { ...view }, to: { x, y, z, s: s1, yaw: o.orient ? o.orient.yaw : view.yaw, tilt: o.orient ? o.orient.tilt : view.tilt },
-    t0: performance.now(), dur, done: o.done };
+    t0: performance.now(), dur, done: o.done, through: !!o.through };
   draw();
 }
 // where the flight is at path position q (0…S): centre and view width
@@ -2925,6 +2931,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=53a671c8" data-place="header" defer></script>
+<script src="../music/music.js?v=4d2c74ef" data-place="header" defer></script>
 </body>
 </html>
