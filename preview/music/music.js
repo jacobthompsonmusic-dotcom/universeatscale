@@ -14,11 +14,17 @@
   var me = document.currentScript;
   var place = (me && me.getAttribute('data-place')) || 'corner';
   var embedded = window.name === 'uas-embed' || /[?&]embed=1/.test(location.search);
+  // the lowest of the panels stacked in the top right (the object card, the sky view's zodiac wheel), if any is showing
+  function lowestCard() {
+    var best = null;
+    ['info', 'zodwheel'].forEach(function (id) { var e = document.getElementById(id); if (!e || getComputedStyle(e).display === 'none') return;
+      var r = e.getBoundingClientRect(); if (r.height && (!best || r.bottom > best.bottom)) best = r; });
+    return best;
+  }
   if (embedded) {                             // the joined page shows its own note, so the music keeps playing across the hand-over;
     var lastR = null;                         // tell it where this map's object card is, so the note can sit under it
     setInterval(function () {
-      var i = document.getElementById('info'), s = '';
-      if (i && getComputedStyle(i).display !== 'none') { var r = i.getBoundingClientRect(); if (r.height) s = [r.top, r.bottom, r.left, r.right].map(Math.round).join(','); }
+      var r = lowestCard(), s = r ? [r.top, r.bottom, r.left, r.right].map(Math.round).join(',') : '';
       if (s !== lastR) { lastR = s; try { parent.postMessage({ src: 'uas-info', r: s }, '*'); } catch (_) {} }
     }, 200);
     return;
@@ -92,7 +98,7 @@
         // under the open object card if there is one (on the joined page the maps report theirs), else under the ladder, else the top-right corner
         var lad = document.getElementById('ladder'), frameInfo = new Map();
         var cardRect = function () {
-          if (place === 'info') { var i = document.getElementById('info'); if (i && getComputedStyle(i).display !== 'none') { var r = i.getBoundingClientRect(); if (r.height) return r; } return null; }
+          if (place === 'info') return lowestCard();
           // the topmost map on show (the Solar System sits over the galaxy map), and its card if it has one open
           var top = null; [].forEach.call(document.querySelectorAll('iframe[name="uas-embed"]'), function (f) { var cs = getComputedStyle(f); if (+cs.opacity >= 0.5 && cs.visibility !== 'hidden') top = f; });
           var s = top && frameInfo.get(top.contentWindow); if (!s) return null;

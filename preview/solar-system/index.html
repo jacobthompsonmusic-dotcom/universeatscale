@@ -134,6 +134,18 @@
   #skydirs span { position:absolute; left:0; top:0; color:#f1dfae; font:italic 17px "IM Fell English", Georgia, serif; letter-spacing:0.08em; text-shadow:0 0 6px #000; transform:translate(-50%, -100%); }
   #skydirs span:nth-child(even) { font-size:13px; opacity:0.6; }
   body.sky #scale { display:none; }
+  #zodwheel { display:none; top:16px; right:98px; width:316px; padding:12px 12px 10px; z-index:3; }
+  body.embed #zodwheel { right:140px; }
+  body.sky #zodwheel { display:block; }
+  #zodwheel .zw-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
+  #zodwheel .zw-title { font-variant:small-caps; letter-spacing:0.08em; color:#e9d9b0; font-size:15px; }
+  #zodwheel .seg { display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; }
+  #zodwheel .seg button { background:none; border:0; color:var(--text); padding:3px 9px; font:italic 12.5px "IM Fell English", Georgia, serif; cursor:pointer; }
+  #zodwheel .seg button + button { border-left:1px solid var(--line); }
+  #zodwheel .seg button.on { background:rgba(255,207,110,0.18); color:#ffcf6e; }
+  #zw-c { display:block; width:292px; height:292px; margin:0 auto; }
+  #zw-note { margin:6px 2px 0; font-size:11.5px; line-height:1.4; color:rgba(232,226,212,0.6); }
+  @media (max-width:760px) { #zodwheel { right:12px; width:min(78vw, 300px); } #zw-c { width:100%; height:auto; } }
   #datepick label { display:flex; gap:6px; align-items:center; }
   #datepick input { background:rgba(255,255,255,0.06); border:1px solid var(--line); border-radius:7px; color:var(--text); font:italic 14px "IM Fell English", Georgia, serif; padding:5px 7px; color-scheme:dark; }
   #scale { position:fixed; bottom:74px; left:50%; transform:translateX(-50%); text-align:center; font-size:13.5px; color:var(--muted); pointer-events:none; z-index:1; font-variant-numeric:tabular-nums; text-shadow:0 1px 2px #000; }
@@ -249,6 +261,11 @@
   <span class="seg"><button data-az="0">N</button><button data-az="90">E</button><button data-az="180">S</button><button data-az="270">W</button></span>
   <button id="sky-exit">Leave the sky</button>
 </div>
+<div id="zodwheel" class="panel">
+  <div class="zw-head"><span class="zw-title">The zodiac now</span><span class="seg"><button data-zw="signs" class="on">Signs</button><button data-zw="const">Constellations</button></span></div>
+  <canvas id="zw-c" width="300" height="300"></canvas>
+  <p id="zw-note"></p>
+</div>
 <div id="skydirs"><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span></div>
 <div id="time" class="panel">
   <button id="play" aria-label="Pause">❚❚</button>
@@ -261,10 +278,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=01903c9e"></script>
-<script src="../shared/clock.js?v=01903c9e"></script>
-<script src="../shared/fold.js?v=01903c9e"></script>
-<script src="../shared/galaxy-volume.js?v=01903c9e"></script>
+<script src="../shared/frame.js?v=0fde60be"></script>
+<script src="../shared/clock.js?v=0fde60be"></script>
+<script src="../shared/fold.js?v=0fde60be"></script>
+<script src="../shared/galaxy-volume.js?v=0fde60be"></script>
 <script>
 (() => {
 'use strict';
@@ -2250,6 +2267,95 @@ function behindSkyline(p) {   // set below the horizon, or behind the hills and 
   const d = p.clone().sub(camera.position).normalize(), h = d.dot(SKY.up); if (h < 0) return true; if (h > 0.07) return false;
   return h < SKYPROF.at(Math.atan2(d.dot(SKY.east), d.dot(SKY.north)));
 }
+// ---- the zodiac wheel: a birth-chart-style wheel of the Sun, Moon and planets along the ecliptic as seen from this spot, now
+// Positions are geocentric ecliptic longitudes from the same orbits that place the planets in 3D. "Signs" are the twelve equal
+// 30° signs of the tropical zodiac counted from the March equinox (of date: J2000 + precession); "Constellations" are the
+// real star patterns the ecliptic runs through, by their IAU boundaries — thirteen of them, Ophiuchus included, about a sign's
+// width further along. The ascendant (AC) is the point of the ecliptic rising in the east; MC is where it crosses the meridian;
+// houses are equal 30° slices from the ascendant; lines join planets in major aspect (red: square, opposition; blue: trine, sextile).
+const ZW = { mode: 'signs', last: 0, cv: document.getElementById('zw-c') };
+const ZW_SIGNS = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'].map(g => g + '︎');
+const ZW_SIGN_NAMES = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+const ZW_CONST = [['Psc', 351.57], ['Ari', 29.09], ['Tau', 53.47], ['Gem', 90.14], ['Cnc', 118.26], ['Leo', 138.18], ['Vir', 174.15], ['Lib', 217.81],
+  ['Sco', 241.03], ['Oph', 247.68], ['Sgr', 266.27], ['Cap', 299.71], ['Aqr', 327.9]];   // where the ecliptic enters each, J2000 ecliptic longitude
+const ZW_BODIES = [['sun', '☉'], ['moon', '☽'], ['mercury', '☿'], ['venus', '♀'], ['mars', '♂'], ['jupiter', '♃'], ['saturn', '♄'], ['uranus', '♅'], ['neptune', '♆'], ['pluto', '♇']];
+const zwLon = v => ((Math.atan2(-v.z, v.x) / DEG) % 360 + 360) % 360;   // scene axes → ecliptic longitude (J2000)
+function zwGeo(key, ms, out) {   // a body's position from Earth at time ms, scene axes
+  const e = new THREE.Vector3(); helio('earth', T_of(ms), e);
+  if (key === 'sun') return out.copy(e).negate();
+  if (key === 'moon') { const M = EARTH.moons.find(m => m.name === 'Moon'); return relOf(M, out).sub(relOf(EARTH)); }
+  if (DWARF_ORB[key]) helioDwarf(key, ms, out); else helio(key, T_of(ms), out);
+  return out.sub(e);
+}
+function drawZodiac() {
+  const cv = ZW.cv, dpr = Math.min(2, devicePixelRatio || 1), S = 292;
+  if (cv.width !== S * dpr) { cv.width = cv.height = S * dpr; }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, S, S);
+  const prec = (new Date(simMs).getUTCFullYear() + new Date(simMs).getUTCMonth() / 12 - 2000) * 50.29 / 3600, signs = ZW.mode === 'signs', shift = signs ? prec : 0;
+  // the ascendant and midheaven, from this spot's horizon and meridian
+  const N = new THREE.Vector3(0, 1, 0), a1 = new THREE.Vector3().crossVectors(N, SKY.up).normalize(); if (a1.dot(SKY.east) < 0) a1.negate();
+  const m1 = new THREE.Vector3().crossVectors(N, SKY.east).normalize(); if (m1.dot(SKY.up) < 0) m1.negate();
+  const ASC = (zwLon(a1) + shift) % 360, MC = (zwLon(m1) + shift) % 360;
+  const cx = S / 2, cy = S / 2, R = S / 2 - 16, rS = R * 0.84, rP = R * 0.56, rI = R * 0.4;
+  const ang = L => Math.PI + (L - ASC) * DEG, X = (L, r) => cx + r * Math.cos(ang(L)), Y = (L, r) => cy - r * Math.sin(ang(L));
+  const gold = 'rgba(214,178,104,', cream = '#efe2c0';
+  g.lineWidth = 1;
+  for (const r of [R, rS, rP, rI]) { g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.strokeStyle = gold + (r === R || r === rS ? '0.75)' : '0.35)'); g.stroke(); }
+  g.fillStyle = 'rgba(214,178,104,0.06)'; g.beginPath(); g.arc(cx, cy, R, 0, TAU); g.arc(cx, cy, rS, 0, TAU, true); g.fill();
+  // degree ticks
+  for (let d = 0; d < 360; d += 5) { const L = d, r2 = rS - (d % 10 ? 3 : 6); g.beginPath(); g.moveTo(X(L, rS), Y(L, rS)); g.lineTo(X(L, r2), Y(L, r2)); g.strokeStyle = gold + '0.4)'; g.stroke(); }
+  // the band: signs or constellations
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  if (signs) for (let k = 0; k < 12; k++) {
+    const L0 = k * 30; g.beginPath(); g.moveTo(X(L0, rS), Y(L0, rS)); g.lineTo(X(L0, R), Y(L0, R)); g.strokeStyle = gold + '0.6)'; g.stroke();
+    g.font = '17px "Apple Symbols","Segoe UI Symbol","Noto Sans Symbols 2",serif'; g.fillStyle = '#e2bf72'; g.fillText(ZW_SIGNS[k], X(L0 + 15, (R + rS) / 2), Y(L0 + 15, (R + rS) / 2));
+  } else for (let k = 0; k < ZW_CONST.length; k++) {
+    const L0 = ZW_CONST[k][1], L1 = ZW_CONST[(k + 1) % ZW_CONST.length][1], mid = L0 + (((L1 - L0) % 360 + 360) % 360) / 2;
+    g.beginPath(); g.moveTo(X(L0, rS), Y(L0, rS)); g.lineTo(X(L0, R), Y(L0, R)); g.strokeStyle = gold + '0.6)'; g.stroke();
+    g.font = 'italic 11px "IM Fell English", Georgia, serif'; g.fillStyle = '#e2bf72'; g.fillText(ZW_CONST[k][0], X(mid, (R + rS) / 2), Y(mid, (R + rS) / 2));
+  }
+  // houses (equal), numbered
+  for (let k = 0; k < 12; k++) { const L = ASC + k * 30;
+    g.beginPath(); g.moveTo(X(L, rI), Y(L, rI)); g.lineTo(X(L, rS), Y(L, rS)); g.strokeStyle = gold + (k % 3 ? '0.18)' : '0)'); g.stroke();
+    g.font = '10px "UAS Num", Georgia, serif'; g.fillStyle = 'rgba(239,226,192,0.55)'; g.fillText(String(k + 1), X(L + 15, (rI + rP) / 2), Y(L + 15, (rI + rP) / 2)); }
+  // the angles: AC–DC and MC–IC
+  g.lineWidth = 1.6; g.strokeStyle = 'rgba(239,226,192,0.85)';
+  for (const [L, a, b] of [[ASC, 'AC', 'DC'], [MC, 'MC', 'IC']]) {
+    g.beginPath(); g.moveTo(X(L, R + 2), Y(L, R + 2)); g.lineTo(X(L, rI), Y(L, rI)); g.moveTo(X(L + 180, rI), Y(L + 180, rI)); g.lineTo(X(L + 180, R + 2), Y(L + 180, R + 2)); g.stroke();
+    g.font = 'bold 10.5px "UAS Num", Georgia, serif'; g.fillStyle = cream; g.fillText(a, X(L, R + 9), Y(L, R + 9)); g.fillText(b, X(L + 180, R + 9), Y(L + 180, R + 9));
+  }
+  g.lineWidth = 1;
+  // the bodies
+  const v = new THREE.Vector3(), w = new THREE.Vector3(), day = 86400000, pts = [];
+  for (const [key, glyph] of ZW_BODIES) {
+    zwGeo(key, simMs, v); const L = (zwLon(v) + shift) % 360;
+    let retro = false; if (key !== 'sun' && key !== 'moon') { zwGeo(key, simMs + day, w); retro = (((zwLon(w) - zwLon(v)) % 360) + 540) % 360 - 180 < 0; }
+    pts.push({ key, glyph, L, at: L, retro });
+  }
+  pts.sort((a, b) => a.L - b.L);   // nudge glyphs apart where they bunch up
+  for (let it = 0; it < 20; it++) for (let k = 0; k < pts.length; k++) { const a = pts[k], b = pts[(k + 1) % pts.length], gap = ((b.at - a.at) % 360 + 360) % 360;
+    if (gap < 9) { const push = (9 - gap) / 2; a.at -= push; b.at += push; } }
+  // aspects
+  const ASP = [[180, 7, '208,96,79'], [90, 6, '208,96,79'], [120, 6, '111,147,216'], [60, 4, '111,147,216']];
+  for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+    const d = Math.abs(((pts[i].L - pts[j].L) % 360 + 540) % 360 - 180), sep = 180 - d;
+    for (const [A, orb, col] of ASP) if (Math.abs(sep - A) < orb) { g.beginPath(); g.moveTo(X(pts[i].L, rI), Y(pts[i].L, rI)); g.lineTo(X(pts[j].L, rI), Y(pts[j].L, rI)); g.strokeStyle = `rgba(${col},0.75)`; g.stroke(); }
+  }
+  for (const p of pts) {
+    g.beginPath(); g.moveTo(X(p.L, rS), Y(p.L, rS)); g.lineTo(X(p.L, rS - 7), Y(p.L, rS - 7)); g.strokeStyle = cream; g.stroke();
+    g.beginPath(); g.moveTo(X(p.L, rI), Y(p.L, rI)); g.lineTo(X(p.L, rI + 4), Y(p.L, rI + 4)); g.strokeStyle = gold + '0.6)'; g.stroke();
+    g.font = '15px "Apple Symbols","Segoe UI Symbol","Noto Sans Symbols 2",serif'; g.fillStyle = p.key === 'sun' ? '#ffd27a' : cream;
+    g.fillText(p.glyph + '︎', X(p.at, rS - 17), Y(p.at, rS - 17));
+    if (signs) { g.font = '9.5px "UAS Num", Georgia, serif'; g.fillStyle = 'rgba(239,226,192,0.75)'; g.fillText(Math.floor(p.L % 30) + '°' + (p.retro ? 'ʀ' : ''), X(p.at, rS - 31), Y(p.at, rS - 31)); }
+    else if (p.retro) { g.font = '9px Georgia, serif'; g.fillStyle = 'rgba(239,226,192,0.6)'; g.fillText('ʀ', X(p.at, rS - 30), Y(p.at, rS - 30)); }
+  }
+  const sun = pts.find(p => p.key === 'sun'), signOf = L => ZW_SIGN_NAMES[Math.floor(((L % 360) + 360) % 360 / 30)];
+  document.getElementById('zw-note').textContent = signs
+    ? `Sun in ${signOf(sun.L)}, rising sign ${signOf(ASC)}. Tropical signs (equal 30° from the March equinox); the star patterns themselves now sit about a sign further along. ʀ = moving backwards in our sky.`
+    : 'The ecliptic’s real constellations by their official boundaries — 13 of them, Ophiuchus included, of unequal widths. ʀ = moving backwards in our sky.';
+}
+document.querySelectorAll('#zodwheel [data-zw]').forEach(b => b.onclick = () => { ZW.mode = b.dataset.zw; document.querySelectorAll('#zodwheel [data-zw]').forEach(x => x.classList.toggle('on', x === b)); drawZodiac(); });
+UAS_FOLD.foldable(document.getElementById('zodwheel'), { title: 'Zodiac', arrow: '▾' });
 function skyWhere() {
   const lat = SKY_LAT[SKY.hemi], lon = skyLon();
   document.getElementById('sky-where').textContent = `From ${Math.abs(lat)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(Math.round(lon))}° ${lon >= 0 ? 'E' : 'W'} (your time zone)`;
@@ -2269,7 +2375,7 @@ function skyOn(hemi) {
 function skyOff(keep) {
   if (!SKY.on) return; SKY.on = false;
   controls.enabled = true; EARTH.mesh.visible = true; EARTH.clouds.visible = !EARTH.see; if (EARTH.atm) EARTH.atm.visible = true;
-  skyGround.visible = skyDome.visible = false; document.body.classList.remove('sky'); skyPanel.hidden = true;
+  skyGround.visible = skyDome.visible = false; document.body.classList.remove('sky'); skyPanel.hidden = true; document.getElementById('info').style.top = '';
   skyRoot.visible = bandRoot.visible = true; bandCam.fov = 40; SUN.glare.visible = SUN.corona.visible = true;
   if (SKY.saved) { opts.orbits = SKY.saved.orbits; if (!SKY.saved.constel && opts.constel) document.querySelector('.tg[data-k="constel"]').click(); SKY.saved = null; }
   if (!keep) { camera.position.copy(SKY.up).multiplyScalar(EARTH.R * 4); controls.target.set(0, 0, 0); controls.update(); flyTo(EARTH); }
@@ -2301,6 +2407,8 @@ function skyFrame() {
   skyRoot.visible = bandRoot.visible = day < 0.55;   // the stars and the Milky Way vanish in daylight
   SUN.glare.visible = SUN.corona.visible = !behindSkyline(relOf(SUN));   // the glare is drawn over everything: hide it once the Sun has set
   if (constel) constel.visible = opts.constel && day < 0.55;
+  if (performance.now() - ZW.last > 150) { ZW.last = performance.now(); drawZodiac();
+    const zr = document.getElementById('zodwheel').getBoundingClientRect(); document.getElementById('info').style.top = (zr.bottom + 10) + 'px'; }
   // compass points round the horizon
   const W = innerWidth, H = innerHeight;
   skyDirs.forEach((el, i) => { const a = i * 45 * DEG, d = SKY.north.clone().multiplyScalar(Math.cos(a)).addScaledVector(SKY.east, Math.sin(a)).addScaledVector(SKY.up, 0.012);
@@ -2508,6 +2616,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=01903c9e" data-place="info" defer></script>
+<script src="../music/music.js?v=0fde60be" data-place="info" defer></script>
 </body>
 </html>
