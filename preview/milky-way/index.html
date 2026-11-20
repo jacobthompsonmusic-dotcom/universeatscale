@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=bafec355"></script>
-<script src="../shared/clock.js?v=bafec355"></script>
-<script src="../shared/fold.js?v=bafec355"></script>
-<script src="../shared/galaxy-volume.js?v=bafec355"></script>
+<script src="../shared/frame.js?v=86edace9"></script>
+<script src="../shared/clock.js?v=86edace9"></script>
+<script src="../shared/fold.js?v=86edace9"></script>
+<script src="../shared/galaxy-volume.js?v=86edace9"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -2300,7 +2300,7 @@ function psrClock() {
   return rate;
 }
 // a magnetar's field, in words
-function magTxt(B) { const e = Math.floor(Math.log10(B)), m = B / 10 ** e; return `${m.toFixed(m < 10 && m !== Math.round(m) ? 1 : 0)} × 10${String(e).split('').map(c => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+c]).join('')} gauss`; }
+function magTxt(B) { return B >= 1e15 ? `${+(B / 1e15).toFixed(1)} quadrillion gauss` : `${Math.round(B / 1e12).toLocaleString('en-CA')} trillion gauss`; }
 function earthTimes(B) { const r = B / 0.5; return r >= 1e15 ? `${(r / 1e15).toFixed(0)} quadrillion times` : `${(r / 1e12).toFixed(0)} trillion times`; }
 const NOTE_NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 function noteOf(f) { const m = 69 + 12 * Math.log2(f / 440), n = Math.round(m), c = Math.round((m - n) * 100); return `${NOTE_NAMES[(n % 12 + 12) % 12]}${Math.floor(n / 12) - 1}${c ? ` ${c > 0 ? '+' : '−'}${Math.abs(c)} cents` : ''}`; }
@@ -2958,6 +2958,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=bafec355" data-place="header" defer></script>
+<script src="../music/music.js?v=86edace9" data-place="header" defer></script>
 </body>
 </html>
