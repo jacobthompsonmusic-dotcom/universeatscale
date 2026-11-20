@@ -261,10 +261,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=a5944645"></script>
-<script src="../shared/clock.js?v=a5944645"></script>
-<script src="../shared/fold.js?v=a5944645"></script>
-<script src="../shared/galaxy-volume.js?v=a5944645"></script>
+<script src="../shared/frame.js?v=59b6f117"></script>
+<script src="../shared/clock.js?v=59b6f117"></script>
+<script src="../shared/fold.js?v=59b6f117"></script>
+<script src="../shared/galaxy-volume.js?v=59b6f117"></script>
 <script>
 (() => {
 'use strict';
@@ -2177,16 +2177,41 @@ const skyVS = `#include <common>
   varying vec3 vD; void main() { vD = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   #include <logdepthbuf_vertex>
   }`;
-const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 48), new THREE.ShaderMaterial({   // the ground: everything below the horizon
-  side: THREE.BackSide, uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, day: { value: 0 } }, vertexShader: skyVS,
+// the ground: a field running out to a low, hilly horizon with a ragged line of trees along it (procedural — no particular place);
+// the silhouette hides whatever is just above the true horizon, as a real treeline does, and the land takes the sky's light
+const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE.ShaderMaterial({
+  side: THREE.BackSide, vertexShader: skyVS,
+  uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, north: { value: new THREE.Vector3(0, 0, -1) }, east: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 }, sun: { value: new THREE.Vector3(1, 0, 0) } },
   fragmentShader: `#include <logdepthbuf_pars_fragment>
-    uniform vec3 up; uniform float day; varying vec3 vD; void main() {
-    #include <logdepthbuf_fragment>
-    float h = dot(normalize(vD), up); if (h > 0.0) discard;
-    vec3 night = mix(vec3(0.05, 0.055, 0.05), vec3(0.015, 0.017, 0.015), smoothstep(0.0, -0.3, h));
-    vec3 dayc = mix(vec3(0.33, 0.36, 0.30), vec3(0.16, 0.19, 0.13), smoothstep(0.0, -0.3, h));
-    vec3 c = mix(night, dayc, day) + vec3(0.9, 0.75, 0.5) * 0.08 * (1.0 - smoothstep(0.0, 0.012, -h));
-    gl_FragColor = vec4(c, 1.0); }` }));
+    uniform vec3 up; uniform vec3 north; uniform vec3 east; uniform vec3 sun; uniform float day; uniform float dusk; varying vec3 vD;
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
+    float ring(float a, float r, float s) { return vn(vec2(cos(a), sin(a)) * r + s); }   // noise round the horizon, with no seam
+    float trees(float a, float n, float seed) {   // a row of conifers: one per cell, random height and width
+      float x = a / 6.2831853 * n, i = floor(x), f = fract(x);
+      float ht = 0.35 + 0.65 * hash(vec2(i, seed)), w = 0.45 + 0.5 * hash(vec2(seed, i)), off = (hash(vec2(i + 3.0, seed)) - 0.5) * (1.0 - w);
+      float t = max(0.0, 1.0 - abs(f - 0.5 - off) / (0.5 * w)); return ht * pow(t, 0.75); }
+    void main() {
+      #include <logdepthbuf_fragment>
+      vec3 d = normalize(vD); float h = dot(d, up), a = atan(dot(d, east), dot(d, north));
+      float hills = 0.003 + 0.014 * ring(a, 2.2, 3.0) + 0.006 * ring(a, 7.0, 9.0);
+      float woods = smoothstep(0.38, 0.62, ring(a, 4.0, 17.0));
+      float top = hills + woods * (0.007 * trees(a, 900.0, 1.0) + 0.011 * trees(a, 340.0, 5.0) + 0.004);
+      if (h > top) discard;
+      vec3 haze = mix(vec3(0.020, 0.024, 0.032), vec3(0.50, 0.62, 0.74), day) + vec3(0.55, 0.30, 0.14) * dusk;   // the light low in the sky
+      vec3 c;
+      if (h > 0.0 || h > hills - 0.0005) {   // the hills and trees, a dark silhouette softened by the air between
+        c = mix(vec3(0.006, 0.007, 0.008), vec3(0.09, 0.13, 0.08), day) * (0.85 + 0.3 * ring(a, 30.0, 2.0));
+        c = mix(c, haze, 0.28);
+      } else {   // the near field: patches of grass and earth that shrink toward the horizon
+        float k = 0.03 / max(-h, 0.002); vec2 q = vec2(cos(a), sin(a)) * k;
+        float patchy = 0.6 * vn(q * 1.3) + 0.4 * vn(q * 5.0 + 7.0);
+        vec3 grass = mix(vec3(0.16, 0.22, 0.10), vec3(0.30, 0.31, 0.17), patchy);
+        c = mix(vec3(0.020, 0.024, 0.020) * (0.8 + 0.4 * patchy), grass, day);
+        c = mix(c, haze, 0.55 * exp(h / 0.02));   // fading into the distance
+      }
+      gl_FragColor = vec4(c, 1.0); }` }));
 const skyDome = new THREE.Mesh(new THREE.SphereGeometry(0.9, 96, 48), new THREE.ShaderMaterial({   // daylight and twilight, added over the stars
   side: THREE.BackSide, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
   uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, sun: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 } }, vertexShader: skyVS,
@@ -2245,11 +2270,11 @@ function skyFrame() {
   camera.fov = SKY.fov; camera.near = 1e-5; camera.updateProjectionMatrix(); camera.updateMatrixWorld();
   bandCam.fov = SKY.fov;
   skyGround.position.copy(camera.position); skyDome.position.copy(camera.position);
-  skyGround.material.uniforms.up.value.copy(SKY.up); skyDome.material.uniforms.up.value.copy(SKY.up);
+  const gu = skyGround.material.uniforms; gu.up.value.copy(SKY.up); gu.north.value.copy(SKY.north); gu.east.value.copy(SKY.east); skyDome.material.uniforms.up.value.copy(SKY.up);
   const sp = relOf(SUN).sub(camera.position).normalize(), sAlt = Math.asin(THREE.MathUtils.clamp(sp.dot(SKY.up), -1, 1)) / DEG;
   const day = sstep(sAlt, -8, 6), dusk = sstep(sAlt, -16, -2) * (1 - sstep(sAlt, 2, 10));
   skyDome.material.uniforms.sun.value.copy(sp); skyDome.material.uniforms.day.value = day; skyDome.material.uniforms.dusk.value = dusk;
-  skyGround.material.uniforms.day.value = day; SKY.day = day;
+  gu.day.value = day; gu.dusk.value = dusk; SKY.day = day;
   skyRoot.visible = bandRoot.visible = day < 0.55;   // the stars and the Milky Way vanish in daylight
   SUN.glare.visible = SUN.corona.visible = sAlt > -1.5;   // the glare is drawn over everything: hide it once the Sun has set
   if (constel) constel.visible = opts.constel && day < 0.55;
@@ -2460,6 +2485,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=a5944645" data-place="header" defer></script>
+<script src="../music/music.js?v=59b6f117" data-place="header" defer></script>
 </body>
 </html>
