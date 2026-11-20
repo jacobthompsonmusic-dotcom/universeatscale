@@ -291,10 +291,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=8ff7bfb2"></script>
-<script src="../shared/clock.js?v=8ff7bfb2"></script>
-<script src="../shared/fold.js?v=8ff7bfb2"></script>
-<script src="../shared/galaxy-volume.js?v=8ff7bfb2"></script>
+<script src="../shared/frame.js?v=c9ea1797"></script>
+<script src="../shared/clock.js?v=c9ea1797"></script>
+<script src="../shared/fold.js?v=c9ea1797"></script>
+<script src="../shared/galaxy-volume.js?v=c9ea1797"></script>
 <script>
 (() => {
 'use strict';
@@ -863,6 +863,21 @@ const ORB = {
 };
 const AUS = AU * U, LIGHT = 299792.458, EPS = FR.EPS;
 const T_of = ms => (ms / 86400000 + 2440587.5 - 2451545.0) / 36525;
+// Earth's slow wobble: the general precession in longitude since J2000 and the change in obliquity (IAU 2006), degrees
+const precLon = T => (5028.796195 * T + 1.1054348 * T * T) / 3600, dObliq = T => (-46.836769 * T - 0.0001831 * T * T) / 3600;
+// ΔT = TT − UT in seconds (Espenak & Meeus fits; only the Moon moves fast enough for it to show)
+function deltaT(ms) { const y = 1970 + ms / 31556952000, t = y - 2000;
+  if (y >= 2005 && y < 2050) return 62.92 + 0.32217 * t + 0.005589 * t * t;
+  if (y >= 1986 && y < 2005) return 63.86 + 0.3345 * t - 0.060374 * t * t + 0.0017275 * t ** 3 + 0.000651814 * t ** 4 + 0.00002373599 * t ** 5;
+  if (y >= 1961 && y < 1986) { const u = y - 1975; return 45.45 + 1.067 * u - u * u / 260 - u ** 3 / 718; }
+  if (y >= 1941 && y < 1961) { const u = y - 1950; return 29.07 + 0.407 * u - u * u / 233 + u ** 3 / 2547; }
+  if (y >= 1920 && y < 1941) { const u = y - 1920; return 21.2 + 0.84493 * u - 0.0761 * u * u + 0.0020936 * u ** 3; }
+  if (y >= 1900 && y < 1920) { const u = y - 1900; return -2.79 + 1.494119 * u - 0.0598939 * u * u + 0.0061966 * u ** 3 - 0.000197 * u ** 4; }
+  if (y >= 1860 && y < 1900) { const u = y - 1860; return 7.62 + 0.5737 * u - 0.251754 * u * u + 0.01680668 * u ** 3 - 0.0004473624 * u ** 4 + u ** 5 / 233174; }
+  if (y >= 1800 && y < 1860) { const u = y - 1860; return 13.72 - 0.332447 * u + 0.0068612 * u * u + 0.0041116 * u ** 3 - 0.00037436 * u ** 4 + 0.0000121272 * u ** 5 - 0.0000001699 * u ** 6 + 0.000000000875 * u ** 7; }
+  if (y >= 2050 && y < 2150) return -20 + 32 * ((y - 1820) / 100) ** 2 - 0.5628 * (2150 - y);
+  return -20 + 32 * ((y - 1820) / 100) ** 2;
+}
 const elementsAt = (key, T) => ORB[key].map(([v, r]) => v + r * T);
 // a point on the orbit at eccentric anomaly E, in scene axes: +X = vernal equinox, +Y = ecliptic north
 function orbitXYZ(el, E, out = new THREE.Vector3()) {
@@ -1384,7 +1399,7 @@ function cloudMaterial(sunDir) {
     transparent: true, depthWrite: false, premultipliedAlpha: true, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor,
   });
 }
-const gmst = ms => ((280.46061837 + 360.98564736629 * (ms / 86400000 + 2440587.5 - 2451545.0)) % 360) * DEG;
+const gmst = ms => { const d = ms / 86400000 + 2440587.5 - 2451545.0, T = d / 36525; return ((280.46061837 + 360.98564736629 * d + 0.000387933 * T * T - T * T * T / 38710000) % 360) * DEG; };
 
 const dotTex = radialSprite([[0, 'rgba(255,255,255,1)'], [0.45, 'rgba(255,255,255,1)'], [0.62, 'rgba(255,255,255,0.35)'], [1, 'rgba(255,255,255,0)']], 64);
 function marker(color, size) {
@@ -1440,14 +1455,30 @@ function rockyMoon(parent, name, a, P, r, color, disc, blurb, extra = {}) {
   o.mesh = new THREE.Mesh(new THREE.SphereGeometry(Math.max(r * U, 0.0008), r > 100 ? 64 : 24, r > 100 ? 32 : 12), new THREE.MeshStandardMaterial({ map: moonTexture(o, name.length * 7), roughness: 1 }));
   parent.moons.push(o); MOONS.push(o); return o;
 }
-// the Moon: its real position, from the Astronomical Almanac's low-precision lunar theory (good to a fraction of a degree)
+// the Moon: its real position, from Meeus' lunar theory (Astronomical Algorithms ch. 47, ELP-2000/82 truncated to its
+// 120 biggest terms: good to about 10″ in longitude and 4″ in latitude), turned from the ecliptic of date to J2000
+const MOON_THEORY = (() => {
+  const LR = [0,0,1,0,6288774,-20905355,2,0,-1,0,1274027,-3699111,2,0,0,0,658314,-2955968,0,0,2,0,213618,-569925,0,1,0,0,-185116,48888,0,0,0,2,-114332,-3149,2,0,-2,0,58793,246158,2,-1,-1,0,57066,-152138,2,0,1,0,53322,-170733,2,-1,0,0,45758,-204586,0,1,-1,0,-40923,-129620,1,0,0,0,-34720,108743,0,1,1,0,-30383,104755,2,0,0,-2,15327,10321,0,0,1,2,-12528,0,0,0,1,-2,10980,79661,4,0,-1,0,10675,-34782,0,0,3,0,10034,-23210,4,0,-2,0,8548,-21636,2,1,-1,0,-7888,24208,2,1,0,0,-6766,30824,1,0,-1,0,-5163,-8379,1,1,0,0,4987,-16675,2,-1,1,0,4036,-12831,2,0,2,0,3994,-10445,4,0,0,0,3861,-11650,2,0,-3,0,3665,14403,0,1,-2,0,-2689,-7003,2,0,-1,2,-2602,0,2,-1,-2,0,2390,10056,1,0,1,0,-2348,6322,2,-2,0,0,2236,-9884,0,1,2,0,-2120,5751,0,2,0,0,-2069,0,2,-2,-1,0,2048,-4950,2,0,1,-2,-1773,4130,2,0,0,2,-1595,0,4,-1,-1,0,1215,-3958,0,0,2,2,-1110,0,3,0,-1,0,-892,3258,2,1,1,0,-810,2616,4,-1,-2,0,759,-1897,0,2,-1,0,-713,-2117,2,2,-1,0,-700,2354,2,1,-2,0,691,0,2,-1,0,-2,596,0,4,0,1,0,549,-1423,0,0,4,0,537,-1117,4,-1,0,0,520,-1571,1,0,-2,0,-487,-1739,2,1,0,-2,-399,0,0,0,2,-2,-381,-4421,1,1,1,0,351,0,3,0,-2,0,-340,0,4,0,-3,0,330,0,2,-1,2,0,327,0,0,2,1,0,-323,1165,1,1,-1,0,299,0,2,0,3,0,294,0,2,0,-1,-2,0,8752];
+  const BT = [0,0,0,1,5128122,0,0,1,1,280602,0,0,1,-1,277693,2,0,0,-1,173237,2,0,-1,1,55413,2,0,-1,-1,46271,2,0,0,1,32573,0,0,2,1,17198,2,0,1,-1,9266,0,0,2,-1,8822,2,-1,0,-1,8216,2,0,-2,-1,4324,2,0,1,1,4200,2,1,0,-1,-3359,2,-1,-1,1,2463,2,-1,0,1,2211,2,-1,-1,-1,2065,0,1,-1,-1,-1870,4,0,-1,-1,1828,0,1,0,1,-1794,0,0,0,3,-1749,0,1,-1,1,-1565,1,0,0,1,-1491,0,1,1,1,-1475,0,1,1,-1,-1410,0,1,0,-1,-1344,1,0,0,-1,-1335,0,0,3,1,1107,4,0,0,-1,1021,4,0,-1,1,833,0,0,1,-3,777,4,0,-2,1,671,2,0,0,-3,607,2,0,2,-1,596,2,-1,1,-1,491,2,0,-2,1,-451,0,0,3,-1,439,2,0,2,1,422,2,0,-3,-1,421,2,1,-1,1,-366,2,1,0,1,-351,4,0,0,1,331,2,-1,1,1,315,2,-2,0,-1,302,0,0,1,3,-283,2,1,1,-1,-229,1,1,0,-1,223,1,1,0,1,223,0,1,-2,-1,-220,2,1,-1,-1,-220,1,0,1,1,-185,2,-1,-2,-1,181,0,1,2,1,-177,4,0,-2,-1,176,4,-1,-1,-1,166,1,0,1,-1,-164,4,0,1,-1,132,1,0,-1,-1,-119,4,-1,0,-1,115,2,-2,0,1,107];
+  return { LR, BT };
+})();
 function moonGeo(ms) {
-  const T = T_of(ms), s = x => Math.sin(x * DEG), c = x => Math.cos(x * DEG);
-  const L = 218.32 + 481267.881 * T + 6.29 * s(135.0 + 477198.87 * T) - 1.27 * s(259.3 - 413335.36 * T) + 0.66 * s(235.7 + 890534.22 * T) + 0.21 * s(269.9 + 954397.74 * T) - 0.19 * s(357.5 + 35999.05 * T) - 0.11 * s(186.5 + 966404.03 * T);
-  const B = 5.13 * s(93.3 + 483202.02 * T) + 0.28 * s(228.2 + 960400.89 * T) - 0.28 * s(318.3 + 6003.15 * T) - 0.17 * s(217.6 - 407332.21 * T);
-  const Pi = 0.9508 + 0.0518 * c(135.0 + 477198.87 * T) + 0.0095 * c(259.3 - 413335.36 * T) + 0.0078 * c(235.7 + 890534.22 * T) + 0.0028 * c(269.9 + 954397.74 * T);
-  const r = 6378.14 / Math.sin(Pi * DEG), x = r * c(B) * c(L), y = r * c(B) * s(L), z = r * s(B);
-  return new THREE.Vector3(x, z, -y).multiplyScalar(U);
+  const T = T_of(ms + deltaT(ms) * 1000), r = x => x * DEG, sn = Math.sin, cs = Math.cos;
+  const Lp = r(218.3164477 + 481267.88123421 * T - 0.0015786 * T * T + T * T * T / 538841);
+  const D = r(297.8501921 + 445267.1114034 * T - 0.0018819 * T * T + T * T * T / 545868);
+  const M = r(357.5291092 + 35999.0502909 * T - 0.0001536 * T * T);
+  const Mp = r(134.9633964 + 477198.8675055 * T + 0.0087414 * T * T + T * T * T / 69699);
+  const F = r(93.272095 + 483202.0175233 * T - 0.0036539 * T * T - T * T * T / 3526000);
+  const A1 = r(119.75 + 131.849 * T), A2 = r(53.09 + 479264.29 * T), A3 = r(313.45 + 481266.484 * T), E = 1 - 0.002516 * T - 0.0000074 * T * T;
+  let sl = 3958 * sn(A1) + 1962 * sn(Lp - F) + 318 * sn(A2), sr = 0;
+  let sb = -2235 * sn(Lp) + 382 * sn(A3) + 175 * sn(A1 - F) + 175 * sn(A1 + F) + 127 * sn(Lp - Mp) - 115 * sn(Lp + Mp);
+  const { LR, BT } = MOON_THEORY;
+  for (let i = 0; i < LR.length; i += 6) { const m = LR[i + 1], a = D * LR[i] + M * m + Mp * LR[i + 2] + F * LR[i + 3], k = m ? (m * m === 1 ? E : E * E) : 1;
+    sl += LR[i + 4] * k * sn(a); sr += LR[i + 5] * k * cs(a); }
+  for (let i = 0; i < BT.length; i += 5) { const m = BT[i + 1], k = m ? (m * m === 1 ? E : E * E) : 1;
+    sb += BT[i + 4] * k * sn(D * BT[i] + M * m + Mp * BT[i + 2] + F * BT[i + 3]); }
+  const L = Lp + r(sl * 1e-6) - r(precLon(T)), B = r(sb * 1e-6), dist = 385000.56 + sr * 1e-3;   // L: back to the J2000 equinox
+  return new THREE.Vector3(dist * cs(B) * cs(L), dist * sn(B), -dist * cs(B) * sn(L)).multiplyScalar(U);
 }
 {
   const M = rockyMoon(EARTH, 'Moon', 384400, 27.321661, 1737.4, '#cfcac2', 'Known since prehistory', 'Earth\'s only natural satellite, about a quarter of Earth\'s width: enormous for a moon of such a small planet. It probably formed from debris thrown out when a Mars-sized body slammed into the young Earth. It always shows us the same face, and it is drifting away by about 3.8 cm a year.', { fact: ['Position', 'Real, worked out for this moment'] });
@@ -1706,10 +1737,18 @@ function relOf(o, out = new THREE.Vector3()) {      // …and as the camera sees
 const radiusOf = o => o.kind === 'moon' ? Math.max(o.r * U, 0.0008) : o.R;
 const giantOf = o => o ? (o.kind === 'giant' ? o : o.kind === 'moon' && o.parent.kind === 'giant' ? o.parent : null) : null;
 const _ZP = new THREE.Vector3(0, 0, 1);
+// Earth's axis for the moment shown: the J2000 pole and equinox carried along by precession, so that sidereal time (counted
+// from the equinox of date) turns the globe, the sky view and the ascendant to where they really were — or will be
+const _qA = new THREE.Quaternion(), _qB = new THREE.Quaternion(), _AX = new THREE.Vector3(1, 0, 0), _AY = new THREE.Vector3(0, 1, 0);
+function earthAxis(b, T) {
+  if (!b.q0) b.q0 = b.tilt.quaternion.clone();
+  _qA.setFromAxisAngle(_AY, -precLon(T) * DEG); _qB.setFromAxisAngle(_AX, -dObliq(T) * DEG);
+  b.tilt.quaternion.copy(_qA).multiply(_qB).multiply(b.q0);
+}
 function updateWorld() {
   const T = T_of(simMs);
   for (const b of PLANETS) { if (DWARF_ORB[b.key]) helioDwarf(b.key, simMs, b.abs); else helio(b.key, T, b.abs); b.root.position.copy(b.abs); b.sunDir.copy(b.abs).negate().normalize(); if (b.place) b.place();
-    if (b.key === 'earth') { b.mesh.rotation.y = gmst(simMs); b.clouds.rotation.y = b.mesh.rotation.y + simMs / 86400000 * 0.05; earthU.cloudShift.value = -((simMs / 86400000 * 0.05) / TAU % 1); } else if (b.spinDays) b.mesh.rotation.y = (simMs / 86400000 / b.spinDays % 1) * TAU; }
+    if (b.key === 'earth') { earthAxis(b, T); b.mesh.rotation.y = gmst(simMs); b.clouds.rotation.y = b.mesh.rotation.y + simMs / 86400000 * 0.05; earthU.cloudShift.value = -((simMs / 86400000 * 0.05) / TAU % 1); } else if (b.spinDays) b.mesh.rotation.y = (simMs / 86400000 / b.spinDays % 1) * TAU; }
   for (const g of GIANTS) {
     // the planet's own frame: +Y = its north pole, +Z = toward Earth (the Galilean moons' positions are measured from that line)
     _Z.copy(EARTH.abs).sub(g.abs); _Z.addScaledVector(g.pole, -_Z.dot(g.pole)).normalize(); _X.crossVectors(g.pole, _Z);
@@ -2202,7 +2241,8 @@ speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
 // Sun, Moon and planets are where they really were; the daytime sky colour and the ground are drawn simply.
 const SKY = { on: false, hemi: 'n', az: 180, alt: 22, fov: 75, up: new THREE.Vector3(), north: new THREE.Vector3(), east: new THREE.Vector3(), saved: null, day: 0 };
 const SKY_LAT = { n: 45, s: -34 };
-const skyLon = () => -new Date(simMs).getTimezoneOffset() / 4;
+// the observer stands on the meridian of the visitor's standard time zone (summer time ignored, or the sky would jump an hour)
+const skyLon = () => { const y = new Date(simMs).getFullYear(); if (skyLon.y !== y) { skyLon.y = y; skyLon.v = -Math.max(new Date(y, 0, 1).getTimezoneOffset(), new Date(y, 6, 1).getTimezoneOffset()) / 4; } return skyLon.v; };
 const skyVS = `#include <common>
   #include <logdepthbuf_pars_vertex>
   varying vec3 vD; void main() { vD = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -2305,7 +2345,7 @@ function drawZodiac() {
   const cv = ZW.cv, dpr = Math.min(2, devicePixelRatio || 1), S = 292;
   if (cv.width !== S * dpr) { cv.width = cv.height = S * dpr; }
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, S, S);
-  const prec = (new Date(simMs).getUTCFullYear() + new Date(simMs).getUTCMonth() / 12 - 2000) * 50.29 / 3600, signs = ZW.mode === 'signs', shift = signs ? prec : 0;
+  const prec = precLon(T_of(simMs)), signs = ZW.mode === 'signs', shift = signs ? prec : 0;
   // the ascendant and midheaven, from this spot's horizon and meridian
   const N = new THREE.Vector3(0, 1, 0), a1 = new THREE.Vector3().crossVectors(N, SKY.up).normalize(); if (a1.dot(SKY.east) < 0) a1.negate();
   const m1 = new THREE.Vector3().crossVectors(N, SKY.east).normalize(); if (m1.dot(SKY.up) < 0) m1.negate();
@@ -2668,7 +2708,7 @@ function init() {
   const h = location.hash.slice(1); if (byKey(h) && byKey(h).isPlanet) setTimeout(() => flyTo(byKey(h)), 400);
   requestAnimationFrame(frame);
   setTimeout(earthHiRes, 400);
-  if (/[?&]debug=1/.test(location.search)) window.__ss = { MWV, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
+  if (/[?&]debug=1/.test(location.search)) window.__ss = { MWV, moonGeo, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
   if (EMBED) { parent.postMessage({ src: 'uas-ss', ready: true }, '*'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); document.body.classList.add('embed'); }
   // lift the black loading screen once the opening view has actually been drawn, Milky Way included (or after 2.5 s at most)
   const t0 = performance.now(), lift = () => { if (!MWV.ready && performance.now() - t0 < 2500) return setTimeout(lift, 100);
@@ -2678,6 +2718,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=8ff7bfb2" data-place="info" defer></script>
+<script src="../music/music.js?v=c9ea1797" data-place="info" defer></script>
 </body>
 </html>
