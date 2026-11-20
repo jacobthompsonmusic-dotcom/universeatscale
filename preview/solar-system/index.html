@@ -278,10 +278,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=01b8e01a"></script>
-<script src="../shared/clock.js?v=01b8e01a"></script>
-<script src="../shared/fold.js?v=01b8e01a"></script>
-<script src="../shared/galaxy-volume.js?v=01b8e01a"></script>
+<script src="../shared/frame.js?v=14818cb1"></script>
+<script src="../shared/clock.js?v=14818cb1"></script>
+<script src="../shared/fold.js?v=14818cb1"></script>
+<script src="../shared/galaxy-volume.js?v=14818cb1"></script>
 <script>
 (() => {
 'use strict';
@@ -2333,8 +2333,8 @@ function drawZodiac() {
     pts.push({ key, glyph, L, at: L, retro });
   }
   pts.sort((a, b) => a.L - b.L);   // nudge glyphs apart where they bunch up
-  for (let it = 0; it < 80; it++) for (let k = 0; k < pts.length; k++) { const a = pts[k], b = pts[(k + 1) % pts.length], gap = ((b.at - a.at) % 360 + 360) % 360;
-    if (gap < 11) { const push = (11 - gap) / 2 * 0.6; a.at -= push; b.at += push; } }
+  for (let it = 0; it < 80; it++) for (let k = 0; k < pts.length; k++) { const a = pts[k], b = pts[(k + 1) % pts.length], gap = ((b.at - a.at) % 360 + 540) % 360 - 180;   // signed, so neighbours never swap
+    if (gap < 11) { const push = (11 - gap) / 2 * 0.5; a.at -= push; b.at += push; } }
   // aspects
   const ASP = [[180, 7, '208,96,79'], [90, 6, '208,96,79'], [120, 6, '111,147,216'], [60, 4, '111,147,216']];
   for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
@@ -2616,6 +2616,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=01b8e01a" data-place="info" defer></script>
+<script src="../music/music.js?v=14818cb1" data-place="info" defer></script>
 </body>
 </html>
