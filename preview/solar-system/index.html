@@ -132,6 +132,16 @@
   #datepick select { background:rgba(255,255,255,0.06); border:1px solid var(--line); border-radius:7px; color:var(--text); font:italic 14px "IM Fell English", Georgia, serif; padding:5px 7px; color-scheme:dark; }
   #skypanel { top:16px; left:50%; transform:translateX(-50%); padding:8px 12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center; z-index:3; max-width:92vw; }
   #skypanel[hidden] { display:none; }
+  #helixpanel { top:16px; left:50%; transform:translateX(-50%); padding:10px 14px 9px; z-index:3; width:min(560px, 92vw); text-align:center; }
+  #helixpanel[hidden] { display:none; }
+  #helixpanel p { margin:0 0 6px; font-size:14px; line-height:1.4; }
+  #helixpanel .hx-t { font-variant:small-caps; letter-spacing:0.08em; color:#ffcf6e; font-size:15px; margin-bottom:4px; }
+  #helixpanel .hx-row { display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; margin:4px 0 6px; font:italic 14px "IM Fell English", Georgia, serif; }
+  #helixpanel input[type=range] { width:150px; accent-color:#ffcf6e; }
+  #hx-true { background:none; border:1px solid var(--line); border-radius:999px; color:var(--text); padding:4px 10px; font:italic 14px "IM Fell English", Georgia, serif; cursor:pointer; }
+  #hx-true.on { border-color:rgba(255,207,110,0.6); color:#ffcf6e; }
+  #hx-note { opacity:0.72; font-size:12.5px !important; }
+  #hx-dir { position:fixed; z-index:2; pointer-events:none; font:italic 14px "IM Fell English", Georgia, serif; color:#ffcf6e; text-shadow:0 0 6px #000, 0 0 3px #000; white-space:nowrap; }
   #skypanel .seg { display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; }
   #skypanel .seg button, #sky-exit { background:none; border:0; color:var(--text); padding:5px 10px; font:italic 14px "IM Fell English", Georgia, serif; cursor:pointer; }
   #skypanel .seg button + button { border-left:1px solid var(--line); }
@@ -250,6 +260,7 @@
     <button class="tg" data-k="zodiac">Zodiac</button>
     <button class="tg" data-k="constel">Constellations</button>
     <button class="tg" data-k="mag">Magnetic fields</button>
+    <button class="tg" data-k="helix" title="See the Sun carry the planets around the Milky Way">Galactic motion</button>
   </div>
   <div class="hint">Planets, moons, the Sun and every distance are to true scale. Double-click a name to fly there; click empty space to close a card. The stars behind are real, each at its measured distance. Earth imagery: <a href="https://www.solarsystemscope.com/textures/" style="color:inherit">Solar System Scope</a> (CC BY 4.0), from NASA data.</div>
 </div>
@@ -278,6 +289,12 @@
   <p id="zw-cn"></p>
   <p id="zw-note"></p>
 </div>
+<div id="helixpanel" class="panel" hidden>
+  <p class="hx-t">Through the galaxy</p>
+  <p id="hx-txt"></p>
+  <div class="hx-row"><label for="hx-slow">Sun's speed</label><input id="hx-slow" type="range" min="0" max="5" step="1" value="3" aria-label="How much the Sun's speed is slowed"><span id="hx-read"></span><button id="hx-true">True speed</button></div>
+  <p id="hx-note"></p>
+</div>
 <div id="skydirs"><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span></div>
 <div id="time" class="panel">
   <button id="play" aria-label="Pause">❚❚</button>
@@ -291,10 +308,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=47e37277"></script>
-<script src="../shared/clock.js?v=47e37277"></script>
-<script src="../shared/fold.js?v=47e37277"></script>
-<script src="../shared/galaxy-volume.js?v=47e37277"></script>
+<script src="../shared/frame.js?v=a4186627"></script>
+<script src="../shared/clock.js?v=a4186627"></script>
+<script src="../shared/fold.js?v=a4186627"></script>
+<script src="../shared/galaxy-volume.js?v=a4186627"></script>
 <script>
 (() => {
 'use strict';
@@ -1253,7 +1270,7 @@ const probeKms = P => Math.hypot(...P.vel) * AU / 86400;
 function updateProbes(camD) {
   const pxs0 = innerHeight / 2 / TAN20, W = innerWidth, H = innerHeight;
   for (const P of PROBES) {
-    const q = probeAU(P, simMs), on = opts.orbits && q;
+    const q = probeAU(P, simMs), on = opts.orbits && !HX.on && q;
     const near = q ? camera.position.distanceTo(relOf(P, _pp)) : 1e9, mpx = P.R / near * pxs0;   // the craft's own size on screen
     P.model.visible = !!q && mpx > 0.4;
     // the dot and name: in the overview, and up close for the one you're visiting until the craft itself is big enough to see
@@ -1862,6 +1879,92 @@ function retrace(b) {
 // the spin of the rocky worlds from the IAU's rotation models (Archinal et al. 2018): W° = the prime meridian's angle east of the
 // node of the equator on the ICRF equator, d = days from J2000
 const SPIN_W = { mercury: d => 329.5988 + 6.1385108 * d, venus: d => 160.20 - 1.4813688 * d, mars: d => 176.049863 + 350.891982443297 * d, ceres: d => 170.650 + 952.1532 * d };
+// ===================================================================
+//  galactic motion: the Sun carrying the planets around the Milky Way
+// ===================================================================
+// Seen from the Milky Way's centre, the Sun moves at Θ0 = 236 km/s (the circular speed here) plus its own drift (U, V, W) =
+// (10.6, 10.7, 7.6) km/s (Reid et al. 2019, ApJ 885, 131): 247 km/s in all, toward Galactic longitude 87.5°, latitude +1.8°, in
+// Cygnus. Over the years a trail covers, its 230-million-year orbit is a straight line to far better than a pixel. Each planet's
+// path is its real orbit around the Sun (JPL elements; the giants pinned to their VSOP87 places) plus the Sun's motion. The slider
+// slows the Sun's motion uniformly — the same as watching from a viewpoint gliding along with the Sun at the rest of its speed.
+const HX = { on: false, steps: [1, 3, 10, 30, 100, 300], slow: 30, grp: new THREE.Group(), trails: [], tw: null };
+{ const uS = 10.6, vS = 236 + 10.7, wS = 7.6; HX.kmS = Math.hypot(uS, vS, wS);
+  const eq = GAL.x.clone().multiplyScalar(uS).addScaledVector(GAL.y, vS).addScaledVector(GAL.z, wS);   // galactic → equatorial: GAL's axes are EQ2GAL's rows
+  HX.dir = eqToScene(eq).normalize(); HX.auYr = HX.kmS * 31557600 / AU;   // ≈ 52 AU a year
+  HX.tilt = Math.asin(Math.abs(HX.dir.y)) / DEG;   // the planets' plane (scene XZ) against the direction of travel: ≈ 61°
+  space.add(HX.grp); HX.grp.visible = false; }
+function helioKep(key, T, out) {   // the plain Keplerian orbit (fast, for drawing many points)
+  const el = elementsAt(key, T), e = el[1];
+  let M = ((el[3] - el[4]) % 360) * DEG, E = M + e * Math.sin(M);
+  for (let k = 0; k < 8; k++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+  return orbitXYZ(el, E, out);
+}
+const lineGeo = n => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3)); g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3), 3)); return g; };
+const hxMat = () => new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false });
+function buildHelix() {
+  for (const b of PLANETS) if (b.kind === 'planet' || b.kind === 'giant') {
+    const tr = { b, max: 2400, c: new THREE.Color(b.color || (b.sys && b.sys.color) || '#ffffff') };
+    tr.geo = lineGeo(tr.max); tr.line = new THREE.Line(tr.geo, hxMat()); tr.line.frustumCulled = false; HX.grp.add(tr.line); HX.trails.push(tr);
+  }
+  HX.sun = { geo: lineGeo(2), c: new THREE.Color('#ffcf6e') }; HX.sun.line = new THREE.Line(HX.sun.geo, hxMat()); HX.sun.line.frustumCulled = false; HX.grp.add(HX.sun.line);
+  HX.ahead = new THREE.Line(lineGeo(2), new THREE.LineDashedMaterial({ color: '#ffcf6e', dashSize: 1, gapSize: 1, transparent: true, opacity: 0.6, depthWrite: false })); HX.ahead.frustumCulled = false; HX.grp.add(HX.ahead);
+  HX.lab = document.createElement('div'); HX.lab.id = 'hx-dir'; HX.lab.hidden = true; document.body.appendChild(HX.lab);
+}
+const _hk = new THREE.Vector3(), _hd = new THREE.Vector3(), _hp = new THREE.Vector3();
+function updateHelix(camD) {
+  HX.grp.visible = HX.on; if (HX.lab) HX.lab.hidden = !HX.on || SKY.on; if (!HX.on) return;
+  if (!HX.trails.length) buildHelix();
+  const vis = 2 * camD * TAN20 / AUS, vShow = HX.auYr / HX.slow, YR = 31557600000, T0 = T_of(simMs);
+  const W = THREE.MathUtils.clamp(1.25 * vis / vShow, 0.02, 3000);   // years of trail: enough for the Sun's own path to cross the view
+  for (const tr of HX.trails) {
+    const b = tr.b, P = Math.pow(elementsAt(b.key, T0)[0], 1.5);   // its year, in Earth years
+    const Wp = Math.min(W, 40 * P), n = Math.round(THREE.MathUtils.clamp(Wp / P * 90, 24, tr.max - 1));
+    helioKep(b.key, T0, _hk); _hd.copy(b.abs).sub(_hk);   // pin the trail to the planet's exact place now
+    const pos = tr.geo.attributes.position, col = tr.geo.attributes.color;
+    for (let i = 0; i <= n; i++) {
+      const f = i / n, ago = Wp * (1 - f);   // years before now
+      helioKep(b.key, T_of(simMs - ago * YR), _hp).add(_hd).addScaledVector(HX.dir, -vShow * ago * AUS);
+      pos.setXYZ(i, _hp.x, _hp.y, _hp.z);
+      const k = 0.08 + 0.92 * f * f; col.setXYZ(i, tr.c.r * k, tr.c.g * k, tr.c.b * k);
+    }
+    pos.needsUpdate = col.needsUpdate = true; tr.geo.setDrawRange(0, n + 1);
+  }
+  { const pos = HX.sun.geo.attributes.position, col = HX.sun.geo.attributes.color, c = HX.sun.c;   // the Sun's own path: straight back the way it came
+    _hp.copy(SUN.abs).addScaledVector(HX.dir, -vShow * W * AUS); pos.setXYZ(0, _hp.x, _hp.y, _hp.z); pos.setXYZ(1, SUN.abs.x, SUN.abs.y, SUN.abs.z);
+    col.setXYZ(0, c.r * 0.08, c.g * 0.08, c.b * 0.08); col.setXYZ(1, c.r, c.g, c.b); pos.needsUpdate = col.needsUpdate = true; }
+  { const pos = HX.ahead.geometry.attributes.position, L = 0.22 * vis * AUS;   // and a dashed pointer the way it's going
+    _hp.copy(SUN.abs).addScaledVector(HX.dir, L); pos.setXYZ(0, SUN.abs.x, SUN.abs.y, SUN.abs.z); pos.setXYZ(1, _hp.x, _hp.y, _hp.z); pos.needsUpdate = true;
+    HX.ahead.material.dashSize = HX.ahead.material.gapSize = L / 24; HX.ahead.computeLineDistances();
+    _hp.sub(origin); if (deep.t > 0) _hp.applyQuaternion(scene.quaternion); _hp.project(camera);
+    const on = _hp.z < 1 && Math.abs(_hp.x) < 1.1 && Math.abs(_hp.y) < 1.1; HX.lab.hidden = !on || SKY.on;
+    if (on) { HX.lab.textContent = `→ toward Cygnus, ${Math.round(HX.kmS)} km/s`; HX.lab.style.left = ((_hp.x + 1) / 2 * innerWidth + 8) + 'px'; HX.lab.style.top = ((1 - _hp.y) / 2 * innerHeight - 9) + 'px'; } }
+}
+function helixText() {
+  const s = HX.slow, real = s === 1;
+  document.getElementById('hx-read').textContent = real ? 'true speed' : `slowed ${s}×`;
+  document.getElementById('hx-true').classList.toggle('on', real);
+  document.getElementById('hx-note').textContent = real
+    ? `At its true speed the Sun covers ${Math.round(HX.auYr)} AU a year, so even Mercury's coils are stretched out nearly straight.`
+    : `The Sun's speed is slowed ${s}× so the coils show (true: ${Math.round(HX.auYr)} AU a year). Slowing it is the same as watching from a viewpoint that glides along with the Sun at the rest of its speed; the planets' own motion is untouched.`;
+}
+function setHelix(on) {
+  HX.on = on; document.getElementById('helixpanel').hidden = !on;
+  if (!on) { if (HX.lab) HX.lab.hidden = true; return; }
+  document.getElementById('hx-txt').innerHTML = `The Sun carries every planet around the Milky Way's centre at <b>${Math.round(HX.kmS)} km/s</b>, heading for Cygnus — one lap takes about 230 million years. The planets don't trail behind it: their orbits are tilted <b>${Math.round(HX.tilt)}°</b> to the way we're going, so each one traces a slanted corkscrew.`;
+  helixText();
+  if (SKY.on) return;
+  // a side-on view: looking along the planets' plane, square to the direction of travel, so the tilt shows
+  setFocus(SUN); select(null);
+  const side = new THREE.Vector3().crossVectors(HX.dir, new THREE.Vector3(0, 1, 0)).normalize(), D = 9 * AUS;
+  const to = controls.target.clone().addScaledVector(side, D * 0.94).addScaledVector(new THREE.Vector3(0, 1, 0), D * 0.34);
+  HX.tw = { from: camera.position.clone(), to, t0: performance.now(), dur: 1800 };
+  if (!playing) { playing = true; playBtn.textContent = '❚❚'; }
+  logTarget = Math.log10(20 * 86400); speedIn.value = Math.round(logTarget / MAXLOG * 1000);   // 20 days a second: the inner planets coil round in seconds
+}
+{ const sl = document.getElementById('hx-slow');
+  const setSlow = i => { HX.slow = HX.steps[i]; sl.value = i; helixText(); };
+  sl.oninput = () => setSlow(+sl.value);
+  document.getElementById('hx-true').onclick = () => setSlow(HX.slow === 1 ? 3 : 0); }
 function updateWorld() {
   const T = T_of(simMs);
   for (const b of PLANETS) { if (DWARF_ORB[b.key]) helioDwarf(b.key, simMs, b.abs); else helio(b.key, T, b.abs); b.root.position.copy(b.abs); b.sunDir.copy(b.abs).negate().normalize(); if (b.place) b.place(); if (ORB_DAYS[b.key]) retrace(b);
@@ -2344,8 +2447,8 @@ addEventListener('wheel', e => {
 // ===================================================================
 //  UI
 // ===================================================================
-const opts = { orbits: true, labels: true, dots: true, faint: true, milky: true, zodiac: false, constel: false, mag: false };
-document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); for (const g of GIANTS) g.faint.visible = opts.faint; milky.visible = opts.milky; zodiac.visible = opts.zodiac; constel.visible = opts.constel; if (b.dataset.k === 'mag' && selected) select(selected);
+const opts = { orbits: true, labels: true, dots: true, faint: true, milky: true, zodiac: false, constel: false, mag: false, helix: false };
+document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); for (const g of GIANTS) g.faint.visible = opts.faint; milky.visible = opts.milky; zodiac.visible = opts.zodiac; constel.visible = opts.constel; if (b.dataset.k === 'mag' && selected) select(selected); if (b.dataset.k === 'helix') setHelix(opts.helix);
   if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-ss', opt: 'zodiac', on: opts.zodiac }, '*'); });
 const playBtn = document.getElementById('play'), speedIn = document.getElementById('speed');
 playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶'; };
@@ -2717,8 +2820,11 @@ function frame(t) {
     scene.quaternion.copy(_qn); skyRoot.quaternion.copy(scene.quaternion); }
   updateWorld(); updateFields();
   if (SKY.on) skyCamera();
-  else { if (fly) stepFly(t); controls.update(); keepOutside(); }
+  else { if (fly) stepFly(t);
+    if (HX.tw && !fly) { const k = Math.min(1, (performance.now() - HX.tw.t0) / HX.tw.dur), e = k * k * (3 - 2 * k); camera.position.lerpVectors(HX.tw.from, HX.tw.to, e); if (k >= 1) HX.tw = null; }
+    controls.update(); keepOutside(); }
   const camD = camera.position.distanceTo(controls.target), pxs = innerHeight / 2 / Math.tan(camera.fov * DEG / 2), p = new THREE.Vector3();
+  updateHelix(camD);
   // past the Oort cloud the lens narrows while the camera backs away, so the picture slides from a view of the sky into the galaxy map's straight-down projection
   const spanLy = 2 * camD * TAN20 * Math.min(1, camera.aspect) / LY, ls = Math.log(Math.max(spanLy, 1e-30));
   deep.p = 0; deep.q = EMBED ? sstep(ls, Math.log(3.2), Math.log(5.8)) : 0;
@@ -2743,7 +2849,7 @@ function frame(t) {
     relOf(b, p); const dist = p.distanceTo(camera.position), px = b.R / dist * pxs;
     const ratio = b.orbit.userData.a / camD, tiny = THREE.MathUtils.clamp((ratio - 0.0012) / 0.003, 0, 1);   // from far enough out the whole orbit is a speck
     b.dot.visible = opts.dots && px < 2.5 && tiny > 0;
-    b.orbit.visible = opts.orbits && ratio < 900 && tiny > 0; b.orbit.material.opacity = b.orbit.userData.base * THREE.MathUtils.clamp((900 - ratio) / 450, 0, 1) * tiny;
+    b.orbit.visible = opts.orbits && !HX.on && ratio < 900 && tiny > 0; b.orbit.material.opacity = b.orbit.userData.base * THREE.MathUtils.clamp((900 - ratio) / 450, 0, 1) * tiny;
     if (b.moons.length) {
       for (const o of b.moons) {
         const orbitPx = o.a * U / dist * pxs, r2 = o.a * U / Math.max(camD, 1e-6);
@@ -2845,6 +2951,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=47e37277" data-place="info" defer></script>
+<script src="../music/music.js?v=a4186627" data-place="info" defer></script>
 </body>
 </html>
