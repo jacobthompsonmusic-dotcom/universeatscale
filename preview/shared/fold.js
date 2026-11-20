@@ -32,7 +32,7 @@
     if (!opts.closeBtn) el.classList.add('uas-foldable-pad');
     const label = () => (typeof opts.title === 'function' ? opts.title() : opts.title) || 'Menu';
     const arrow = opts.arrow || '▴';   // which way the panel opens from its tab
-    const set = f => { if (f) tab.textContent = label() + ' ' + arrow; el.classList.toggle('uas-folded', !!f); };
+    const set = f => { if (f) tab.textContent = label() + ' ' + arrow; el.classList.toggle('uas-folded', !!f); if (opts.onToggle) opts.onToggle(!!f); };
     x.addEventListener('click', e => { e.stopPropagation(); set(true); });
     x.addEventListener('pointerdown', e => e.stopPropagation());
     tab.addEventListener('click', e => { e.stopPropagation(); set(false); });

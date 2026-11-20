@@ -40,9 +40,9 @@
   /* the scale ladder: where you are between Earth and the edge of the observable universe (outermost at the top) */
   #ladder { position: fixed; z-index: 3; top: 16px; right: 16px; width: 116px; display: flex; flex-direction: column; gap: 1px; padding: 6px;
     background: rgba(12, 13, 20, 0.78); border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 14px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-  #ladder button { border: 0; background: none; color: #8d93a8; font: italic 14.5px IM Fell English, Georgia, serif; padding: 6px 9px; border-radius: 8px; cursor: pointer; white-space: nowrap; text-align: left; }
-  #ladder button:hover, #ladder button:focus-visible { color: #e9ecf5; background: rgba(255, 255, 255, 0.06); outline: none; }
-  #ladder button.on { color: #14110a; background: #ffcf6e; }
+  #ladder button[data-go] { border: 0; background: none; color: #8d93a8; font: italic 14.5px IM Fell English, Georgia, serif; padding: 6px 9px; border-radius: 8px; cursor: pointer; white-space: nowrap; text-align: left; }
+  #ladder button[data-go]:hover, #ladder button[data-go]:focus-visible { color: #e9ecf5; background: rgba(255, 255, 255, 0.06); outline: none; }
+  #ladder button[data-go].on { color: #14110a; background: #ffcf6e; }
   @media (max-width: 760px), (max-height: 620px) { #ladder { display: none; } }
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 </style>
@@ -165,11 +165,13 @@ addEventListener('message', e => {
 });
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-const UAS_V = '285184c3';
+const UAS_V = '349528b2';
 mwEl.src = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
 ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 })();
 </script>
-<script src="../music/music.js?v=285184c3" data-place="ladder" defer></script>
+<script src="../shared/fold.js?v=349528b2"></script>
+<script>UAS_FOLD.foldable(document.getElementById('ladder'), { title: 'Scale', arrow: '▾', startFolded: false, onToggle: () => dispatchEvent(new Event('resize')) });   // the soundtrack note below it moves up</script>
+<script src="../music/music.js?v=349528b2" data-place="ladder" defer></script>
 </body>
 </html>
