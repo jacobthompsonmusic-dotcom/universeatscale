@@ -3,7 +3,7 @@
 # scripts. Idempotent; runs from tools/preview.sh, i.e. before every commit.
 import hashlib, pathlib, re
 root = pathlib.Path(__file__).resolve().parent.parent
-FILES = ['milky-way/index.html', 'solar-system/index.html', 'shared/frame.js', 'shared/clock.js', 'shared/galaxy-volume.js', 'music/music.js']
+FILES = ['milky-way/index.html', 'solar-system/index.html', 'shared/frame.js', 'shared/clock.js', 'shared/galaxy-volume.js', 'shared/fold.js', 'music/music.js']
 strip = lambda s: re.sub(r'\?v=[0-9a-f]{8}', '', re.sub(r"const UAS_V = '[0-9a-f]{8}'", '', s))
 h = hashlib.sha1(b''.join(strip((root / f).read_text()).encode() for f in FILES)).hexdigest()[:8]
 PAGES = ['index.html', 'universe/index.html', 'milky-way/index.html', 'solar-system/index.html', 'moons/index.html', 'giant-planets-3d/index.html']

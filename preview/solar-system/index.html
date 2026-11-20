@@ -120,7 +120,7 @@
   #scale { position:fixed; bottom:74px; left:50%; transform:translateX(-50%); text-align:center; font-size:13.5px; color:var(--muted); pointer-events:none; z-index:1; font-variant-numeric:tabular-nums; text-shadow:0 1px 2px #000; }
   #scale .bar { height:6px; border:1.5px solid rgba(255,255,255,0.55); border-top:0; margin:0 auto 3px; }
   #loading { position:fixed; inset:0; display:flex; align-items:flex-end; justify-content:center; padding-bottom:9vh; box-sizing:border-box; color:rgba(233,236,245,0.85); font-size:13px; letter-spacing:0.04em; z-index:5; transition:opacity .9s;
-    background:#020205;   /* plain black: the real opening view fades in underneath, so there is never a different picture */
+    background:#020205;   /* plain black: the real opening view fades in underneath, so there is never a different picture */ }
   #loading::after { content:""; width:6px; height:6px; margin-left:8px; margin-bottom:5px; border-radius:50%; background:#ffcf6e; animation:ldpulse 1.2s ease-in-out infinite; }
   @keyframes ldpulse { 50% { opacity:0.25; } }
 
@@ -128,7 +128,8 @@
   @media (max-width: 760px) {
     #top { width:calc(100% - 32px); }
     #info { top:auto; bottom:136px; left:16px; right:98px; width:auto; max-height:45vh; z-index:5; }
-    #legend { display:none; }
+    #top.collapsed .switch { display:none; }
+    #legend { bottom:150px; max-height:50vh; overflow-y:auto; }   /* above the time bar */
     #time { left:16px; right:84px; transform:none; flex-wrap:wrap; justify-content:center; }
     #time input[type=range] { flex:1 1 90px; width:auto; height:28px; }
     #time .date { flex:1 1 auto; min-width:0; font-size:14px; }
@@ -230,9 +231,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=29cc2147"></script>
-<script src="../shared/clock.js?v=29cc2147"></script>
-<script src="../shared/galaxy-volume.js?v=29cc2147"></script>
+<script src="../shared/frame.js?v=7fba118d"></script>
+<script src="../shared/clock.js?v=7fba118d"></script>
+<script src="../shared/fold.js?v=7fba118d"></script>
+<script src="../shared/galaxy-volume.js?v=7fba118d"></script>
 <script>
 (() => {
 'use strict';
@@ -1865,7 +1867,7 @@ function bodyUnder(X, Y, rad = 18) {
   for (const o of LIST) if (o.onScreen) { const d = Math.max(0, Math.hypot(o.ax - X, o.ay - Y) - Math.max(0, o.px)); if (d < bd || (d === bd && best && o.pr < best.pr)) { bd = d; best = o; } }
   return best;
 }
-canvas.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; collapse(true); });
+canvas.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; collapse(true); UAS_FOLD.foldAll(); });   // a tap on the map puts the menus away
 canvas.addEventListener('pointerup', e => {
   if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return;
   const fg = giantOf(focus);
@@ -1925,6 +1927,8 @@ document.getElementById('now').onclick = () => { CK.set(Date.now()); simMs = CK.
 const topPanel = document.getElementById('top'), aboutBtn = document.getElementById('about');
 const collapse = c => { topPanel.classList.toggle('collapsed', c); aboutBtn.textContent = c ? 'i' : '×'; };
 aboutBtn.onclick = () => collapse(!topPanel.classList.contains('collapsed'));
+if (UAS_FOLD.phone.matches) collapse(true);   // on a phone the intro starts folded: just the search box and its i
+UAS_FOLD.foldable(document.getElementById('legend'), { title: 'Layers' });
 const kindLabel = o => o.isSun ? 'Star' : o.kind === 'giant' ? 'Giant planet' : o.kind === 'planet' ? 'Planet' : o.kind === 'dwarf' ? 'Dwarf planet' : `Moon of ${o.parent.name}`;
 const sIn = document.getElementById('search'), sRes = document.getElementById('results'); let hits = [], active = 0;
 // On the joined page the search box also finds things in the Milky Way map (asked through the page that holds both maps)
@@ -2105,6 +2109,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=29cc2147" data-place="header" defer></script>
+<script src="../music/music.js?v=7fba118d" data-place="header" defer></script>
 </body>
 </html>

@@ -139,7 +139,9 @@
   @media (max-width: 760px) {
     #top { width: calc(100% - 32px); }
     #info { top: auto; bottom: 16px; left: 16px; right: 84px; width: auto; max-height: 50vh; overflow-y: auto; z-index: 5; }
-    #legend, #readout, #note { display: none; }
+    #readout, #note { display: none; }
+    #t1panel, #acpanel, #qpanel, #ppanel { left: 16px; right: 84px; width: auto; bottom: 64px; max-height: 42vh; overflow-y: auto; }
+    #legend { max-height: 50vh; overflow-y: auto; }
     #scale { bottom: 24px; }
   }
 
@@ -165,9 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=29cc2147"></script>
-<script src="../shared/clock.js?v=29cc2147"></script>
-<script src="../shared/galaxy-volume.js?v=29cc2147"></script>
+<script src="../shared/frame.js?v=7fba118d"></script>
+<script src="../shared/clock.js?v=7fba118d"></script>
+<script src="../shared/fold.js?v=7fba118d"></script>
+<script src="../shared/galaxy-volume.js?v=7fba118d"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -369,7 +372,7 @@ const TYPES = {
   void:     { label: 'Cosmic void',        color: '#8b93ff' },
 };
 // measured distance (ly), galactic longitude & latitude (°), and how the distance was measured
-const POS = {"Alpha Centauri": [4.3652, 315.7398, -0.6856, "Barycentre: Kervella et al. 2017 (parallax 747.17 mas)"], "Barnard's Star": [5.96, 31.01, 14.06, "Gaia DR3 parallax"], "Wolf 359": [7.86, 244.06, 56.12, "Gaia DR3 parallax"], "Lalande 21185": [8.3, 185.12, 65.43, "Gaia DR3 parallax"], "Epsilon Eridani": [10.5, 195.84, -48.05, "Gaia DR3 parallax"], "Procyon": [11.46, 213.7, 13.02, "Hipparcos parallax"], "Altair": [16.73, 47.74, -8.91, "Hipparcos parallax"], "Fomalhaut": [25.1, 20.49, -64.91, "Hipparcos parallax"], "Pollux": [33.8, 192.23, 23.41, "Hipparcos parallax"], "Denebola": [35.9, 250.64, 70.8, "Hipparcos parallax"], "Arcturus": [36.7, 15.07, 69.11, "Hipparcos parallax"], "Porrima": [38.1, 297.83, 61.33, "Hipparcos parallax"], "55 Cancri": [41.1, 196.79, 37.7, "Gaia DR3 parallax"], "Capella": [42.8, 162.59, 4.57, "Hipparcos parallax"], "Rasalhague": [48.6, 35.89, 22.57, "Hipparcos parallax"], "Alderamin": [49.0, 101.0, 9.17, "Hipparcos parallax"], "51 Pegasi": [50.6, 90.06, -34.73, "Gaia DR3 parallax"], "Castor": [50.9, 187.44, 22.48, "Hipparcos parallax"], "Caph": [54.7, 117.53, -3.28, "Hipparcos parallax"], "Menkent": [58.8, 319.45, 24.08, "Hipparcos parallax"], "Aldebaran": [66.6, 180.97, -20.25, "Hipparcos parallax"], "Hamal": [65.8, 144.58, -36.21, "Hipparcos parallax"], "Alphecca": [75.0, 41.87, 53.77, "Hipparcos parallax"], "Regulus": [79.3, 226.43, 48.93, "Hipparcos parallax"], "Mizar": [85.8, 113.11, 61.58, "Hipparcos parallax"], "Gacrux": [88.6, 300.17, 5.65, "Hipparcos parallax"], "Algol": [89.9, 148.98, -14.9, "Hipparcos parallax"], "Alpheratz": [97.0, 111.73, -32.84, "Hipparcos parallax"], "Achernar": [139.4, 290.84, -58.79, "Hipparcos parallax"], "Eltanin": [154.3, 79.05, 29.22, "Hipparcos parallax"], "Alphard": [180.3, 241.49, 29.05, "Hipparcos parallax"], "Peacock": [178.8, 340.9, -35.19, "Hipparcos parallax"], "Mirach": [197.4, 127.11, -27.1, "Hipparcos parallax"], "Izar": [202.6, 39.38, 64.78, "Hipparcos parallax"], "Nunki": [227.8, 9.56, -12.44, "Hipparcos parallax"], "Schedar": [228.2, 121.42, -6.3, "Hipparcos parallax"], "Spica": [249.7, 316.11, 50.84, "Hipparcos parallax"], "Bellatrix": [252.4, 196.93, -15.95, "Hipparcos parallax"], "Mimosa": [278.5, 302.46, 3.18, "Hipparcos parallax"], "Mira": [299.0, 167.76, -57.98, "Hipparcos parallax"], "Canopus": [309.2, 261.21, -25.29, "Hipparcos parallax"], "Acrux": [322.0, 300.13, -0.36, "Hipparcos parallax"], "Almach": [393.0, 136.96, -18.56, "Hipparcos parallax"], "Rasalgethi": [359.6, 35.53, 27.82, "Hipparcos parallax"], "Hadar": [392.0, 311.77, 1.25, "Hipparcos parallax"], "Atria": [390.6, 321.54, -15.26, "Hipparcos parallax"], "Vega": [25.0, 67.45, 19.24, "Hipparcos parallax"], "Sirius": [8.6, 227.23, -8.89, "Hipparcos parallax"], "Deneb": [2615.8, 84.28, 2.0, "Spectroscopic modelling (Schiller & Przybilla 2008)"], "Betelgeuse": [547.9, 199.79, -8.96, "Asteroseismology (Joyce et al. 2020)"], "Antares": [553.7, 351.95, 15.06, "Hipparcos parallax"], "Rigel": [861.1, 209.24, -25.25, "Gaia DR2 parallax of Rigel B"], "Polaris": [446.5, 123.28, 26.46, "Gaia DR3 parallax of Polaris B"], "61 Cygni": [11.4, 82.32, -5.82, "Gaia DR3 parallax"], "Tau Ceti": [11.91, 173.1, -73.44, "Gaia DR3 parallax"], "Epsilon Indi": [11.87, 336.19, -48.04, "Gaia DR3 parallax"], "Beta Pictoris": [64.0, 258.36, -30.61, "Gaia DR3 parallax"], "Zeta Ophiuchi": [366.1, 6.28, 23.59, "Hipparcos parallax"], "Sagittarius A*": [26989.0, 359.94, -0.05, "S2 orbit (GRAVITY Collab. 2021)"], "TRAPPIST-1": [40.66, 69.71, -56.64, "Gaia DR3 parallax"], "Orion Nebula": [1272.0, 209.01, -19.38, "Gaia parallaxes of member stars"], "Carina Nebula": [7665.0, 287.69, -0.79, "Gaia EDR3 (Göppl & Preibisch 2022)"], "Eagle Nebula": [5577.0, 16.97, 0.8, "Gaia DR2 (Kuhn et al. 2019)"], "Crab Nebula": [6523.0, 184.56, -5.78, "Expansion parallax"], "Omega Centauri": [17710.0, 309.1, 14.97, "Gaia EDR3 (Baumgardt & Vasiliev 2021)"], "Cygnus X-1": [7241.0, 71.34, 3.07, "VLBA radio parallax (Miller-Jones 2021)"], "Cassiopeia A": [11089.0, 111.73, -2.13, "Expansion kinematics"], "Pleiades": [441.0, 166.64, -23.46, "Gaia DR2 cluster parallax"], "Lagoon Nebula": [4338.0, 5.96, -1.17, "Gaia DR2 cluster parallax"], "Westerlund 1": [13209.0, 339.55, -0.4, "Gaia EDR3 + eclipsing binary (Navarete 2022)"], "Rosette Nebula": [5055.0, 206.31, -2.07, "Gaia EDR3 cluster parallax"], "Double Cluster": [7502.0, 134.82, -3.67, "Gaia cluster parallax"], "Hercules Cluster (M13)": [24201.0, 59.01, 40.91, "Gaia EDR3 (Baumgardt & Vasiliev 2021)"], "M4": [6034.0, 350.97, 15.97, "Gaia EDR3 (Baumgardt & Vasiliev 2021)"], "Kepler's Supernova": [16634.0, 4.53, 6.82, "Shock-speed modelling"], "Tycho's Supernova": [8154.0, 120.08, 1.42, "Light-echo & shock studies"], "Vela Supernova Remnant": [936.0, 263.55, -2.79, "VLBI radio parallax of its pulsar (Dodson 2003)"], "Vela Pulsar": [936.0, 263.552, -2.787, "VLBI radio parallax (Dodson et al. 2003)"], "Crab Pulsar": [6523.0, 184.557, -5.784, "Expansion parallax of the Crab Nebula"], "PSR B1919+21": [1000.0, 55.777, 3.501, "Estimated from radio dispersion (~300 pc; uncertain by a factor of a few)"], "PSR J0437-4715": [511.9, 253.394, -41.963, "Pulsar-timing parallax (Reardon et al. 2024)"], "Double Pulsar": [2398.0, 245.236, -4.505, "Pulsar-timing parallax, 1.36 mas (Kramer et al. 2021)"], "Ring Nebula": [2567.0, 63.17, 13.98, "Gaia DR3 parallax of central star"], "Cat's Eye Nebula": [3262.0, 96.47, 29.95, "Gaia parallax of central star"], "Helix Nebula": [652.0, 36.16, -57.12, "Gaia DR3 parallax of central star"], "Hyades": [155.0, 180.06, -22.34, "Gaia DR2 cluster parallax"], "Horsehead Nebula": [1375, 206.96, -16.77, "literature distance (Orion B cloud)"], "Trifid Nebula": [4100, 7.0, -0.25, "literature distance"], "North America Nebula": [2590, 85.67, -0.89, "Gaia (Kuhn et al. 2020, 795 pc)"], "Dumbbell Nebula": [1360, 60.84, -3.7, "literature distance"], "Butterfly Nebula": [3400, 349.51, 1.06, "literature distance"], "Owl Nebula": [2030, 148.49, 57.05, "literature distance"], "Heart Nebula": [7500, 134.73, 0.92, "literature distance"], "Christmas Tree Cluster": [2350, 202.93, 2.19, "Gaia cluster parallax (~720 pc)"], "Tarantula Nebula": [161000, 279.47, -31.67, "LMC distance (Pietrzyński et al. 2019)"], "Rho Ophiuchi Cloud": [450, 353.69, 17.68, "VLBA parallaxes (Ortiz-León et al. 2018, 137 pc)"]};
+const POS = {"Alpha Centauri": [4.3652, 315.7398, -0.6856, "Barycentre: Kervella et al. 2017 (parallax 747.17 mas)"], "Barnard's Star": [5.96, 31.01, 14.06, "Gaia DR3 parallax"], "Wolf 359": [7.86, 244.06, 56.12, "Gaia DR3 parallax"], "Lalande 21185": [8.3, 185.12, 65.43, "Gaia DR3 parallax"], "Epsilon Eridani": [10.5, 195.84, -48.05, "Gaia DR3 parallax"], "Procyon": [11.46, 213.7, 13.02, "Hipparcos parallax"], "Altair": [16.73, 47.74, -8.91, "Hipparcos parallax"], "Fomalhaut": [25.1, 20.49, -64.91, "Hipparcos parallax"], "Pollux": [33.8, 192.23, 23.41, "Hipparcos parallax"], "Denebola": [35.9, 250.64, 70.8, "Hipparcos parallax"], "Arcturus": [36.7, 15.07, 69.11, "Hipparcos parallax"], "Porrima": [38.1, 297.83, 61.33, "Hipparcos parallax"], "55 Cancri": [41.1, 196.79, 37.7, "Gaia DR3 parallax"], "Capella": [42.8, 162.59, 4.57, "Hipparcos parallax"], "Rasalhague": [48.6, 35.89, 22.57, "Hipparcos parallax"], "Alderamin": [49.0, 101.0, 9.17, "Hipparcos parallax"], "51 Pegasi": [50.6, 90.06, -34.73, "Gaia DR3 parallax"], "Castor": [50.9, 187.44, 22.48, "Hipparcos parallax"], "Caph": [54.7, 117.53, -3.28, "Hipparcos parallax"], "Menkent": [58.8, 319.45, 24.08, "Hipparcos parallax"], "Aldebaran": [66.6, 180.97, -20.25, "Hipparcos parallax"], "Hamal": [65.8, 144.58, -36.21, "Hipparcos parallax"], "Alphecca": [75.0, 41.87, 53.77, "Hipparcos parallax"], "Regulus": [79.3, 226.43, 48.93, "Hipparcos parallax"], "Mizar": [85.8, 113.11, 61.58, "Hipparcos parallax"], "Gacrux": [88.6, 300.17, 5.65, "Hipparcos parallax"], "Algol": [89.9, 148.98, -14.9, "Hipparcos parallax"], "Alpheratz": [97.0, 111.73, -32.84, "Hipparcos parallax"], "Achernar": [139.4, 290.84, -58.79, "Hipparcos parallax"], "Eltanin": [154.3, 79.05, 29.22, "Hipparcos parallax"], "Alphard": [180.3, 241.49, 29.05, "Hipparcos parallax"], "Peacock": [178.8, 340.9, -35.19, "Hipparcos parallax"], "Mirach": [197.4, 127.11, -27.1, "Hipparcos parallax"], "Izar": [202.6, 39.38, 64.78, "Hipparcos parallax"], "Nunki": [227.8, 9.56, -12.44, "Hipparcos parallax"], "Schedar": [228.2, 121.42, -6.3, "Hipparcos parallax"], "Spica": [249.7, 316.11, 50.84, "Hipparcos parallax"], "Bellatrix": [252.4, 196.93, -15.95, "Hipparcos parallax"], "Mimosa": [278.5, 302.46, 3.18, "Hipparcos parallax"], "Mira": [299.0, 167.76, -57.98, "Hipparcos parallax"], "Canopus": [309.2, 261.21, -25.29, "Hipparcos parallax"], "Acrux": [322.0, 300.13, -0.36, "Hipparcos parallax"], "Almach": [393.0, 136.96, -18.56, "Hipparcos parallax"], "Rasalgethi": [359.6, 35.53, 27.82, "Hipparcos parallax"], "Hadar": [392.0, 311.77, 1.25, "Hipparcos parallax"], "Atria": [390.6, 321.54, -15.26, "Hipparcos parallax"], "Vega": [25.0, 67.45, 19.24, "Hipparcos parallax"], "Sirius": [8.6, 227.23, -8.89, "Hipparcos parallax"], "Deneb": [2615.8, 84.28, 2.0, "Spectroscopic modelling (Schiller & Przybilla 2008)"], "Betelgeuse": [547.9, 199.79, -8.96, "Asteroseismology (Joyce et al. 2020)"], "Antares": [553.7, 351.95, 15.06, "Hipparcos parallax"], "Rigel": [861.1, 209.24, -25.25, "Gaia DR2 parallax of Rigel B"], "Polaris": [446.5, 123.28, 26.46, "Gaia DR3 parallax of Polaris B"], "61 Cygni": [11.4, 82.32, -5.82, "Gaia DR3 parallax"], "Tau Ceti": [11.91, 173.1, -73.44, "Gaia DR3 parallax"], "Epsilon Indi": [11.87, 336.19, -48.04, "Gaia DR3 parallax"], "Beta Pictoris": [64.0, 258.36, -30.61, "Gaia DR3 parallax"], "Zeta Ophiuchi": [366.1, 6.28, 23.59, "Hipparcos parallax"], "Sagittarius A*": [26989.0, 359.94, -0.05, "S2 orbit (GRAVITY Collab. 2021)"], "TRAPPIST-1": [40.66, 69.71, -56.64, "Gaia DR3 parallax"], "Orion Nebula": [1272.0, 209.01, -19.38, "Gaia parallaxes of member stars"], "Carina Nebula": [7665.0, 287.69, -0.79, "Gaia EDR3 (Göppl & Preibisch 2022)"], "Eagle Nebula": [5577.0, 16.97, 0.8, "Gaia DR2 (Kuhn et al. 2019)"], "Crab Nebula": [6523.0, 184.557, -5.784, "Expansion parallax (centred on its pulsar)"], "Omega Centauri": [17710.0, 309.1, 14.97, "Gaia EDR3 (Baumgardt & Vasiliev 2021)"], "Cygnus X-1": [7241.0, 71.34, 3.07, "VLBA radio parallax (Miller-Jones 2021)"], "Cassiopeia A": [11089.0, 111.73, -2.13, "Expansion kinematics"], "Pleiades": [441.0, 166.64, -23.46, "Gaia DR2 cluster parallax"], "Lagoon Nebula": [4338.0, 5.96, -1.17, "Gaia DR2 cluster parallax"], "Westerlund 1": [13209.0, 339.55, -0.4, "Gaia EDR3 + eclipsing binary (Navarete 2022)"], "Rosette Nebula": [5055.0, 206.31, -2.07, "Gaia EDR3 cluster parallax"], "Double Cluster": [7502.0, 134.82, -3.67, "Gaia cluster parallax"], "Hercules Cluster (M13)": [24201.0, 59.01, 40.91, "Gaia EDR3 (Baumgardt & Vasiliev 2021)"], "M4": [6034.0, 350.97, 15.97, "Gaia EDR3 (Baumgardt & Vasiliev 2021)"], "Kepler's Supernova": [16634.0, 4.53, 6.82, "Shock-speed modelling"], "Tycho's Supernova": [8154.0, 120.08, 1.42, "Light-echo & shock studies"], "Vela Supernova Remnant": [936.0, 263.552, -2.787, "VLBI radio parallax of its pulsar (Dodson 2003); centred on the pulsar"], "Vela Pulsar": [936.0, 263.552, -2.787, "VLBI radio parallax (Dodson et al. 2003)"], "Crab Pulsar": [6523.0, 184.557, -5.784, "Expansion parallax of the Crab Nebula"], "PSR B1919+21": [1000.0, 55.777, 3.501, "Estimated from radio dispersion (~300 pc; uncertain by a factor of a few)"], "PSR J0437-4715": [511.9, 253.394, -41.963, "Pulsar-timing parallax (Reardon et al. 2024)"], "Double Pulsar": [2398.0, 245.236, -4.505, "Pulsar-timing parallax, 1.36 mas (Kramer et al. 2021)"], "Ring Nebula": [2567.0, 63.17, 13.98, "Gaia DR3 parallax of central star"], "Cat's Eye Nebula": [3262.0, 96.47, 29.95, "Gaia parallax of central star"], "Helix Nebula": [652.0, 36.16, -57.12, "Gaia DR3 parallax of central star"], "Hyades": [155.0, 180.06, -22.34, "Gaia DR2 cluster parallax"], "Horsehead Nebula": [1375, 206.96, -16.77, "literature distance (Orion B cloud)"], "Trifid Nebula": [4100, 7.0, -0.25, "literature distance"], "North America Nebula": [2590, 85.67, -0.89, "Gaia (Kuhn et al. 2020, 795 pc)"], "Dumbbell Nebula": [1360, 60.84, -3.7, "literature distance"], "Butterfly Nebula": [3400, 349.51, 1.06, "literature distance"], "Owl Nebula": [2030, 148.49, 57.05, "literature distance"], "Heart Nebula": [7500, 134.73, 0.92, "literature distance"], "Christmas Tree Cluster": [2350, 202.93, 2.19, "Gaia cluster parallax (~720 pc)"], "Tarantula Nebula": [161000, 279.47, -31.67, "LMC distance (Pietrzyński et al. 2019)"], "Rho Ophiuchi Cloud": [450, 353.69, 17.68, "VLBA parallaxes (Ortiz-León et al. 2018, 137 pc)"]};
 const OBJ = [
   ['Sun', 'sun', 0, 0, 0, '—', 'Our star, about 27,000 light-years from the centre of the galaxy and about 68 light-years above the middle of its disc, sitting on the inner edge of the Orion Spur. It takes roughly 230 million years to go once around the galaxy, bobbing up and down through the disc as it goes.'],
   ['Sagittarius A*', 'bh', 26989, 0, 0, 'Sagittarius', 'A black hole about four million times the mass of the Sun, sitting at the exact centre of the galaxy. The Event Horizon Telescope photographed its shadow in 2022, and timing the star S2\'s orbit around it gives the most precise distance to the centre we have.', true],
@@ -1348,6 +1351,7 @@ function drawObjects() {
     if (o === ACEN.sys && ACEN.show > 0.3) continue;   // its three stars are drawn in their own right
     if (o.qso && o.qso.vis > 0.3) continue;            // a quasar you can see the insides of
     if (o.psr && o.psr.vis > 0.3) continue;            // a pulsar drawn in its own right
+    if (o.psrIn && o.psrIn.vis > 0.3) continue;        // a remnant whose pulsar you're looking at close up
     const [X, Y, dep] = proj(o.x, o.y, o.z);
     if (!isFinite(X) || X < -40 || X > Wd + 40 || Y < -40 || Y > Ht + 40) continue;
     vis.push({ o, X, Y, dep });
@@ -1657,7 +1661,7 @@ let T1A = 0, SYSIN = 0;   // SYSIN: how far inside another star system you are (
 function t1Panel(show) {
   const el = document.getElementById('t1panel');
   if (show && !el.dataset.built) {
-    el.innerHTML = '<h3>TRAPPIST-1’s planets</h3><table><tr><th></th><th>orbit</th><th>width</th><th>mass</th><th>temp.</th></tr>' +
+    panelBody(el).innerHTML = '<h3>TRAPPIST-1’s planets</h3><table><tr><th></th><th>orbit</th><th>width</th><th>mass</th><th>temp.</th></tr>' +
       T1.planets.map(p => `<tr class="${'efg'.includes(p.n) ? 'hz' : ''}"><td>${p.n}</td><td>${p.per.toFixed(2)} d</td><td>${p.r.toFixed(2)}×</td><td>${p.m.toFixed(2)}×</td><td>~${p.teq} K</td></tr>`).join('') +
       '</table><p>Width and mass compared with Earth; temperature for a bare, airless surface. Green: in the habitable zone. Orbits from transit timing (Agol et al. 2021), seen almost edge-on from the Sun; their tilt on our sky is illustrative.</p>';
     el.dataset.built = 1;
@@ -1702,6 +1706,8 @@ function drawTrappist() {
 //    period 2–3 yr, e ≈ 0.4, tilted ~50° to A and B's orbit, 90–150 Earth masses (shown at 2.5 yr; its node and phase illustrative).
 //  • Habitable zones: Kopparapu et al. 2014 (conservative limits).
 // ===================================================================
+// a side panel's contents live in an inner box, so the phone's fold controls (shared/fold.js) survive a rebuild
+function panelBody(el) { let b = el.querySelector(':scope > .pc'); if (!b) { b = document.createElement('div'); b.className = 'pc'; el.appendChild(b); } if (el._fold) setTimeout(el._fold.relabel, 0); return b; }
 var ACEN = (() => {   // var: zoomLimit() may look before this line has run
   const AU = 1 / AU_PER_LY, DAY_YR = 1 / 365.25;
   const sys = OBJ.find(o => o.name === 'Alpha Centauri');
@@ -1862,7 +1868,7 @@ function acenPanel(show, r) {
   if (show && !el.dataset.built) {
     const S = ACEN.ST, row = (n, a, b, c, d, cls = '') => `<tr class="${cls}"><td>${n}</td><td>${a}</td><td>${b}</td><td>${c}</td><td>${d}</td></tr>`;
     const pc = s => `<span style="color:${S[s].hex}">●</span> `;
-    el.innerHTML = '<h3>Alpha Centauri</h3><table><tr><th>star</th><th>type</th><th>mass</th><th>width</th><th>temp.</th></tr>' +
+    panelBody(el).innerHTML = '<h3>Alpha Centauri</h3><table><tr><th>star</th><th>type</th><th>mass</th><th>width</th><th>temp.</th></tr>' +
       row(pc('A') + 'A', 'G2V', '1.08', '1.22', '5,790 K') + row(pc('B') + 'B', 'K1V', '0.91', '0.86', '5,260 K') + row(pc('P') + 'Proxima', 'M5.5V', '0.12', '0.15', '3,050 K') +
       '</table><p class="more">Mass and width compared with the Sun. A and B circle each other every 79.8 years, 11 to 35 AU apart (next closest in 2035). Proxima circles both every ~560,000 years and is near its farthest, 13,000 AU out.</p>' +
       '<table class="more"><tr><th>planet</th><th>orbit</th><th>mass</th><th>temp.</th><th></th></tr>' +
@@ -2054,7 +2060,7 @@ function qsoPanel(q, yps) {
   if (!q) { if (!el.hidden) el.hidden = true; return; }
   if (el.dataset.q !== q.name) {
     const au = q.Rs * AU_PER_LY * 2, row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
-    el.innerHTML = `<h3>${q.name}</h3><table class="more">` +
+    panelBody(el).innerHTML = `<h3>${q.name}</h3><table class="more">` +
       row('Black hole', `${q.Mtxt}<br><span class="src">${q.Msrc}</span>`) +
       row('Event horizon', `${au >= 100 ? Math.round(au / 10) * 10 : au.toFixed(0)} AU across`) +
       row('Accretion disc', `~${q.rd < 1 ? (q.rd * 365.25).toFixed(0) + ' light-days' : q.rd.toFixed(1) + ' ly'} wide (model) · ${Math.round(q.Tpk / 1000) * 1000 > 0 ? '~' + (Math.round(q.Tpk / 1000)).toLocaleString('en-CA') + ',000 K' : ''} at its hottest`) +
@@ -2126,6 +2132,7 @@ var PSR = (() => {
     if (p.bin) { const b = p.bin, Mt = b.m1 + b.m2; b.a = Math.cbrt(Mt * Math.pow(b.Pb / 365.25, 2)) * 149597870.7; b.a1 = b.a * b.m2 / Mt; b.a2 = b.a * b.m1 / Mt; b.lc2 = b.P2 ? C_KM * b.P2 / (2 * Math.PI) : 0; }
     p.zone = (p.bin ? p.bin.a * 2.5 : p.lc * 4) * KM;          // the region the zoom-in view is about, ly
   }
+  OBJ.find(o => o.name === 'Crab Nebula').psrIn = list[0]; OBJ.find(o => o.name === 'Vela Supernova Remnant').psrIn = list[1];
   return { list, by: Object.fromEntries(list.map(p => [p.name, p])), KM, IN: 0, active: null, audio: null };
 })();
 // the magnetic axis at wall-clock time t (s): tilted by α from the spin axis, turning with the star
@@ -2202,7 +2209,7 @@ function drawPulsar(p, yr, t) {
     for (const sg of [1, -1]) { const ax = m.map(v => v * sg), L = 2.2 * lc, rho = 12 * DEG, [x0, y0] = at(ax.map(v => v * p.R)), rim = [];
       for (let j = 0; j < 24; j++) { const ph = 2 * Math.PI * j / 24, d = [0, 1, 2].map(k => Math.cos(rho) * ax[k] + Math.sin(rho) * (Math.cos(ph) * perp1[k] + Math.sin(ph) * perp2[k])); rim.push(at(d.map(v => v * L))); }
       if (!isFinite(x0)) continue;
-      const [xe, ye] = at(ax.map(v => v * L)), g = ctx.createLinearGradient(x0, y0, isFinite(xe) ? xe : x0, isFinite(ye) ? ye : y0); g.addColorStop(0, `rgba(215,200,255,${0.5 * a})`); g.addColorStop(1, 'rgba(215,200,255,0)');
+      const [xe, ye] = at(ax.map(v => v * L * 1.25)), g = ctx.createLinearGradient(x0, y0, isFinite(xe) ? xe : x0, isFinite(ye) ? ye : y0); g.addColorStop(0, `rgba(215,200,255,${0.5 * a})`); g.addColorStop(1, 'rgba(215,200,255,0)');
       ctx.fillStyle = g; for (let j = 0; j < 24; j++) { const r1 = rim[j], r2 = rim[(j + 1) % 24]; if (!isFinite(r1[0]) || !isFinite(r2[0])) continue; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(r1[0], r1[1]); ctx.lineTo(r2[0], r2[1]); ctx.closePath(); ctx.fill(); } }
     // the star: about the size of a city, hot (a million degrees) and blue-white; its magnetic poles glow hottest
     const [sx, sy] = at([0, 0, 0]), rs = Math.max(2, ns);
@@ -2242,7 +2249,7 @@ function psrPanel(p, rate) {
   if (!p) { if (!el.hidden) { el.hidden = true; if (PSR.audio && PSR.audio.src) psrListen({ name: PSR.audio.name }); } return; }
   if (el.dataset.p !== p.name) {
     const f = 1 / p.P, row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`, slow = p.Pvis / p.P;
-    el.innerHTML = `<h3>${p.name} <span id="psr-blip"></span></h3><table class="more">` +
+    panelBody(el).innerHTML = `<h3>${p.name} <span id="psr-blip"></span></h3><table class="more">` +
       row('Spins', `${f >= 10 ? f.toFixed(1) : f.toFixed(3)} times a second · ${p.P < 1 ? (p.P * 1000).toFixed(p.P < 0.01 ? 3 : 1) + ' ms' : p.P.toFixed(4) + ' s'} a turn`) +
       row('As a note', f >= 20 ? noteOf(f) : 'too slow to hear as a note: a ticking') +
       row('Neutron star', `${(2 * p.R).toFixed(0)} km wide, ${p.M} × the Sun’s mass${p.name === 'PSR J0437-4715' ? ' (NICER, 2024)' : ' (typical)'}`) +
@@ -2862,8 +2869,11 @@ sRes.addEventListener('click', e => { const b = e.target.closest('button'); if (
 const topPanel = document.getElementById('top'), aboutBtn = document.getElementById('about');
 const setCollapsed = c => { topPanel.classList.toggle('collapsed', c); aboutBtn.textContent = c ? 'i' : '×'; aboutBtn.setAttribute('aria-label', c ? 'Show intro' : 'Hide intro'); };
 aboutBtn.onclick = () => setCollapsed(!topPanel.classList.contains('collapsed'));
-cv.addEventListener('pointerdown', () => { setCollapsed(true); sRes.style.display = 'none'; sIn.blur(); });
-setCollapsed(false);
+cv.addEventListener('pointerdown', () => { setCollapsed(true); sRes.style.display = 'none'; sIn.blur(); UAS_FOLD.foldAll(); });   // a tap on the map puts the menus away
+setCollapsed(UAS_FOLD.phone.matches);   // on a phone the intro starts folded: just the search box and its i
+// on a phone, each menu gets a × and folds to a small tab
+UAS_FOLD.foldable(document.getElementById('legend'), { title: 'Key & layers' });
+for (const id of ['t1panel', 'acpanel', 'qpanel', 'ppanel']) { const el = document.getElementById(id); el._fold = UAS_FOLD.foldable(el, { title: () => (el.querySelector('h3') || {}).textContent || 'Details' }); }
 
 addEventListener('resize', resize);
 resize();
@@ -2871,6 +2881,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=29cc2147" data-place="header" defer></script>
+<script src="../music/music.js?v=7fba118d" data-place="header" defer></script>
 </body>
 </html>
