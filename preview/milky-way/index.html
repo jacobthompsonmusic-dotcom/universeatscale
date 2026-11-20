@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=f41edd84"></script>
-<script src="../shared/clock.js?v=f41edd84"></script>
-<script src="../shared/fold.js?v=f41edd84"></script>
-<script src="../shared/galaxy-volume.js?v=f41edd84"></script>
+<script src="../shared/frame.js?v=47e37277"></script>
+<script src="../shared/clock.js?v=47e37277"></script>
+<script src="../shared/fold.js?v=47e37277"></script>
+<script src="../shared/galaxy-volume.js?v=47e37277"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -529,7 +529,7 @@ const GSRC = {
 const GALAXIES = [
   ['Milky Way', 'galaxy', 26989, 0, 0, 100000, null, 0, 1, 0, '—', 'Our galaxy: about 100,000 light-years across but only about 2,000 light-years thick in the disc, and home to somewhere between 100 and 400 billion stars. Zoom in to explore it.'],
   ['Sagittarius Dwarf', 'dwarf', 86400, 5.6, -14.2, 10000, 'ell', 70, 0.35, 2, 'Sagittarius', 'The closest known galaxy, hidden on the far side of our core. The Milky Way is tearing it apart, and its stars trail around our galaxy in a huge loop. Found in 1994.'],
-  ['Large Magellanic Cloud', 'galaxy', 161700, 280.5, -32.9, 14000, 'blob', 20, 0.8, 1, 'Dorado', 'Our biggest satellite galaxy, seen from the southern hemisphere as a detached piece of the Milky Way. Home of the Tarantula Nebula and Supernova 1987A.'],
+  ['Large Magellanic Cloud', 'galaxy', 161700, 280.5, -32.9, 14000, 'blob', 20, 0.8, 1, 'Dorado', 'Our biggest satellite galaxy, seen from the southern hemisphere as a detached piece of the Milky Way. Home of the Tarantula Nebula and Supernova 1987A. It is falling in: in about 2 billion years it will almost certainly merge with the Milky Way (Cautun et al. 2019).'],
   ['Small Magellanic Cloud', 'galaxy', 203700, 302.8, -44.3, 7000, 'blob', -40, 0.6, 1, 'Tucana', 'The LMC\'s smaller sibling, also visible to the naked eye from southern skies. The two clouds are slowly being pulled into the Milky Way.'],
   ['Draco Dwarf', 'dwarf', 250000, 86.4, 34.7, 2500, 'ell', 10, 0.7, 3, 'Draco', 'One of the most dark-matter-dominated objects known — its stars are a tiny fraction of its mass.'],
   ['Ursa Minor Dwarf', 'dwarf', 250000, 105.0, 44.8, 2000, 'ell', -30, 0.55, 3, 'Ursa Minor', 'A faint, ancient dwarf galaxy made almost entirely of very old stars.'],
@@ -541,7 +541,7 @@ const GALAXIES = [
   ['Leo I', 'dwarf', 820000, 226.0, 49.1, 2000, 'ell', 30, 0.75, 3, 'Leo', 'One of the most distant Milky Way satellites — it may only be passing through rather than truly orbiting.'],
   ['Barnard\'s Galaxy (NGC 6822)', 'dwarf', 1600000, 25.3, -18.4, 7000, 'blob', 10, 0.6, 2, 'Sagittarius', 'An irregular dwarf galaxy discovered by E. E. Barnard in 1884, dotted with star-forming nebulae.'],
   ['IC 1613', 'dwarf', 2400000, 129.7, -60.6, 10000, 'blob', -30, 0.8, 3, 'Cetus', 'A quiet dwarf irregular galaxy whose Cepheid stars help astronomers calibrate cosmic distances.'],
-  ['Andromeda Galaxy (M31)', 'galaxy', 2480000, 121.2, -21.6, 220000, 'spiral', 38, 0.42, 0, 'Andromeda', 'The nearest big galaxy, about twice as wide as the Milky Way, and the most distant thing most people can see with the naked eye. It is heading toward us and the two galaxies may merge in roughly 5 billion years.'],
+  ['Andromeda Galaxy (M31)', 'galaxy', 2480000, 121.2, -21.6, 220000, 'spiral', 38, 0.42, 0, 'Andromeda', 'The nearest big galaxy, about twice as wide as the Milky Way, and the most distant thing most people can see with the naked eye. It is heading toward us at about 110 km/s, but a 2025 study with Hubble and Gaia (Sawala et al.) gives only about a 50–50 chance the two galaxies merge in the next 10 billion years — a crash within 5 billion years now looks very unlikely.'],
   ['M32', 'dwarf', 2490000, 121.15, -22.0, 6500, 'ell', 0, 0.8, 3, 'Andromeda', 'A compact elliptical companion of Andromeda — possibly the stripped core of a once-larger galaxy.'],
   ['M110', 'dwarf', 2690000, 120.7, -21.1, 17000, 'ell', 60, 0.5, 3, 'Andromeda', 'Andromeda\'s other bright companion, an elongated dwarf elliptical galaxy.'],
   ['Triangulum Galaxy (M33)', 'galaxy', 2730000, 133.6, -31.3, 60000, 'spiral', -20, 0.75, 1, 'Triangulum', 'The third-largest galaxy in the Local Group. Under very dark skies it may be the most distant object visible to the naked eye.'],
@@ -590,10 +590,10 @@ OBJ.push(...GALAXIES);
 const GCO = OBJ.find(o => o.name === 'Sagittarius A*');
 const gpos = n => GALAXIES.find(g => g.name.startsWith(n));
 const REGIONS = [
-  { name: 'Local Group', type: 'region', x: gpos('Andromeda').x * 0.4, y: gpos('Andromeda').y * 0.4, z: gpos('Andromeda').z * 0.4, r: 5e6, d: 1e6,
-    blurb: 'Our home group of galaxies: the Milky Way, Andromeda, Triangulum and dozens of dwarfs, about 10 million light-years across. Andromeda and the Milky Way are its heavyweights.' },
+  { name: 'Local Group', type: 'region', x: gpos('Andromeda').x * 0.5, y: gpos('Andromeda').y * 0.5, z: gpos('Andromeda').z * 0.5, r: 5e6, d: 1.25e6,   // centred about halfway: the two big galaxies weigh about the same
+    blurb: 'Our home group of galaxies: the Milky Way, Andromeda, Triangulum and about 100 known smaller galaxies, some 10 million light-years across. Andromeda and the Milky Way are its heavyweights, of roughly equal weight, so the group\'s centre lies about halfway between them.' },
   { name: 'Laniakea Supercluster', type: 'region', x: gpos('Norma').x, y: gpos('Norma').y, z: gpos('Norma').z, r: 2.6e8, d: 2.2e8,
-    blurb: 'Our home supercluster, mapped in 2014 by following how galaxies flow. About 520 million light-years across with some 100,000 galaxies. Laniakea is Hawaiian for "immeasurable heaven".' },
+    blurb: 'Our home supercluster, mapped in 2014 by following how galaxies flow. About 520 million light-years across with some 100,000 galaxies. Laniakea is Hawaiian for "immeasurable heaven". Its real boundary is irregular; the sphere here is a simplification. Newer data (Cosmicflows-4, Valade et al. 2024) give about a 60% chance that Laniakea is itself part of a basin around ten times bigger, centred on the Shapley Supercluster.' },
   { name: 'Observable universe', type: 'region', x: 0, y: 0, z: 0, r: 4.65e10, d: 0, edge: true,
     blurb: 'As far as light could possibly have reached us in 13.8 billion years. Because space kept stretching while that light travelled, the edge is now about 46.5 billion light-years away in every direction. Beyond it is just more universe we can\'t see yet.' },
 ];
@@ -2884,7 +2884,7 @@ document.getElementById('gosun').onclick = () => select(SUN, true);
 document.getElementById('goall').onclick = () => flyTo(0, 4000, 0, 118000);
 document.getElementById('golan').onclick = () => { const r = REGIONS[1]; flyTo(r.x * 0.5, r.y * 0.5, r.z * 0.5, 7e8); };
 document.getElementById('goobs').onclick = () => flyTo(0, 0, 0, 1.0e11);
-document.getElementById('golg').onclick = () => { const m = gpos('Andromeda'); flyTo(m.x * 0.45, m.y * 0.45, m.z * 0.45, 3.6e6); };
+document.getElementById('golg').onclick = () => { const m = gpos('Andromeda'); flyTo(m.x * 0.5, m.y * 0.5, m.z * 0.5, 3.6e6); };
 // the card's × folds it to a tab named after what's selected; the selection stays (click empty space to let go of it)
 var infoFold = UAS_FOLD.foldable(document.getElementById('info'), { closeBtn: document.querySelector('#info .close'), title: () => selected ? selected.name : 'Info', startFolded: false, arrow: '▾' });
 function cardOpen() { return document.getElementById('info').style.display === 'block' && !(infoFold && infoFold.folded()); }
@@ -2981,6 +2981,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=f41edd84" data-place="info" defer></script>
+<script src="../music/music.js?v=47e37277" data-place="info" defer></script>
 </body>
 </html>
