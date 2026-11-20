@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=1c969725"></script>
-<script src="../shared/clock.js?v=1c969725"></script>
-<script src="../shared/fold.js?v=1c969725"></script>
-<script src="../shared/galaxy-volume.js?v=1c969725"></script>
+<script src="../shared/frame.js?v=ec424e42"></script>
+<script src="../shared/clock.js?v=ec424e42"></script>
+<script src="../shared/fold.js?v=ec424e42"></script>
+<script src="../shared/galaxy-volume.js?v=ec424e42"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1116,6 +1116,7 @@ function drawGalaxy3D() {
     else { const cx = view.x + F[0] * PD, cy = view.y + F[1] * PD, cz = view.z + F[2] * PD, T = Math.max(0, -(cx * fw[0] + cy * fw[1] + cz * fw[2]) - GB);
       gl.uniform1f(U.uOrtho, 0); gl.uniform3f(U.uCam, cx + fw[0] * T, cy + fw[1] * T, cz + fw[2] * T); gl.uniform1f(U.uTanH, PT); gl.uniform1f(U.uHalfH, T * PT); }
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    if (PROF) { const t = performance.now(); gl.finish(); const d = performance.now() - t; if (d > 60) PROF.push(`GPU volume ${Math.round(d)} ms ${w}x${h} q${qq} at ${Math.round(view.x)},${Math.round(view.y)},${Math.round(view.z)} span ${Math.round(Ht / view.s)} tilt ${Math.round(view.tilt / DEG)}`); }
     GX.key = key;
     // drawn coarser to keep up with movement? once you stop, draw it again at full quality
     clearTimeout(GX.tq); if (!settle && qq < 1) GX.tq = setTimeout(() => { GX.settleQ = GX.q; GX.q = 1; GX.settle = true; GX.key = null; draw(); }, 350);
@@ -2093,7 +2094,7 @@ function drawQBH(q) {
   gl.uniform3fv(bhU.uR, toDisc(R)); gl.uniform3fv(bhU.uU, toDisc(U)); gl.uniform3fv(bhU.uF, toDisc(F));
   gl.uniform1f(bhU.uT, t); gl.uniform1f(bhU.uA, Math.min(1, (pxRs - 1.2) / 3)); gl.uniform1f(bhU.uSpot, 0); gl.uniform1f(bhU.uDark, 0);
   gl.uniform1f(bhU.uMode, 1); gl.uniform1f(bhU.uT0, q.T0); gl.uniform1f(bhU.uTpk, q.Tpk);
-  gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); if (PROF) { const t = performance.now(); gl.finish(); const d = performance.now() - t; if (d > 60) PROF.push(`GPU QBH ${Math.round(d)} ms`); }
   if (bhNote.dataset.q !== q.name) { bhNote.dataset.q = q.name; bhNote.innerHTML = `<b>${q.name}</b> · ${q.Mtxt} · light traced through curved spacetime (non-spinning hole) · the disc in the colours of its own heat, brighter and bluer on the side swinging toward us · illustrated from the measured mass`; }
   bhNote.style.display = pxRs > 8 ? 'block' : 'none';
   return true;
@@ -2582,7 +2583,7 @@ function drawBH() {
   gl.uniform3fv(bhU.uR, toDisc(R)); gl.uniform3fv(bhU.uU, toDisc(U)); gl.uniform3fv(bhU.uF, toDisc(F));
   if (bhNote.dataset.q) { bhNote.innerHTML = BH_NOTE; delete bhNote.dataset.q; }
   gl.uniform1f(bhU.uMode, 0); gl.uniform1f(bhU.uT, t); gl.uniform1f(bhU.uA, Math.min(1, (shadowPx - 1.5) / 6)); gl.uniform1f(bhU.uSpot, spot); gl.uniform1f(bhU.uDark, 0.85 * Math.max(0, Math.min(1, (shadowPx - 2) / 40)));
-  gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); if (PROF) { const t = performance.now(); gl.finish(); const d = performance.now() - t; if (d > 60) PROF.push(`GPU BH ${Math.round(d)} ms`); }
   bhNote.style.display = shadowPx > 12 ? 'block' : 'none';
   return true;
 }
@@ -2961,6 +2962,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=1c969725" data-place="info" defer></script>
+<script src="../music/music.js?v=ec424e42" data-place="info" defer></script>
 </body>
 </html>
