@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=8f519149"></script>
-<script src="../shared/clock.js?v=8f519149"></script>
-<script src="../shared/fold.js?v=8f519149"></script>
-<script src="../shared/galaxy-volume.js?v=8f519149"></script>
+<script src="../shared/frame.js?v=1c969725"></script>
+<script src="../shared/clock.js?v=1c969725"></script>
+<script src="../shared/fold.js?v=1c969725"></script>
+<script src="../shared/galaxy-volume.js?v=1c969725"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1001,6 +1001,9 @@ let raf = 0;
 const draw = () => { if (!raf) raf = requestAnimationFrame(render); };
 const angDiff = (a, b) => { let d = (b - a) % (2 * Math.PI); if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; return d; };
 
+// ?debug=1: note any part of a frame that takes over 100 ms (window.__slow), to find hitches
+const PROF = /[?&]debug=1/.test(location.search) ? (window.__slow = []) : null;
+const pf = (n, f) => { if (!PROF) return f(); const t = performance.now(), r = f(), d = performance.now() - t; if (d > 100) PROF.push(`${n} ${Math.round(d)} ms span ${Math.round(Ht / view.s)}`); return r; };
 function render(t) {
   raf = 0;
   if (anim) {
@@ -1022,30 +1025,30 @@ function render(t) {
   }
   if (ACEN) { acenUpdate(CK.year()); acenTrack(); }
   if (PSR) { PSR.yr = CK.year(); psrTrack(); }   // one date for the whole frame: a binary's stars move fast
-  setupView();
+  pf('setup', setupView);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = '#04050a'; ctx.fillRect(0, 0, Wd, Ht);
   ctx.globalAlpha = 0.9; ctx.drawImage(sky, 0, 0, Wd, Ht); ctx.globalAlpha = 1;
 
-  if (!drawGalaxy3D()) { drawHaze(); drawDisc(); }
+  if (!pf('galaxy3D', drawGalaxy3D)) { drawHaze(); drawDisc(); }
   if (opts.grid) drawGrid();
   if (opts.arms) drawArms();
   drawVoids();
-  drawGalaxies();
+  pf('galaxies', drawGalaxies);
   drawBubble();
   drawOort();
   if (opts.zodiac) drawZodiac();
-  drawNebulae();
+  pf('nebulae', drawNebulae);
   // Inside another star system, as inside ours, the galaxy steps back: the sky goes darker, the nebulae, gas and other galaxies fade
   // and the background stars dim, so the system's own stars and planets take over
   T1A = t1Vis(); ACEN.IN = acenIn(); qsoScan(); psrScan(); SYSIN = Math.max(T1A, ACEN.IN, QSO.IN, PSR.IN); t1Panel(T1A > 0.5);
   if (SYSIN > 0.002) { ctx.fillStyle = `rgba(0,0,0,${(0.82 * SYSIN).toFixed(3)})`; ctx.fillRect(0, 0, Wd, Ht); }
-  drawField();
-  const qbh = qsoDraw();
-  psrDraw();
-  drawObjects();
+  pf('field', drawField);
+  const qbh = pf('qso', qsoDraw);
+  pf('psr', psrDraw);
+  pf('objects', drawObjects);
   gcTick();
-  const nb = drawGCNear(), s2a = drawS2(), bhOn = drawBH(), t1a = drawTrappist(), aca = drawAcen(); GCT.on = nb > 0 || s2a > 0;
+  const nb = pf('gcnear', drawGCNear), s2a = pf('s2', drawS2), bhOn = pf('bh', drawBH), t1a = drawTrappist(), aca = drawAcen(); GCT.on = nb > 0 || s2a > 0;
   const qOn = !bhOn && qbh ? drawQBH(qbh) : false;
   if (!bhOn && !qOn && bhCv.style.display !== 'none') { bhCv.style.display = 'none'; bhNote.style.display = 'none'; }
   acenPanel(ACEN.IN > 0.5, acenClock());
@@ -2958,6 +2961,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=8f519149" data-place="info" defer></script>
+<script src="../music/music.js?v=1c969725" data-place="info" defer></script>
 </body>
 </html>
