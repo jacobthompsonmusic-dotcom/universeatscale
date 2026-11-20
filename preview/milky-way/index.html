@@ -67,6 +67,12 @@
   #results small { color: var(--muted); margin-left: auto; white-space: nowrap; }
   .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 
+  #orbpanel { top: 16px; left: 50%; transform: translateX(-50%); width: min(560px, 92vw); padding: 10px 14px 9px; font-size: 13.5px; text-align: center; z-index: 4; }
+  #orbpanel[hidden] { display: none; }
+  #orbpanel h3 { margin: 0 0 4px; font-size: 16px; font-variant: small-caps; letter-spacing: 0.06em; color: #ffcf6e; font-weight: 400; }
+  #orbpanel p { margin: 0 0 6px; line-height: 1.4; }
+  #orbpanel .orb-note { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
+  #orb-z { width: 100%; height: auto; display: block; }
   #t1panel, #acpanel, #qpanel, #ppanel { right: 84px; bottom: 16px; width: 330px; padding: 14px 16px; font-size: 13.5px; }
   #t1panel h3, #acpanel h3, #qpanel h3, #ppanel h3 { margin: 0 0 8px; font-size: 16px; }
   #t1panel table, #acpanel table { width: 100%; border-collapse: collapse; font-family: "UAS Num", "IM Fell English", Georgia, serif; font-variant-numeric: tabular-nums; }
@@ -167,10 +173,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=18f46dc7"></script>
-<script src="../shared/clock.js?v=18f46dc7"></script>
-<script src="../shared/fold.js?v=18f46dc7"></script>
-<script src="../shared/galaxy-volume.js?v=18f46dc7"></script>
+<script src="../shared/frame.js?v=af76d0d7"></script>
+<script src="../shared/clock.js?v=af76d0d7"></script>
+<script src="../shared/fold.js?v=af76d0d7"></script>
+<script src="../shared/galaxy-volume.js?v=af76d0d7"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -259,6 +265,12 @@ void main() {
   <div id="results"></div>
 </div>
 
+<div id="orbpanel" class="panel" hidden>
+  <h3>The Sun’s orbit</h3>
+  <p id="orb-txt"></p>
+  <canvas id="orb-z" width="560" height="150" aria-label="The Sun's height above and below the midplane of the disc over the last 260 million years"></canvas>
+  <p class="orb-note" id="orb-note"></p>
+</div>
 <div id="t1panel" class="panel" hidden></div>
 <div id="acpanel" class="panel" hidden></div>
 <div id="qpanel" class="panel" hidden></div>
@@ -282,6 +294,7 @@ void main() {
     <button class="tg on" data-k="voids">Voids</button>
     <button class="tg" data-k="stalks">Depth lines</button>
     <button class="tg" data-k="zodiac">Zodiac</button>
+    <button class="tg" data-k="orbit">Sun’s orbit</button>
   </div>
 </div>
 
@@ -914,7 +927,7 @@ function drawVoids() {
 const cv = document.getElementById('map'), ctx = cv.getContext('2d');
 let Wd = 0, Ht = 0, dpr = 1;
 const view = { x: 0, y: 4000, z: 0, s: 0.01, yaw: 0, tilt: 0 };
-const opts = { arms: true, grid: true, labels: true, stars: true, stalks: false, voids: true, zodiac: false };   // depth lines start off, to keep the view clean
+const opts = { arms: true, grid: true, labels: true, stars: true, stalks: false, voids: true, zodiac: false, orbit: false };   // depth lines start off, to keep the view clean
 let sky = null, hover = null, selected = null, anim = null;
 let CY = 1, SY = 0, CT = 1, ST = 0;
 // Close in, the map is drawn through a real camera with a 40° lens (the same as the Solar System view), so you see the Milky Way
@@ -1039,6 +1052,7 @@ function render(t) {
   if (!drawGalaxy3D()) { drawHaze(); drawDisc(); }
   if (opts.grid) drawGrid();
   if (opts.arms) drawArms();
+  drawOrbit();
   drawVoids();
   drawGalaxies();
   drawBubble();
@@ -1240,6 +1254,116 @@ function drawArms() {
     ctx.fillStyle = a.color; ctx.globalAlpha = 0.85;
     ctx.fillText(a.name.toUpperCase().split('').join(' '), 0, -10);
     ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ---------- the Sun's orbit around the Galaxy ----------
+// Traced back from today's measured position (R0, GRAVITY 2021; 20.8 pc above the midplane, Bennett & Bovy 2019) and velocity
+// (Reid et al. 2019: the Galaxy turns at 236 km/s here, and the Sun moves 10.6 km/s inward, 10.7 km/s faster and 7.6 km/s north)
+// through a smooth model of the Galaxy's gravity: a bulge (Hernquist), thin and thick discs (Miyamoto–Nagai) and a dark halo (NFW),
+// fitted to a flat 236 km/s rotation curve, the local midplane density 0.097 M☉/pc³ (McKee et al. 2015) and the 68 M☉/pc² within
+// 1.1 kpc of the plane (Bovy & Rix 2013). Units: kpc, km/s, Myr. The real path is also tugged by the bar and the spiral arms.
+const SORB = (() => {
+  const G = 4.30091e-6, K = 1.0227e-3;   // G in kpc (km/s)²/M☉; 1 km/s in kpc/Myr
+  const BUL = [5.0e9, 0.6], DISCS = [[5.95e10, 3.0, 0.25], [2.0e9, 2.5, 0.4]], HALO = [9.17e11, 19.0];
+  function acc(x, y, z, out) {
+    const R2 = x * x + y * y, r = Math.sqrt(R2 + z * z);
+    let fr = -G * BUL[0] / ((r + BUL[1]) ** 2 * r);                                   // bulge and halo pull toward the centre
+    fr += -G * HALO[0] * (Math.log(1 + r / HALO[1]) - r / (HALO[1] + r)) / r ** 3;
+    let ax = fr * x, ay = fr * y, az = fr * z;
+    for (const [M, a, b] of DISCS) { const zb = Math.sqrt(z * z + b * b), D = (R2 + (a + zb) ** 2) ** 1.5;
+      ax -= G * M * x / D; ay -= G * M * y / D; az -= G * M * z * (a + zb) / (zb * D); }
+    out[0] = ax * K * K; out[1] = ay * K * K; out[2] = az * K * K;
+  }
+  // start: the Sun's position and velocity in the map's frame (kpc, kpc/Myr). helioToWorld is linear apart from the offset to the centre.
+  const o = helioToWorld(0, 0, 0), dir = (u, v, w) => { const q = helioToWorld(u, v, w); return [q.x - o.x, q.y - o.y, q.z - o.z]; };
+  const vU = dir(1, 0, 0), vV = dir(0, 1, 0), vW = dir(0, 0, 1);
+  const U = 10.6, V = 236 + 10.7, Wz = 7.6;
+  const x0 = [o.x / LY_PER_KPC, o.y / LY_PER_KPC, o.z / LY_PER_KPC], v0 = [0, 1, 2].map(i => (U * vU[i] + V * vV[i] + Wz * vW[i]) * K);
+  function run(T, dt) {   // leapfrog from now to T Myr (negative: the past); a point every Myr/2
+    const x = x0.slice(), v = v0.slice(), a = [0, 0, 0], pts = [[0, ...x]], n = Math.round(Math.abs(T / dt)), every = Math.round(0.5 / Math.abs(dt));
+    acc(...x, a);
+    for (let i = 1; i <= n; i++) {
+      for (let k = 0; k < 3; k++) { v[k] += 0.5 * dt * a[k]; x[k] += dt * v[k]; }
+      acc(...x, a); for (let k = 0; k < 3; k++) v[k] += 0.5 * dt * a[k];
+      if (i % every === 0) pts.push([i * dt, ...x]);
+    }
+    return pts;
+  }
+  const past = run(-262, -0.05), fut = run(40, 0.05);
+  const toLy = p => ({ t: p[0], x: p[1] * LY_PER_KPC, y: p[2] * LY_PER_KPC, z: p[3] * LY_PER_KPC });
+  const P = past.map(toLy), F = fut.map(toLy);
+  // facts for the panel, all from the integration
+  let ph = 0, lap = 0, Rmin = 1e9, Rmax = 0, zmax = 0;
+  for (let i = 1; i < P.length; i++) { const a = P[i - 1], b = P[i];
+    let d = Math.atan2(b.y, b.x) - Math.atan2(a.y, a.x); if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; ph += d;
+    if (!lap && Math.abs(ph) >= 2 * Math.PI) lap = -b.t;
+    const R = Math.hypot(b.x, b.y); Rmin = Math.min(Rmin, R); Rmax = Math.max(Rmax, R); zmax = Math.max(zmax, Math.abs(b.z)); }
+  const cross = []; for (let i = 1; i < P.length; i++) if (Math.sign(P[i].z) !== Math.sign(P[i - 1].z)) cross.push(-P[i].t);
+  const zPer = cross.length > 2 ? 2 * (cross[cross.length - 1] - cross[0]) / (cross.length - 1) : 0;
+  const ages = [[66, 'Dinosaurs die out', '66 Myr ago', 'dinosaurs end'], [130, 'First flowering plants', '~130 Myr ago', 'flowers'],
+    [201.4, 'End-Triassic extinction', '201 Myr ago', 'Triassic ends'], [231, 'First dinosaurs', '~231 Myr ago', 'first dinosaurs'], [251.9, 'The Great Dying', '252 Myr ago', 'Great Dying']];   // ICS chart 2024; earliest dinosaurs ~231 Myr (Ischigualasto)
+  const at = t => { const i = Math.min(P.length - 1, Math.round(t * 2)); return P[i]; };
+  return { P, F, lap, Rmin, Rmax, zmax, cross, zPer, ages, at };
+})();
+
+function orbitPanel(on) {
+  const el = document.getElementById('orbpanel');
+  if (el.hidden === !on) return; el.hidden = !on; if (!on) return;
+  const S = SORB, kly = v => (v / 1000).toLocaleString('en-CA', { maximumFractionDigits: 1 });
+  document.getElementById('orb-txt').innerHTML =
+    `Carried at 247 km/s, the Sun takes about <b>${Math.round(S.lap)} million years</b> to go once around the Milky Way — one lap ago the first dinosaurs were appearing. ` +
+    `The path isn’t a circle: it swings between ${kly(S.Rmin)} and ${kly(S.Rmax)} thousand light-years from the centre, and bobs up to ${Math.round(S.zmax / PC)} pc (${Math.round(S.zmax / 10) * 10} ly) above and below the disc, ` +
+    `crossing its midplane about every ${Math.round(S.zPer / 2)} million years — last about ${Math.round(S.cross[0])} million years ago, heading north.`;
+  document.getElementById('orb-note').textContent =
+    'Traced back from today’s measured position and velocity (GRAVITY 2021; Reid et al. 2019) through a smooth model of the Galaxy’s gravity, fitted to its 236 km/s rotation and the measured density of the disc here (McKee et al. 2015; Bovy & Rix 2013). ' +
+    'The bar and spiral arms also tug on the Sun, so the older half of the path is uncertain by a few thousand light-years. The arms on the map are where they are today: the pattern turns more slowly than the Sun, so it has moved since.';
+  orbitGraph();
+}
+function orbitGraph() {   // the Sun's height above the midplane, the last 260 Myr, true scale in height (the time axis is squeezed)
+  const cv = document.getElementById('orb-z'), g = cv.getContext('2d'), w = cv.width, h = cv.height, S = SORB, L = 34, Rr = 10, top = 14, bot = h - 26;
+  const X = t => L + (w - L - Rr) * (1 - t / 260), zM = Math.ceil(S.zmax / PC / 50) * 50, Y = zpc => top + (bot - top) * (0.5 - zpc / (2 * zM));
+  g.clearRect(0, 0, w, h); g.font = '19px "IM Fell English", Georgia, serif'; g.textBaseline = 'middle';
+  g.strokeStyle = 'rgba(255,255,255,0.18)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(L, Y(0)); g.lineTo(w - Rr, Y(0)); g.stroke();
+  g.fillStyle = 'rgba(232,226,210,0.55)'; g.textAlign = 'right'; g.fillText(`+${zM} pc`, L - 3, Y(zM)); g.fillText(`−${zM}`, L - 3, Y(-zM)); g.fillText('0', L - 3, Y(0));
+  for (const [t, , , short] of S.ages) { const x = X(t); g.strokeStyle = 'rgba(255,207,110,0.35)'; g.setLineDash([3, 4]); g.beginPath(); g.moveTo(x, top - 6); g.lineTo(x, bot); g.stroke(); g.setLineDash([]);
+    g.fillStyle = 'rgba(255,207,110,0.8)'; g.textAlign = 'center'; g.fillText(short, Math.min(w - 50, Math.max(L + 40, x)), bot + 14); }
+  g.strokeStyle = '#ffcf6e'; g.lineWidth = 2.5; g.beginPath();
+  S.P.forEach((p, i) => { if (-p.t > 260) return; const x = X(-p.t), y = Y(p.z / PC); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(X(0), Y(S.P[0].z / PC), 4, 0, 7); g.fill();
+  g.fillStyle = 'rgba(232,226,210,0.7)'; g.textAlign = 'left'; g.fillText('height above the disc, last 260 million years → now', L + 4, 6);
+}
+function drawOrbit() {
+  orbitPanel(opts.orbit);
+  if (!opts.orbit) return;
+  const S = SORB, span = viewSpan(), fade = sstep(Math.log(span), Math.log(40), Math.log(400));
+  if (fade <= 0.01) return;
+  ctx.lineWidth = 1.6; ctx.strokeStyle = '#ffcf6e';
+  // the past, fading with age, drawn in short runs so the fade shows
+  for (let i = 0, R = 8; i < S.P.length - 1; i += R) {
+    const age = -S.P[i].t; ctx.globalAlpha = fade * (0.95 - 0.65 * age / 262);
+    ctx.beginPath(); let first = true;
+    for (let j = i; j <= Math.min(i + R, S.P.length - 1); j++) { const p = S.P[j], [X, Y] = proj(p.x, p.y, p.z);
+      if (!isFinite(X)) { first = true; continue; } first ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y); first = false; }
+    ctx.stroke();
+  }
+  // the next 40 Myr, dashed
+  ctx.setLineDash([6, 7]); ctx.globalAlpha = 0.55 * fade; ctx.beginPath(); let first = true;
+  for (const p of S.F) { const [X, Y] = proj(p.x, p.y, p.z); if (!isFinite(X)) { first = true; continue; } first ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y); first = false; }
+  ctx.stroke(); ctx.setLineDash([]);
+  // where the Sun was at each epoch
+  const big = sstep(Math.log(span), Math.log(4000), Math.log(20000));
+  if (big > 0.02) {
+    ctx.font = 'italic 14px "IM Fell English", Georgia, serif'; ctx.textAlign = 'left';
+    for (const [t, name, when] of S.ages) {
+      const p = S.at(t), [X, Y] = proj(p.x, p.y, p.z); if (!isFinite(X) || X < -40 || X > Wd + 40 || Y < -40 || Y > Ht + 40) continue;
+      ctx.globalAlpha = big; ctx.fillStyle = '#ffcf6e'; ctx.beginPath(); ctx.arc(X, Y, 3.5, 0, 7); ctx.fill();
+      if (!opts.labels) continue;
+      ctx.fillStyle = 'rgba(255,230,180,0.95)'; ctx.fillText(name, X + 8, Y - 3);
+      ctx.fillStyle = 'rgba(232,226,210,0.6)'; ctx.font = 'italic 12px "IM Fell English", Georgia, serif'; ctx.fillText(when, X + 8, Y + 11);
+      ctx.font = 'italic 14px "IM Fell English", Georgia, serif';
+    }
   }
   ctx.globalAlpha = 1;
 }
@@ -2889,7 +3013,8 @@ document.getElementById('golg').onclick = () => { const m = gpos('Andromeda'); f
 var infoFold = UAS_FOLD.foldable(document.getElementById('info'), { closeBtn: document.querySelector('#info .close'), title: () => selected ? selected.name : 'Info', startFolded: false, arrow: '▾' });
 function cardOpen() { return document.getElementById('info').style.display === 'block' && !(infoFold && infoFold.folded()); }
 document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); draw();
-  if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-mw', opt: 'zodiac', on: opts.zodiac }, '*'); });
+  if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-mw', opt: 'zodiac', on: opts.zodiac }, '*');
+  if (b.dataset.k === 'orbit' && opts.orbit && viewSpan() < 40000) flyTo(0, 0, 0, 82000, { orient: { yaw: view.yaw, tilt: (Math.abs(view.tilt) > Math.PI / 2 ? 140 : 40) * DEG * (view.tilt < 0 ? -1 : 1) } }); });
 if (EMBED) {
   document.body.classList.add('embed'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top');
   document.getElementById('info-go').onclick = diveToSun;
@@ -2981,6 +3106,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=18f46dc7" data-place="info" defer></script>
+<script src="../music/music.js?v=af76d0d7" data-place="info" defer></script>
 </body>
 </html>
