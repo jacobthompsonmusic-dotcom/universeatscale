@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=90fb8da2"></script>
-<script src="../shared/clock.js?v=90fb8da2"></script>
-<script src="../shared/fold.js?v=90fb8da2"></script>
-<script src="../shared/galaxy-volume.js?v=90fb8da2"></script>
+<script src="../shared/frame.js?v=85cef56b"></script>
+<script src="../shared/clock.js?v=85cef56b"></script>
+<script src="../shared/fold.js?v=85cef56b"></script>
+<script src="../shared/galaxy-volume.js?v=85cef56b"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -896,8 +896,23 @@ const fitScale = () => Math.min(Wd, Ht) / 108000;
 const minScale = () => Math.min(Wd, Ht) / 1.1e11;
 const farOut = () => view.s < fitScale() * 0.22;
 // closest zoom: a 6-ly view in general, but you can go closer at a nebula with a photograph (down to its own size) and all the way to Sgr A*
+// Big pictured objects (galaxies, nebulae, clusters with a photograph or galaxy sprite): zooming stops when the picture fills
+// the screen, so it never swells past the view and fades out. Smaller pictures inside bigger ones (the Tarantula in the LMC,
+// M32 in Andromeda) take over as you near them, and the deep targets below (pulsars, quasars, star systems) still go further.
+let PICS = null;
+function picFloor(x, y, z, base) {
+  if (!PICS) { PICS = [];
+    for (const o of OBJ) { const e = typeof NEB !== 'undefined' ? NEB[o.name] : null;
+      const W = o.gal ? (o.sprite && !o.mw ? o.diam : 0) : (e && e.w && !e.fill ? e.w : 0);
+      if (W > 0) PICS.push({ o, W }); }
+    PICS.sort((a, b) => b.W - a.W); }
+  let f = base;
+  for (const p of PICS) { const o = p.o, d = Math.hypot(x - o.x, y - o.y, z - o.z); if (d >= p.W) continue;
+    const w = 1 - sstep(d, 0.5 * p.W, p.W); f = Math.exp(Math.log(f) + w * (Math.log(0.8 * p.W) - Math.log(f))); }
+  return f;
+}
 function zoomLimit(x, y, z) {
-  let lim = Math.min(6, 1.5 * Math.hypot(x - GCO.x, y - GCO.y, z - GCO.z));
+  let lim = picFloor(x, y, z, Math.min(6, 1.5 * Math.hypot(x - GCO.x, y - GCO.y, z - GCO.z)));
   { const t = OBJ.find(q => q.name === 'TRAPPIST-1'); if (t) { const d = Math.hypot(x - t.x, y - t.y, z - t.z); if (d < 1) lim = Math.min(lim, Math.max(8e-8, d * 1.5)); } }   // down to TRAPPIST-1's planets
   if (typeof PSR !== 'undefined' && PSR) for (const p of PSR.list) { let d = Math.hypot(x - p.x, y - p.y, z - p.z); if (d > 1) continue;   // down to a neutron star
     if (p.bin) { const s1 = psrBinPos(p, CK.year()).s1; d = Math.min(d, Math.hypot(x - p.x - s1[0] * PSR.KM, y - p.y - s1[1] * PSR.KM, z - p.z - s1[2] * PSR.KM)); } lim = Math.min(lim, Math.max(8e-11, d * 1.2)); }
@@ -2887,6 +2902,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=90fb8da2" data-place="header" defer></script>
+<script src="../music/music.js?v=85cef56b" data-place="header" defer></script>
 </body>
 </html>
