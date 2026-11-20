@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=a1397182"></script>
-<script src="../shared/clock.js?v=a1397182"></script>
-<script src="../shared/fold.js?v=a1397182"></script>
-<script src="../shared/galaxy-volume.js?v=a1397182"></script>
+<script src="../shared/frame.js?v=0d76e21e"></script>
+<script src="../shared/clock.js?v=0d76e21e"></script>
+<script src="../shared/fold.js?v=0d76e21e"></script>
+<script src="../shared/galaxy-volume.js?v=0d76e21e"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1881,7 +1881,7 @@ function acenPanel(show, r) {
     el.dataset.built = 1;
   }
   if (show) { const t = document.getElementById('ac-rate'), s = r ? `Time here runs at ${r >= 1 ? r + ' years' : r >= 0.05 ? Math.round(r * 365.25) + ' days' : '1 day'} a second.` : ''; if (t.textContent !== s) t.textContent = s; }
-  const card = document.getElementById('info').style.display === 'block';   // with a card open, keep to the stars (the card sits above)
+  const card = cardOpen();   // with a card open, keep to the stars (the card sits above)
   if (el.classList.contains('compact') !== card) el.classList.toggle('compact', card);
   if (el.hidden === !!show) el.hidden = !show;
 }
@@ -2074,7 +2074,7 @@ function qsoPanel(q, yps) {
   }
   const t = document.getElementById('q-rate'), s = yps ? `Time here runs at ${yps >= 1 ? yps + (yps === 1 ? ' year' : ' years') : yps >= 1 / 365 ? Math.round(yps * 365.25) + (Math.round(yps * 365.25) === 1 ? ' day' : ' days') : Math.max(1, Math.round(yps * 8766)) + ' hours'} a second.` : '';
   if (t.textContent !== s) t.textContent = s;
-  const card = document.getElementById('info').style.display === 'block'; if (el.classList.contains('compact') !== card) el.classList.toggle('compact', card);
+  const card = cardOpen(); if (el.classList.contains('compact') !== card) el.classList.toggle('compact', card);
   if (el.hidden) el.hidden = false;
 }
 // Huchra's Lens: the four images of the quasar behind, where Hubble sees them around the galaxy's centre (1″ = ~2,400 ly here),
@@ -2265,7 +2265,7 @@ function psrPanel(p, rate) {
   }
   const bl = document.getElementById('psr-blip'), pu = psrPulse(p, performance.now() / 1000); bl.style.opacity = (0.15 + 0.85 * pu).toFixed(2);
   const r = document.getElementById('psr-rate'), s = rate > 1 ? `Orbit shown ${Math.round(rate).toLocaleString('en-CA')}× faster.` : rate === 1 ? 'Orbit in real time.' : ''; if (r.textContent !== s) r.textContent = s;
-  const card = document.getElementById('info').style.display === 'block'; if (el.classList.contains('compact') !== card) el.classList.toggle('compact', card);
+  const card = cardOpen(); if (el.classList.contains('compact') !== card) el.classList.toggle('compact', card);
   if (el.hidden) el.hidden = false;
 }
 // riding along with a selected pulsar when zoomed right in. The camera stays exactly on the system's catalogue position and a small,
@@ -2619,7 +2619,7 @@ function describeStar(i) {
 }
 
 function select(o, fly) {
-  selected = o; draw();
+  const prevSel = selected; selected = o; draw();
   const info = document.getElementById('info');
   if (!o) { info.style.display = 'none'; return; }
   const T = TYPES[o.type];
@@ -2682,6 +2682,7 @@ function select(o, fly) {
     go.textContent = o.psr ? 'Fly down to the neutron star' : bh || o.qso ? 'Fly down to the black hole' : 'Dive into the Solar System';
     go.onclick = o.psr ? () => flyTo(o.x, o.y, o.z, Math.max(9e-11, o.psr.lc * 3 * PSR.KM), { raw: true }) : o.qso ? () => flyTo(o.x, o.y, o.z, 60 * o.qso.Rs, { raw: true }) : bh ? () => { select(null); flyTo(GCO.x, GCO.y, GCO.z, 1.4e-5, { raw: true }); } : diveToSun; }
   info.style.display = 'block';
+  if (typeof infoFold !== 'undefined' && infoFold) { if (o !== prevSel) infoFold.set(false); else infoFold.relabel(); }   // a new pick opens its card
   if (fly) flyTo(o.x, o.y, o.z || 0, spanFor(o));
 }
 
@@ -2790,7 +2791,9 @@ document.getElementById('goall').onclick = () => flyTo(0, 4000, 0, 118000);
 document.getElementById('golan').onclick = () => { const r = REGIONS[1]; flyTo(r.x * 0.5, r.y * 0.5, r.z * 0.5, 7e8); };
 document.getElementById('goobs').onclick = () => flyTo(0, 0, 0, 1.0e11);
 document.getElementById('golg').onclick = () => { const m = gpos('Andromeda'); flyTo(m.x * 0.45, m.y * 0.45, m.z * 0.45, 3.6e6); };
-document.querySelector('#info .close').onclick = () => select(null);
+// the card's × folds it to a tab named after what's selected; the selection stays (click empty space to let go of it)
+var infoFold = UAS_FOLD.foldable(document.getElementById('info'), { closeBtn: document.querySelector('#info .close'), title: () => selected ? selected.name : 'Info', startFolded: false, arrow: '▾' });
+function cardOpen() { return document.getElementById('info').style.display === 'block' && !(infoFold && infoFold.folded()); }
 document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); draw();
   if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-mw', opt: 'zodiac', on: opts.zodiac }, '*'); });
 if (EMBED) {
@@ -2884,6 +2887,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=a1397182" data-place="header" defer></script>
+<script src="../music/music.js?v=0d76e21e" data-place="header" defer></script>
 </body>
 </html>

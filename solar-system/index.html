@@ -231,10 +231,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=a1397182"></script>
-<script src="../shared/clock.js?v=a1397182"></script>
-<script src="../shared/fold.js?v=a1397182"></script>
-<script src="../shared/galaxy-volume.js?v=a1397182"></script>
+<script src="../shared/frame.js?v=0d76e21e"></script>
+<script src="../shared/clock.js?v=0d76e21e"></script>
+<script src="../shared/fold.js?v=0d76e21e"></script>
+<script src="../shared/galaxy-volume.js?v=0d76e21e"></script>
 <script>
 (() => {
 'use strict';
@@ -1699,7 +1699,7 @@ const lightTime = km => { const s = km / LIGHT; return s > 5400 ? `${(s / 3600).
 const ASTRO = { sun: '\u2609', mercury: '\u263F', venus: '\u2640', earth: '\u{1F728}', mars: '\u2642', jupiter: '\u2643', saturn: '\u2644', uranus: '\u2645', neptune: '\u2646',
   pluto: '\u2BD3', ceres: '\u26B3', haumea: '\u{1F77B}', makemake: '\u{1F77C}', eris: '\u2BF0' };
 function select(o) {
-  selected = o; const info = document.getElementById('info');
+  const prevSel = selected; selected = o; const info = document.getElementById('info');
   if (!o) { info.style.display = 'none'; return; }
   const isRing = !!o.in, f = [];
   let type, dot;
@@ -1745,8 +1745,10 @@ function select(o) {
   const go = document.getElementById('info-go'); go.style.display = isRing || o.kind === 'probe' ? 'none' : 'inline-block';
   go.textContent = focus === o ? 'Centred here' : 'Fly here'; go.classList.toggle('on', focus === o);
   info.style.display = 'block';
+  if (typeof infoFold !== 'undefined' && infoFold) { if (o !== prevSel) infoFold.set(false); else infoFold.relabel(); }   // a new pick opens its card
 }
-document.querySelector('#info .close').onclick = () => select(null);
+// the card's × folds it to a tab named after what's selected; the selection stays (click empty space to let go of it)
+var infoFold = UAS_FOLD.foldable(document.getElementById('info'), { closeBtn: document.querySelector('#info .close'), title: () => selected ? (selected.name || document.getElementById('info-nm').textContent) : 'Info', startFolded: false, arrow: '▾' });
 document.getElementById('info-go').onclick = () => { if (selected && focus !== selected) flyTo(selected); };
 
 // ===================================================================
@@ -2056,7 +2058,7 @@ function frame(t) {
     document.getElementById('date').textContent = new Date(simMs).toLocaleString('en-CA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     document.getElementById('spd').textContent = speedLabel(Math.pow(10, logTarget));
     updateScale(camD);
-    if (selected && !selected.in && document.getElementById('info').style.display === 'block' && (selected.isSun || selected.kind !== 'moon')) select(selected); // keep live distances fresh
+    if (selected && !selected.in && document.getElementById('info').style.display === 'block' && !(infoFold && infoFold.folded()) && (selected.isSun || selected.kind !== 'moon')) select(selected); // keep live distances fresh
   }
   if (EMBED) { // tell the page that joins the maps where we are: pixels per light-year, and the direction of view in the galaxy map's terms
     const msg = { src: 'uas-ss', s: innerHeight * LY / (2 * camD * TAN20), yaw: controls.getAzimuthalAngle() - MW_AZ, tilt: controls.getPolarAngle(), q: deep.q, span: spanLy };
@@ -2112,6 +2114,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=a1397182" data-place="header" defer></script>
+<script src="../music/music.js?v=0d76e21e" data-place="header" defer></script>
 </body>
 </html>
