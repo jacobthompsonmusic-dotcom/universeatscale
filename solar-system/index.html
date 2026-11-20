@@ -206,6 +206,7 @@
     <button class="tg on" data-k="milky">Milky Way</button>
     <button class="tg" data-k="zodiac">Zodiac</button>
     <button class="tg" data-k="constel">Constellations</button>
+    <button class="tg" data-k="mag">Magnetic fields</button>
   </div>
   <div class="hint">Planets, moons, the Sun and every distance are to true scale. Double-click a name to fly there; click empty space to close a card. The stars behind are real, each at its measured distance. Earth imagery: <a href="https://www.solarsystemscope.com/textures/" style="color:inherit">Solar System Scope</a> (CC BY 4.0), from NASA data.</div>
 </div>
@@ -233,10 +234,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=86edace9"></script>
-<script src="../shared/clock.js?v=86edace9"></script>
-<script src="../shared/fold.js?v=86edace9"></script>
-<script src="../shared/galaxy-volume.js?v=86edace9"></script>
+<script src="../shared/frame.js?v=bc777f8c"></script>
+<script src="../shared/clock.js?v=bc777f8c"></script>
+<script src="../shared/fold.js?v=bc777f8c"></script>
+<script src="../shared/galaxy-volume.js?v=bc777f8c"></script>
 <script>
 (() => {
 'use strict';
@@ -1743,6 +1744,93 @@ function stepFly(t) {
   camera.position.copy(dir.multiplyScalar(d));
   if (k >= 1) fly = null;
 }
+
+// ===================================================================
+//  magnetic fields (the "Magnetic fields" layer)
+// ===================================================================
+// Each planet's magnetosphere: the bow shock and magnetopause, squashed on the Sun side by the solar wind and trailing away from it,
+// and inside, dipole field lines tilted and offset like the real field and turning with the planet. Mercury, Earth and the giants
+// have their own fields; Venus and Mars don't (only Mars's crust is patchily magnetised), so the solar wind wraps an "induced"
+// magnetosphere round their ionospheres instead — shown as the boundary shells alone. The Sun's field is carried out by the solar
+// wind and wound into the Parker spiral by its 25-day spin. Standoff distances are typical values; the field lines are illustrative.
+const FIELD = {   // standoff distances in planet radii (subsolar magnetopause or induced boundary, bow shock), dipole tilt °, northward offset (radii)
+  mercury: { mp: 1.45, bs: 1.96, tilt: 0.8, off: 0.2, field: '0.003 gauss at the equator — about 1% of Earth’s', note: 'Mercury’s small field is shifted 480 km north of the planet’s centre. Its magnetosphere is so tiny that the solar wind can reach the surface.' },
+  venus: { mp: 1.1, bs: 1.5, induced: true, field: 'None of its own', note: 'Venus has no field of its own: the solar wind drapes its field round the planet’s electrically charged upper atmosphere, making an “induced” magnetosphere.' },
+  earth: { mp: 10, bs: 13, tilt: 9.3, off: 0, field: '0.31 gauss at the equator', note: 'Earth’s field shields us from the solar wind, which pushes the magnetopause in to about 10 Earth radii (64,000 km) on the day side and stretches it into a tail hundreds of Earth radii long. The dipole is tilted about 9° from the spin axis (IGRF 2025).' },
+  mars: { mp: 1.3, bs: 1.6, induced: true, field: 'None of its own — only magnetised patches of ancient crust', note: 'Mars lost its global field about 4 billion years ago; only patches of its southern crust are still magnetised. The solar wind wraps an induced magnetosphere round it.' },
+};
+const FIELDS = [];
+function buildFields() {
+  const shellMat = (col, k) => new THREE.ShaderMaterial({
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+    uniforms: { col: { value: new THREE.Color(col) }, k: { value: k } },
+    vertexShader: `#include <common>
+      #include <logdepthbuf_pars_vertex>
+      varying vec3 vN; varying vec3 vV; varying float vT; void main() { vT = uv.y; vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv;
+      #include <logdepthbuf_vertex>
+      }`,
+    fragmentShader: `#include <logdepthbuf_pars_fragment>
+      uniform vec3 col; uniform float k; varying vec3 vN; varying vec3 vV; varying float vT; void main() {
+      #include <logdepthbuf_fragment>
+      float rim = pow(1.0 - abs(dot(vN, vV)), 2.2); float fade = 1.0 - smoothstep(0.55, 1.0, vT);
+      gl_FragColor = vec4(col * (0.12 + rim) * k * fade, 1.0); }`,
+  });
+  const shell = (r0, alpha, thMax, col, k) => {   // a paraboloid-like boundary, nose toward +Y (turned to face the Sun each frame)
+    const pts = []; for (let i = 0; i <= 120; i++) { const th = i / 120 * thMax * DEG, r = r0 * Math.pow(2 / (1 + Math.cos(th)), alpha); pts.push(new THREE.Vector2(Math.max(1e-6, r * Math.sin(th)), r * Math.cos(th))); }
+    const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 96), shellMat(col, k)); m.renderOrder = 4; m.frustumCulled = false; return m;
+  };
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xa48cff, transparent: true, opacity: 0.42, depthWrite: false, blending: THREE.AdditiveBlending });
+  const dipole = (Rp, Lmax, tilt, off) => {   // field lines r = L·cos²λ, out to most of the magnetopause distance
+    const dip = new THREE.Group(); dip.rotation.x = tilt * DEG; dip.position.set(0, off * Rp, 0);
+    const Ls = []; for (let i = 0; i < 6; i++) Ls.push(1.25 * Math.pow(Lmax / 1.25, i / 5));
+    for (const L of Ls) for (let j = 0; j < 10; j++) {
+      const phi = j / 10 * TAU, lmax = Math.acos(Math.sqrt(1 / L)), pts = [];
+      for (let i = 0; i <= 80; i++) { const lat = -lmax + 2 * lmax * i / 80, r = L * Math.cos(lat) ** 2 * Rp; pts.push(new THREE.Vector3(r * Math.cos(lat) * Math.cos(phi), r * Math.sin(lat), r * Math.cos(lat) * Math.sin(phi))); }
+      const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat); ln.frustumCulled = false; dip.add(ln);
+    }
+    return dip;
+  };
+  for (const b of PLANETS) {
+    const F = b.kind === 'giant' ? b.cf.mag : FIELD[b.key]; if (!F) continue;
+    const Rp = b.R, shells = new THREE.Group(); shells.visible = false; b.root.add(shells);
+    shells.add(shell(F.bs * Rp, 0.8, 150, 0x6fd6ff, 0.1)); shells.add(shell(F.mp * Rp, F.induced ? 0.5 : 0.6, F.induced ? 150 : 166, 0x9a7dff, 0.2));
+    let spin = null;
+    if (!F.induced) {   // the dipole turns with the planet: it lives in the planet's own (spinning) frame
+      spin = new THREE.Group(); spin.visible = false; (b.kind === 'giant' ? b.eq : b.tilt).add(spin);
+      spin.add(dipole(Rp, F.mp * 0.7, F.tilt, F.off));
+    }
+    FIELDS.push({ b, shells, spin });
+  }
+  // the Sun: twelve field lines carried out by a 400 km/s solar wind and wound into the Parker spiral, out to ~100 AU (near the
+  // termination shock), in the Sun's equatorial plane (close to the ecliptic) — plus closed loops of its field low in the corona
+  const sun = new THREE.Group(); sun.visible = false; SUN.root.add(sun);
+  const spiral = new THREE.Group(); sun.add(spiral);
+  const W = 2 * Math.PI / (25.38 * 86400), k = 400 / W * U;   // scene units per radian of turn
+  const sMat = new THREE.LineBasicMaterial({ color: 0xffc46a, transparent: true, opacity: 0.32, depthWrite: false, blending: THREE.AdditiveBlending });
+  for (let j = 0; j < 12; j++) {
+    const ph0 = j / 12 * TAU, pts = [], r0 = 2.5 * SUN.R, rMax = 100 * AUS;
+    for (let i = 0; i <= 3000; i++) { const r = r0 * Math.pow(rMax / r0, i / 3000), ph = ph0 - (r - r0) / k; pts.push(new THREE.Vector3(r * Math.cos(ph), 0, -r * Math.sin(ph))); }
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), sMat); ln.frustumCulled = false; spiral.add(ln);
+  }
+  const loops = new THREE.Group(); sun.add(loops);
+  const lMat = new THREE.LineBasicMaterial({ color: 0xffb070, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending });
+  for (const L of [1.3, 1.7, 2.3]) for (let j = 0; j < 12; j++) {
+    const phi = j / 12 * TAU, lmax = Math.acos(Math.sqrt(1 / L)), pts = [];
+    for (let i = 0; i <= 60; i++) { const lat = -lmax + 2 * lmax * i / 60, r = L * Math.cos(lat) ** 2 * SUN.R; pts.push(new THREE.Vector3(r * Math.cos(lat) * Math.cos(phi), r * Math.sin(lat), r * Math.cos(lat) * Math.sin(phi))); }
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lMat); ln.frustumCulled = false; loops.add(ln);
+  }
+  FIELDS.sun = { g: sun, spiral, loops };
+}
+const _YF = new THREE.Vector3(0, 1, 0);
+function updateFields() {
+  const on = opts.mag;
+  for (const F of FIELDS) {
+    F.shells.visible = on; if (F.spin) F.spin.visible = on; if (!on) continue;
+    F.shells.quaternion.setFromUnitVectors(_YF, F.b.sunDir);   // nose into the solar wind
+    if (F.spin) F.spin.rotation.y = F.b.kind === 'giant' ? F.b.planet.rotation.y : F.b.mesh.rotation.y;
+  }
+  if (FIELDS.sun) { FIELDS.sun.g.visible = on; if (on) FIELDS.sun.spiral.rotation.y = (simMs / 86400000 / 25.38 % 1) * TAU; }   // the pattern turns with the Sun
+}
 const ALLBODIES = () => [SUN, ...PLANETS, ...MOONS];
 const SOLIDS = () => focus.kind === 'probe' ? [...ALLBODIES(), focus] : ALLBODIES();
 function keepOutside() { // never let the camera sink inside anything
@@ -1817,6 +1905,11 @@ function select(o) {
     f.push(['Diameter', fmtKm(o.r * 2)], [`From ${o.parent.name}`, `${fmtKm(o.a)} · ${(o.a / (cf.R * 1000)).toFixed(1)} ${o.parent.name} radii`], ['One orbit', fmtPeriod(o.P)], ['Direction', o.P < 0 ? 'Backwards (retrograde)' : `With ${o.parent.name}'s spin`], ['Discovered', o.disc]);
     if (cf.incl[o.name] > 1) f.push(['Orbit tilt', `${cf.incl[o.name]}° from the equator`]);
     if (o.fact) f.push(o.fact);
+  }
+  if (opts.mag && !isRing) {   // with the Magnetic fields layer on, say what each field is like
+    const F = o.kind === 'giant' ? o.cf.mag : o.kind === 'planet' ? FIELD[o.key] : null;
+    if (F) f.push(['Magnetic field', F.field]); else if (o.isSun) f.push(['Magnetic field', 'Carried out by the solar wind and wound into a spiral by the Sun’s 25-day spin; it flips every 11 years or so']);
+    if (F && F.note && o.kind === 'planet') f.push(['Magnetosphere', F.note]);
   }
   document.getElementById('info-facts').innerHTML = f.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
   document.getElementById('info-blurb').textContent = o.blurb;
@@ -1990,8 +2083,8 @@ addEventListener('wheel', e => {
 // ===================================================================
 //  UI
 // ===================================================================
-const opts = { orbits: true, labels: true, dots: true, faint: true, milky: true, zodiac: false, constel: false };
-document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); for (const g of GIANTS) g.faint.visible = opts.faint; milky.visible = opts.milky; zodiac.visible = opts.zodiac; constel.visible = opts.constel;
+const opts = { orbits: true, labels: true, dots: true, faint: true, milky: true, zodiac: false, constel: false, mag: false };
+document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); for (const g of GIANTS) g.faint.visible = opts.faint; milky.visible = opts.milky; zodiac.visible = opts.zodiac; constel.visible = opts.constel; if (b.dataset.k === 'mag' && selected) select(selected);
   if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-ss', opt: 'zodiac', on: opts.zodiac }, '*'); });
 const playBtn = document.getElementById('play'), speedIn = document.getElementById('speed');
 playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶'; };
@@ -2066,7 +2159,7 @@ function frame(t) {
     _qn.copy(Q_ID).slerp(Q_GAL, deep.t);
     if (!fly) { _dq.copy(_qn).multiply(_qp.copy(scene.quaternion).invert()); camera.position.sub(controls.target).applyQuaternion(_dq).add(controls.target); }
     scene.quaternion.copy(_qn); skyRoot.quaternion.copy(scene.quaternion); }
-  updateWorld();
+  updateWorld(); updateFields();
   if (fly) stepFly(t);
   controls.update();
   keepOutside();
@@ -2177,6 +2270,7 @@ if (EMBED) addEventListener('message', e => {
 
 function init() {
   ['jupiter', 'saturn', 'uranus', 'neptune'].forEach(buildGiant);
+  buildFields();
   makeLabels();
   for (const g of GIANTS) g.faint.visible = opts.faint;
   const d = new THREE.Vector3(0.45, 0.62, 0.64).normalize().multiplyScalar(1.35e7);
@@ -2195,6 +2289,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=86edace9" data-place="header" defer></script>
+<script src="../music/music.js?v=bc777f8c" data-place="header" defer></script>
 </body>
 </html>
