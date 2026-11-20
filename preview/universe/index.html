@@ -165,13 +165,13 @@ addEventListener('message', e => {
 });
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-const UAS_V = 'a4186627';
+const UAS_V = '18f46dc7';
 mwEl.src = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
 ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 })();
 </script>
-<script src="../shared/fold.js?v=a4186627"></script>
+<script src="../shared/fold.js?v=18f46dc7"></script>
 <script>UAS_FOLD.foldable(document.getElementById('ladder'), { title: 'Scale', arrow: '▾', startFolded: false, onToggle: () => dispatchEvent(new Event('resize')) });   // the soundtrack note below it moves up</script>
-<script src="../music/music.js?v=a4186627" data-place="ladder" defer></script>
+<script src="../music/music.js?v=18f46dc7" data-place="ladder" defer></script>
 </body>
 </html>
