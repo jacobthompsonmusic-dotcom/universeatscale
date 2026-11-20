@@ -47,6 +47,7 @@
   .searchrow { display:flex; gap:6px; align-items:center; }
   #search { flex:1; min-width:0; padding:9px 12px; border-radius:9px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--text); font:inherit; outline:none; }
   #search:focus { border-color:rgba(240,181,106,0.5); }
+  #about.on { color:#ffcf6e; border-color:rgba(255,207,110,0.45); }
   #about { flex:none; width:36px; height:36px; border-radius:9px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--muted); font:italic 15.5px "IM Fell English", Georgia, serif; cursor:pointer; }
   .switch { display:flex; gap:4px; padding:3px; margin:0 0 6px; border-radius:10px; background:rgba(255,255,255,0.05); border:1px solid var(--line); }
   .switch button { flex:1; padding:6px 0; border:0; border-radius:7px; background:none; color:var(--muted); font:italic 14.5px "IM Fell English", Georgia, serif; cursor:pointer; min-width:0; }
@@ -182,7 +183,7 @@
   <p>The Sun, the planets, the dwarf planets and their moons where they really are right now, calculated from NASA JPL orbital data. Everything is drawn to true size and distance, so from out here the planets are far too small to see: the dots show where they are. <b>Drag</b> to turn, <b>scroll</b> over a planet to dive into its rings and moons, <b>right-drag</b> to pan. Keep scrolling <b>out</b> past Neptune for the Kuiper belt, the Oort cloud and the way to the stars.<span class="solo"> Or take the <a href="../universe/index.html" style="color:#ffcf6e">whole journey</a>, from Earth out to the edge of the universe.</span></p>
   <div class="searchrow">
     <input id="search" type="text" placeholder="Search — try “Saturn” or “Titan”" autocomplete="off" spellcheck="false">
-    <button id="about" aria-label="Hide intro">×</button>
+    <button id="about" aria-label="Hide intro">i</button>
   </div>
   <div id="results"></div>
 </div>
@@ -232,10 +233,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=74abb08c"></script>
-<script src="../shared/clock.js?v=74abb08c"></script>
-<script src="../shared/fold.js?v=74abb08c"></script>
-<script src="../shared/galaxy-volume.js?v=74abb08c"></script>
+<script src="../shared/frame.js?v=603712ef"></script>
+<script src="../shared/clock.js?v=603712ef"></script>
+<script src="../shared/fold.js?v=603712ef"></script>
+<script src="../shared/galaxy-volume.js?v=603712ef"></script>
 <script>
 (() => {
 'use strict';
@@ -2007,10 +2008,12 @@ speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
 }
 document.getElementById('now').onclick = () => { CK.set(Date.now()); simMs = CK.now(); logTarget = logCur = 0; speedIn.value = 0; };
 const topPanel = document.getElementById('top'), aboutBtn = document.getElementById('about');
-const collapse = c => { topPanel.classList.toggle('collapsed', c); aboutBtn.textContent = c ? 'i' : '×'; };
+// the i shows or hides the intro text; the panel's own × (fold.js) puts the whole menu — planet names, search and all — away to a tab
+const collapse = c => { topPanel.classList.toggle('collapsed', c); aboutBtn.textContent = 'i'; aboutBtn.classList.toggle('on', !c); aboutBtn.setAttribute('aria-label', c ? 'Show intro' : 'Hide intro'); };
 aboutBtn.onclick = () => collapse(!topPanel.classList.contains('collapsed'));
-if (UAS_FOLD.phone.matches) collapse(true);   // on a phone the intro starts folded: just the search box and its i
+collapse(UAS_FOLD.phone.matches);   // on a phone the intro starts folded: just the search box and its i
 UAS_FOLD.foldable(document.getElementById('legend'), { title: 'Layers' });
+UAS_FOLD.foldable(topPanel, { title: 'Planets', arrow: '▾', startFolded: false });
 const kindLabel = o => o.isSun ? 'Star' : o.kind === 'probe' ? 'Spacecraft' : o.kind === 'giant' ? 'Giant planet' : o.kind === 'planet' ? 'Planet' : o.kind === 'dwarf' ? 'Dwarf planet' : `Moon of ${o.parent.name}`;
 const sIn = document.getElementById('search'), sRes = document.getElementById('results'); let hits = [], active = 0;
 // On the joined page the search box also finds things in the Milky Way map (asked through the page that holds both maps)
@@ -2192,6 +2195,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=74abb08c" data-place="header" defer></script>
+<script src="../music/music.js?v=603712ef" data-place="header" defer></script>
 </body>
 </html>
