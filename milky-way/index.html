@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=ab02c248"></script>
-<script src="../shared/clock.js?v=ab02c248"></script>
-<script src="../shared/fold.js?v=ab02c248"></script>
-<script src="../shared/galaxy-volume.js?v=ab02c248"></script>
+<script src="../shared/frame.js?v=38d71463"></script>
+<script src="../shared/clock.js?v=38d71463"></script>
+<script src="../shared/fold.js?v=38d71463"></script>
+<script src="../shared/galaxy-volume.js?v=38d71463"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -2712,7 +2712,7 @@ cv.addEventListener('pointermove', e => {
     const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
     view.yaw = gest.yaw - angDiff(gest.ang, ang);
     view.tilt = clampTilt(gest.tilt - (my - gest.my) * 0.006);
-    const f = clampS(gest.s * d / gest.d) / view.s;
+    const f = (gest.s * d / gest.d) / view.s;   // unclamped, as with the wheel: the hand-over to the Solar System waits right at the zoom limit (zoomAt and steerIn clamp)
     if (!(f > 1 && selected && steerIn(mx, my, f, false))) { const [ax, ay] = zoomAnchor(mx, my); zoomAt(ax, ay, f); }
   } else if (drag) {
     const dx = e.clientX - drag.X, dy = e.clientY - drag.Y;
@@ -2884,6 +2884,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=ab02c248" data-place="header" defer></script>
+<script src="../music/music.js?v=38d71463" data-place="header" defer></script>
 </body>
 </html>
