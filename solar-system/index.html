@@ -261,10 +261,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=59b6f117"></script>
-<script src="../shared/clock.js?v=59b6f117"></script>
-<script src="../shared/fold.js?v=59b6f117"></script>
-<script src="../shared/galaxy-volume.js?v=59b6f117"></script>
+<script src="../shared/frame.js?v=ae5002ad"></script>
+<script src="../shared/clock.js?v=ae5002ad"></script>
+<script src="../shared/fold.js?v=ae5002ad"></script>
+<script src="../shared/galaxy-volume.js?v=ae5002ad"></script>
 <script>
 (() => {
 'use strict';
@@ -2068,7 +2068,7 @@ function updateLabels() {
     relOf(o, p); const v = p.clone().project(camera), dist = p.distanceTo(camera.position);
     o.ax = (v.x + 1) / 2 * W; o.ay = (1 - v.y) / 2 * H; o.px = radiusOf(o) / dist * pxs; o.ndc = v; o.dist = dist;
     o.onScreen = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1 && !(occ && o !== fg && o.kind === 'moon' && o.parent === fg && hiddenBy(p, occ, fg.R));
-    o.belowH = SKY.on && (o === EARTH || p.clone().sub(camera.position).dot(SKY.up) < 0); if (o.belowH) o.onScreen = false;
+    o.belowH = SKY.on && (o === EARTH || behindSkyline(p)); if (o.belowH) o.onScreen = false;
     if (o.kind === 'moon') { const par = o.parent; if (Math.hypot(o.ax - par.ax, o.ay - par.ay) < 12 + par.px) o.onScreen = false; }
     else if (o.isPlanet && o !== selected && SUN.dist > 60 * AUS && Math.hypot(o.ax - SUN.ax, o.ay - SUN.ay) < 18) o.onScreen = false; // from far out the planets melt into the Sun
   }
@@ -2179,11 +2179,32 @@ const skyVS = `#include <common>
   }`;
 // the ground: a field running out to a low, hilly horizon with a ragged line of trees along it (procedural — no particular place);
 // the silhouette hides whatever is just above the true horizon, as a real treeline does, and the land takes the sky's light
+// the horizon's profile (hills, and the trees on them) round all 360°, worked out once here so the page can tell what has set
+// behind the trees (labels too), and handed to the ground's shader as a strip of texture: r = treetops, g = hilltops (× 0.06)
+const SKYPROF = (() => {
+  const N = 4096, top = new Float32Array(N), hill = new Float32Array(N);
+  const hash = (x, y) => { const v = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return v - Math.floor(v); };
+  const vn = (x, y) => { const ix = Math.floor(x), iy = Math.floor(y); let fx = x - ix, fy = y - iy; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+    const a = hash(ix, iy), b = hash(ix + 1, iy), c = hash(ix, iy + 1), d = hash(ix + 1, iy + 1); return (a + (b - a) * fx) + ((c + (d - c) * fx) - (a + (b - a) * fx)) * fy; };
+  const ring = (a, r, s) => vn(Math.cos(a) * r + s, Math.sin(a) * r + s);
+  const trees = (a, n, seed) => { const x = (a / TAU + 0.5) * n, i = Math.floor(x), f = x - i;
+    const ht = 0.35 + 0.65 * hash(i, seed), w = 0.45 + 0.5 * hash(seed, i), off = (hash(i + 3, seed) - 0.5) * (1 - w), t = Math.max(0, 1 - Math.abs(f - 0.5 - off) / (0.5 * w)); return ht * Math.pow(t, 0.75); };
+  const data = new Uint8Array(N * 4);
+  for (let k = 0; k < N; k++) {
+    const a = (k / N - 0.5) * TAU, hl = 0.003 + 0.014 * ring(a, 2.2, 3) + 0.006 * ring(a, 7, 9), wd = sstep(ring(a, 4, 17), 0.38, 0.62);
+    hill[k] = hl; top[k] = hl + wd * (0.007 * trees(a, 640, 1) + 0.011 * trees(a, 260, 5) + 0.004);
+    data[k * 4] = Math.round(top[k] / 0.06 * 255); data[k * 4 + 1] = Math.round(hl / 0.06 * 255); data[k * 4 + 3] = 255;
+  }
+  const tex = new THREE.DataTexture(data, N, 1, THREE.RGBAFormat); tex.wrapS = THREE.RepeatWrapping; tex.magFilter = tex.minFilter = THREE.LinearFilter; tex.needsUpdate = true;
+  // the height of the skyline (as the sine of its altitude) at azimuth a (radians from north through east)
+  const at = a => { const x = ((a / TAU + 0.5) % 1 + 1) % 1 * N, i = Math.floor(x) % N, f = x - Math.floor(x); return top[i] + (top[(i + 1) % N] - top[i]) * f; };
+  return { tex, at };
+})();
 const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE.ShaderMaterial({
   side: THREE.BackSide, vertexShader: skyVS,
-  uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, north: { value: new THREE.Vector3(0, 0, -1) }, east: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 }, sun: { value: new THREE.Vector3(1, 0, 0) } },
+  uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, north: { value: new THREE.Vector3(0, 0, -1) }, east: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 }, sun: { value: new THREE.Vector3(1, 0, 0) }, prof: { value: SKYPROF.tex } },
   fragmentShader: `#include <logdepthbuf_pars_fragment>
-    uniform vec3 up; uniform vec3 north; uniform vec3 east; uniform vec3 sun; uniform float day; uniform float dusk; varying vec3 vD;
+    uniform vec3 up; uniform vec3 north; uniform vec3 east; uniform vec3 sun; uniform float day; uniform float dusk; uniform sampler2D prof; varying vec3 vD;
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
       return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
@@ -2195,9 +2216,7 @@ const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE
     void main() {
       #include <logdepthbuf_fragment>
       vec3 d = normalize(vD); float h = dot(d, up), a = atan(dot(d, east), dot(d, north));
-      float hills = 0.003 + 0.014 * ring(a, 2.2, 3.0) + 0.006 * ring(a, 7.0, 9.0);
-      float woods = smoothstep(0.38, 0.62, ring(a, 4.0, 17.0));
-      float top = hills + woods * (0.007 * trees(a, 900.0, 1.0) + 0.011 * trees(a, 340.0, 5.0) + 0.004);
+      vec4 pr = texture2D(prof, vec2(a / 6.2831853 + 0.5, 0.5)); float hills = pr.g * 0.06, top = pr.r * 0.06;
       if (h > top) discard;
       vec3 haze = mix(vec3(0.020, 0.024, 0.032), vec3(0.50, 0.62, 0.74), day) + vec3(0.55, 0.30, 0.14) * dusk;   // the light low in the sky
       vec3 c;
@@ -2227,6 +2246,10 @@ const skyDome = new THREE.Mesh(new THREE.SphereGeometry(0.9, 96, 48), new THREE.
 skyGround.visible = skyDome.visible = false; skyGround.frustumCulled = skyDome.frustumCulled = false; skyDome.renderOrder = -10;
 scene.add(skyGround, skyDome);
 const skyPanel = document.getElementById('skypanel'), skyDirs = [...document.querySelectorAll('#skydirs span')];
+function behindSkyline(p) {   // set below the horizon, or behind the hills and trees on it
+  const d = p.clone().sub(camera.position).normalize(), h = d.dot(SKY.up); if (h < 0) return true; if (h > 0.07) return false;
+  return h < SKYPROF.at(Math.atan2(d.dot(SKY.east), d.dot(SKY.north)));
+}
 function skyWhere() {
   const lat = SKY_LAT[SKY.hemi], lon = skyLon();
   document.getElementById('sky-where').textContent = `From ${Math.abs(lat)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(Math.round(lon))}° ${lon >= 0 ? 'E' : 'W'} (your time zone)`;
@@ -2276,7 +2299,7 @@ function skyFrame() {
   skyDome.material.uniforms.sun.value.copy(sp); skyDome.material.uniforms.day.value = day; skyDome.material.uniforms.dusk.value = dusk;
   gu.day.value = day; gu.dusk.value = dusk; SKY.day = day;
   skyRoot.visible = bandRoot.visible = day < 0.55;   // the stars and the Milky Way vanish in daylight
-  SUN.glare.visible = SUN.corona.visible = sAlt > -1.5;   // the glare is drawn over everything: hide it once the Sun has set
+  SUN.glare.visible = SUN.corona.visible = !behindSkyline(relOf(SUN));   // the glare is drawn over everything: hide it once the Sun has set
   if (constel) constel.visible = opts.constel && day < 0.55;
   // compass points round the horizon
   const W = innerWidth, H = innerHeight;
@@ -2485,6 +2508,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=59b6f117" data-place="header" defer></script>
+<script src="../music/music.js?v=ae5002ad" data-place="header" defer></script>
 </body>
 </html>
