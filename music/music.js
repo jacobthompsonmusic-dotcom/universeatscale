@@ -4,7 +4,8 @@
    Usage: <script src="../music/music.js" data-place="ladder|corner|header" defer></script>
      ladder  — under the scale ladder (joined page)
      corner  — fixed, bottom-right (home page)
-     header  — beside the "← All maps" link in a map's panel (standalone map pages; skipped when embedded) */
+     info    — top right, just under the object card when one is open (standalone map pages; skipped when embedded)
+   It always stays on screen: no menu folds it away. */
 (function () {
   var ALBUM = '5NK09eF6jO8AHI5NAiuBzL';
   var SPOTIFY = 'https://open.spotify.com/album/' + ALBUM;
@@ -13,7 +14,15 @@
   var me = document.currentScript;
   var place = (me && me.getAttribute('data-place')) || 'corner';
   var embedded = window.name === 'uas-embed' || /[?&]embed=1/.test(location.search);
-  if (embedded) return;                       // the joined page shows its own note, so the music keeps playing across the hand-over
+  if (embedded) {                             // the joined page shows its own note, so the music keeps playing across the hand-over;
+    var lastR = null;                         // tell it where this map's object card is, so the note can sit under it
+    setInterval(function () {
+      var i = document.getElementById('info'), s = '';
+      if (i && getComputedStyle(i).display !== 'none') { var r = i.getBoundingClientRect(); if (r.height) s = [r.top, r.bottom, r.left, r.right].map(Math.round).join(','); }
+      if (s !== lastR) { lastR = s; try { parent.postMessage({ src: 'uas-info', r: s }, '*'); } catch (_) {} }
+    }, 200);
+    return;
+  }
 
   var css = [
     '.uas-mu-btn{font:italic 12.5px "IM Fell English",Georgia,serif;color:#8d93a8;background:rgba(12,13,20,.78);border:1px solid rgba(255,255,255,.09);',
@@ -49,7 +58,7 @@
     '.uas-mu-pop .frame.off{height:auto;padding:12px 10px;text-align:center;display:flex;flex-direction:column;gap:6px}',
     '.uas-mu-pop .frame.off a{font-weight:600;font-size:13.5px}.uas-mu-pop .frame.off span{color:#8d93a8;font-size:11.5px}',
     '.uas-mu-pop .links{margin:5px 6px 1px;display:flex;justify-content:space-between;font-size:11px}',
-    '@media (max-width:760px),(max-height:620px){.uas-mu-ladder{top:auto;bottom:14px;right:auto;left:50%;transform:translateX(-50%);width:auto}}'
+    '.uas-mu-info{top:16px;right:16px}'
   ].join('\n');
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -71,17 +80,33 @@
     '<a href="' + SITE + '" target="_blank" rel="noopener">iamjacob.ca ↗</a></div>';
 
   function mount() {
-    if (place === 'header') {
+    if (place === 'header') place = 'info';   // (older pages)
+    if (false) {
       var home = document.querySelector('a.homelink');
       if (!home) { place = 'corner'; return mount(); }
       btn.classList.add('uas-mu-header');
       home.insertAdjacentElement('afterend', btn);
     } else {
-      btn.classList.add('uas-mu-fixed', place === 'ladder' ? 'uas-mu-ladder' : 'uas-mu-corner');
-      if (place === 'ladder') {                // sit just under the ladder, whatever its height
-        var lad = document.getElementById('ladder');
-        if (lad) { var fit = function () { var r = lad.getBoundingClientRect(); if (r.height) { btn.style.top = (r.bottom + 8) + 'px'; btn.style.width = r.width + 'px'; } else btn.style.top = ''; };
-          fit(); addEventListener('resize', fit); }
+      btn.classList.add('uas-mu-fixed', place === 'ladder' ? 'uas-mu-ladder' : place === 'info' ? 'uas-mu-info' : 'uas-mu-corner');
+      if (place === 'ladder' || place === 'info') {
+        // under the open object card if there is one (on the joined page the maps report theirs), else under the ladder, else the top-right corner
+        var lad = document.getElementById('ladder'), frameInfo = new Map();
+        var cardRect = function () {
+          if (place === 'info') { var i = document.getElementById('info'); if (i && getComputedStyle(i).display !== 'none') { var r = i.getBoundingClientRect(); if (r.height) return r; } return null; }
+          // the topmost map on show (the Solar System sits over the galaxy map), and its card if it has one open
+          var top = null; [].forEach.call(document.querySelectorAll('iframe[name="uas-embed"]'), function (f) { var cs = getComputedStyle(f); if (+cs.opacity >= 0.5 && cs.visibility !== 'hidden') top = f; });
+          var s = top && frameInfo.get(top.contentWindow); if (!s) return null;
+          var a = s.split(',').map(Number); return { top: a[0], bottom: a[1], left: a[2], right: a[3] };
+        };
+        var fit = function () {
+          var c = cardRect(), r = lad && lad.getBoundingClientRect();
+          if (c && c.bottom + 44 < innerHeight) { btn.style.top = (c.bottom + 8) + 'px'; btn.style.right = Math.max(8, innerWidth - c.right) + 'px'; btn.style.width = ''; }
+          else if (r && r.height) { btn.style.top = (r.bottom + 8) + 'px'; btn.style.right = Math.max(8, innerWidth - r.right) + 'px'; btn.style.width = r.width + 'px'; }
+          else { btn.style.top = '16px'; btn.style.right = '16px'; btn.style.width = ''; }
+          if (!pop.hidden) position();
+        };
+        addEventListener('message', function (e) { if (e.data && e.data.src === 'uas-info') { frameInfo.set(e.source, e.data.r); fit(); } });
+        addEventListener('resize', fit); setInterval(fit, 200); setTimeout(fit, 0);
       }
       document.body.appendChild(btn);
     }
