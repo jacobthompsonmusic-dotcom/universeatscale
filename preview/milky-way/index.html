@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=252a0c96"></script>
-<script src="../shared/clock.js?v=252a0c96"></script>
-<script src="../shared/fold.js?v=252a0c96"></script>
-<script src="../shared/galaxy-volume.js?v=252a0c96"></script>
+<script src="../shared/frame.js?v=c061255b"></script>
+<script src="../shared/clock.js?v=c061255b"></script>
+<script src="../shared/fold.js?v=c061255b"></script>
+<script src="../shared/galaxy-volume.js?v=c061255b"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1003,7 +1003,8 @@ const angDiff = (a, b) => { let d = (b - a) % (2 * Math.PI); if (d > Math.PI) d 
 
 // ?debug=1: note any part of a frame that takes over 100 ms (window.__slow), to find hitches
 const PROF = /[?&]debug=1/.test(location.search) ? (window.__slow = []) : null;
-const pf = (n, f) => { if (!PROF) return f(); const t = performance.now(), r = f(); if (PROF.flush) ctx.getImageData(0, 0, 1, 1); const d = performance.now() - t; if (d > 100) PROF.push(`${n} ${Math.round(d)} ms span ${Math.round(Ht / view.s)}`); return r; };
+const SKIP = new Set(((/[?&]skip=([\w,]+)/.exec(location.search) || [])[1] || '').split(','));
+const pf = (n, f) => { if (SKIP.has(n)) return 0; if (!PROF) return f(); const t = performance.now(), r = f(); if (PROF.flush) ctx.getImageData(0, 0, 1, 1); const d = performance.now() - t; if (d > 100) PROF.push(`${n} ${Math.round(d)} ms span ${Math.round(Ht / view.s)}`); return r; };
 function render(t) {
   const ck = PROF ? [['start', performance.now()]] : null, C = n => { if (ck) ck.push([n, performance.now()]); };
   if (PROF && render.end && performance.now() - render.end > 1000) PROF.push(`idle before frame ${Math.round(performance.now() - render.end)} ms (anim ${!!anim})`);
@@ -3001,6 +3002,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=252a0c96" data-place="info" defer></script>
+<script src="../music/music.js?v=c061255b" data-place="info" defer></script>
 </body>
 </html>
