@@ -144,6 +144,8 @@
   #zodwheel .seg button + button { border-left:1px solid var(--line); }
   #zodwheel .seg button.on { background:rgba(255,207,110,0.18); color:#ffcf6e; }
   #zw-c { display:block; width:292px; height:292px; margin:0 auto; }
+  #zw-cn { margin:8px 2px 0; padding-top:7px; border-top:1px solid var(--line); font-size:13.5px; color:#e9d9b0; text-align:center; }
+  #zw-cn small { display:block; font-size:11px; color:rgba(232,226,212,0.6); margin-top:2px; }
   #zw-note { margin:6px 2px 0; font-size:11.5px; line-height:1.4; color:rgba(232,226,212,0.6); }
   @media (max-width:760px) { #zodwheel { right:12px; width:min(78vw, 300px); } #zw-c { width:100%; height:auto; } }
   #datepick label { display:flex; gap:6px; align-items:center; }
@@ -264,6 +266,7 @@
 <div id="zodwheel" class="panel">
   <div class="zw-head"><span class="zw-title">The zodiac now</span><span class="seg"><button data-zw="signs" class="on">Signs</button><button data-zw="const">Constellations</button></span></div>
   <canvas id="zw-c" width="300" height="300"></canvas>
+  <p id="zw-cn"></p>
   <p id="zw-note"></p>
 </div>
 <div id="skydirs"><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span></div>
@@ -278,10 +281,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=14818cb1"></script>
-<script src="../shared/clock.js?v=14818cb1"></script>
-<script src="../shared/fold.js?v=14818cb1"></script>
-<script src="../shared/galaxy-volume.js?v=14818cb1"></script>
+<script src="../shared/frame.js?v=39425f27"></script>
+<script src="../shared/clock.js?v=39425f27"></script>
+<script src="../shared/fold.js?v=39425f27"></script>
+<script src="../shared/galaxy-volume.js?v=39425f27"></script>
 <script>
 (() => {
 'use strict';
@@ -2354,6 +2357,23 @@ function drawZodiac() {
     ? `Sun in ${signOf(sun.L)}, rising sign ${signOf(ASC)}. Tropical signs (equal 30° from the March equinox); the star patterns themselves now sit about a sign further along. ʀ = moving backwards in our sky.`
     : 'The ecliptic’s real constellations by their official boundaries — 13 of them, Ophiuchus included, of unequal widths. ʀ = moving backwards in our sky.';
 }
+// the Chinese zodiac: a calendar cycle, not a place in the sky — so it's a line under the wheel. The year turns at Chinese New Year
+// (the second new moon after the winter solstice, Beijing time); the browser's own Chinese calendar supplies the dates.
+const CN_ANIMALS = ['Rat', 'Ox', 'Tiger', 'Rabbit', 'Dragon', 'Snake', 'Horse', 'Goat', 'Monkey', 'Rooster', 'Dog', 'Pig'], CN_ELEM = ['Wood', 'Fire', 'Earth', 'Metal', 'Water'];
+const CN_GLYPH = ['鼠', '牛', '虎', '兔', '龍', '蛇', '馬', '羊', '猴', '雞', '狗', '豬'], cnNY = {};
+let cnFmt = null; try { cnFmt = new Intl.DateTimeFormat('en-u-ca-chinese', { timeZone: 'Asia/Shanghai', year: 'numeric' }); } catch (_) {}
+const cnYear = ms => { if (!cnFmt) return null; const p = cnFmt.formatToParts(new Date(ms)).find(x => x.type === 'relatedYear'); return p ? +p.value : null; };
+function cnNewYear(y) {   // the first day of Chinese year y (between 21 Jan and 20 Feb of Gregorian year y)
+  if (cnNY[y]) return cnNY[y];
+  for (let d = 20; d <= 52; d++) { const ms = Date.UTC(y, 0, d, 4); if (cnYear(ms) === y) return (cnNY[y] = ms); }
+  return null;
+}
+function drawChinese() {
+  const el = document.getElementById('zw-cn'), y = cnYear(simMs); if (!y) { el.textContent = ''; return; }
+  const k = ((y - 4) % 12 + 12) % 12, e = CN_ELEM[Math.floor(((y - 4) % 10 + 10) % 10 / 2)], ny = cnNewYear(y), nx = cnNewYear(y + 1);
+  const f = ms => new Date(ms).toLocaleDateString('en-CA', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' });
+  el.innerHTML = `Chinese zodiac: Year of the ${e} ${CN_ANIMALS[k]} <span lang="zh">${CN_GLYPH[k]}</span>` + (ny && nx ? `<small>${f(ny)} – ${f(nx - 86400000)}</small>` : '');
+}
 document.querySelectorAll('#zodwheel [data-zw]').forEach(b => b.onclick = () => { ZW.mode = b.dataset.zw; document.querySelectorAll('#zodwheel [data-zw]').forEach(x => x.classList.toggle('on', x === b)); drawZodiac(); });
 UAS_FOLD.foldable(document.getElementById('zodwheel'), { title: 'Zodiac', arrow: '▾' });
 function skyWhere() {
@@ -2407,7 +2427,7 @@ function skyFrame() {
   skyRoot.visible = bandRoot.visible = day < 0.55;   // the stars and the Milky Way vanish in daylight
   SUN.glare.visible = SUN.corona.visible = !behindSkyline(relOf(SUN));   // the glare is drawn over everything: hide it once the Sun has set
   if (constel) constel.visible = opts.constel && day < 0.55;
-  if (performance.now() - ZW.last > 150) { ZW.last = performance.now(); drawZodiac();
+  if (performance.now() - ZW.last > 150) { ZW.last = performance.now(); drawZodiac(); drawChinese();
     const zr = document.getElementById('zodwheel').getBoundingClientRect(); document.getElementById('info').style.top = (zr.bottom + 10) + 'px'; }
   // compass points round the horizon
   const W = innerWidth, H = innerHeight;
@@ -2616,6 +2636,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=14818cb1" data-place="info" defer></script>
+<script src="../music/music.js?v=39425f27" data-place="info" defer></script>
 </body>
 </html>
