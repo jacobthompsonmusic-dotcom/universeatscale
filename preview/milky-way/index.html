@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=229d9c5f"></script>
-<script src="../shared/clock.js?v=229d9c5f"></script>
-<script src="../shared/fold.js?v=229d9c5f"></script>
-<script src="../shared/galaxy-volume.js?v=229d9c5f"></script>
+<script src="../shared/frame.js?v=e32d2ef1"></script>
+<script src="../shared/clock.js?v=e32d2ef1"></script>
+<script src="../shared/fold.js?v=e32d2ef1"></script>
+<script src="../shared/galaxy-volume.js?v=e32d2ef1"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -984,7 +984,7 @@ function planeHit(X, Y, zp) {
 }
 
 function resize() {
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  dpr = Math.min(window.devicePixelRatio || 1, 2, +(/[?&]dpr=([\d.]+)/.exec(location.search) || [])[1] || 2);
   Wd = innerWidth; Ht = innerHeight;
   cv.width = Wd * dpr; cv.height = Ht * dpr;
   sky = document.createElement('canvas'); sky.width = cv.width; sky.height = cv.height;
@@ -2962,6 +2962,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=229d9c5f" data-place="info" defer></script>
+<script src="../music/music.js?v=e32d2ef1" data-place="info" defer></script>
 </body>
 </html>
