@@ -261,10 +261,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=d256dff7"></script>
-<script src="../shared/clock.js?v=d256dff7"></script>
-<script src="../shared/fold.js?v=d256dff7"></script>
-<script src="../shared/galaxy-volume.js?v=d256dff7"></script>
+<script src="../shared/frame.js?v=a5944645"></script>
+<script src="../shared/clock.js?v=a5944645"></script>
+<script src="../shared/fold.js?v=a5944645"></script>
+<script src="../shared/galaxy-volume.js?v=a5944645"></script>
 <script>
 (() => {
 'use strict';
@@ -970,7 +970,8 @@ const R0_LY = FR.R0_LY, cTHm = Math.cos(MW_TH), sTHm = Math.sin(MW_TH), _g3 = ne
 const sceneToGal = (v, out) => out.set(v.dot(GXs), v.dot(GYs), v.dot(GZs));
 const galToMap = (gv, out, point) => { const x0 = gv.x - (point ? R0_LY : 0), xg = x0 * cTHm + gv.z * sTHm, zg = -x0 * sTHm + gv.z * cTHm; return out.set(-gv.y, -xg, zg); };
 function updateMWV() {
-  MWV.mesh.visible = MWV.ready && opts.milky; milky.visible = opts.milky && !MWV.ready;
+  const lit = SKY.on && SKY.day >= 0.55;   // standing on Earth in daylight: no Milky Way
+  MWV.mesh.visible = MWV.ready && opts.milky && !lit; milky.visible = opts.milky && !MWV.ready;
   if (!MWV.mesh.visible) return;
   const u = MWV.mat.uniforms; _q3.copy(skyRoot.quaternion).invert();
   galToMap(sceneToGal(_v3.copy(skyCam.position).applyQuaternion(_q3), _g3), u.uCam.value, true);
@@ -2459,6 +2460,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=d256dff7" data-place="header" defer></script>
+<script src="../music/music.js?v=a5944645" data-place="header" defer></script>
 </body>
 </html>
