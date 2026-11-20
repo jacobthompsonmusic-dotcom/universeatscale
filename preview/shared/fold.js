@@ -1,18 +1,23 @@
-// shared/fold.js — on a phone, every menu can be put away.
-// Each panel registered here gets a × that folds it down to a small tab (tap the tab to open it again), and a tap on the map
-// folds them all. On larger screens nothing changes. Used by both views (solar-system/ and milky-way/).
+// shared/fold.js — every menu can be put away.
+// Each panel registered here gets a × that folds it down to a small tab in its corner (click the tab to open it again).
+// On a phone they start folded, and a tap on the map folds them all. Used by both views (solar-system/ and milky-way/).
 (function () {
   const phone = matchMedia('(max-width: 760px), (max-height: 620px)');
   const items = [];
   const css = document.createElement('style');
   css.textContent = [
-    '.uas-fold, .uas-tab { display: none; }',
+    '.uas-fold { display: block; position: absolute; top: 3px; right: 5px; z-index: 3; width: 28px; height: 28px; border: 0; background: none; color: rgba(236,228,206,0.6); font: 19px/28px Georgia, serif; cursor: pointer; padding: 0; }',
+    '.uas-fold:hover, .uas-fold:focus-visible { color: #ffcf6e; outline: none; }',
+    '.uas-tab { display: none; }',
+    '.uas-foldable { padding-top: 26px !important; }',
+    '.uas-folded { padding: 0 !important; width: auto !important; min-width: 0 !important; max-height: none !important; overflow: visible !important; }',
+    '.uas-folded > :not(.uas-tab) { display: none !important; }',
+    '.uas-folded > .uas-tab { display: block; border: 0; background: none; color: #f3e7c6; font: italic 15px "IM Fell English", Georgia, serif; letter-spacing: 0.02em; padding: 8px 14px; cursor: pointer; white-space: nowrap; max-width: 62vw; overflow: hidden; text-overflow: ellipsis; }',
+    '.uas-folded > .uas-tab:hover, .uas-folded > .uas-tab:focus-visible { color: #ffcf6e; outline: none; }',
     '@media (max-width: 760px), (max-height: 620px) {',
-    '  .uas-fold { display: block; position: absolute; top: 4px; right: 6px; z-index: 3; width: 34px; height: 34px; border: 0; background: none; color: rgba(236,228,206,0.75); font: 22px/34px Georgia, serif; cursor: pointer; padding: 0; }',
+    '  .uas-fold { width: 34px; height: 34px; font-size: 22px; line-height: 34px; }',
     '  .uas-foldable { padding-top: 30px !important; }',
-    '  .uas-folded { padding: 0 !important; width: auto !important; min-width: 0 !important; max-height: none !important; overflow: visible !important; }',
-    '  .uas-folded > :not(.uas-tab) { display: none !important; }',
-    '  .uas-folded > .uas-tab { display: block; border: 0; background: none; color: #f3e7c6; font: italic 15px "IM Fell English", Georgia, serif; letter-spacing: 0.02em; padding: 9px 15px; cursor: pointer; white-space: nowrap; max-width: 62vw; overflow: hidden; text-overflow: ellipsis; }',
+    '  .uas-folded > .uas-tab { padding: 9px 15px; }',
     '}'
   ].join('\n');
   document.head.appendChild(css);

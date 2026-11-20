@@ -231,10 +231,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=38d71463"></script>
-<script src="../shared/clock.js?v=38d71463"></script>
-<script src="../shared/fold.js?v=38d71463"></script>
-<script src="../shared/galaxy-volume.js?v=38d71463"></script>
+<script src="../shared/frame.js?v=a1397182"></script>
+<script src="../shared/clock.js?v=a1397182"></script>
+<script src="../shared/fold.js?v=a1397182"></script>
+<script src="../shared/galaxy-volume.js?v=a1397182"></script>
 <script>
 (() => {
 'use strict';
@@ -1651,16 +1651,19 @@ function flyTo(o, dist, dir, dur) {
   select(o);
 }
 function preset(dir, dist) { fly = { o: focus, t0: performance.now(), dur: 1400, fromPos: camera.position.clone(), fromTgt: controls.target.clone(), dist: dist || camera.position.distanceTo(controls.target), dir: dir.clone().normalize(), travel: 0 }; }
+// The flight keeps its destination in the middle of the view the whole way: the eye turns to it in the first moment, then the camera
+// swings smoothly round it (along a great circle) while closing in, so the planet grows in place instead of arriving from the side.
 function stepFly(t) {
   const k = Math.min(1, (t - fly.t0) / fly.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
-  controls.target.lerpVectors(fly.fromTgt, ZERO, e);
-  const fromD = fly.fromPos.distanceTo(fly.fromTgt), l0 = Math.log(Math.max(fromD, 1e-4)), l1 = Math.log(fly.dist);
-  // on a long trip, pull back mid-way so you can see where you're going
-  const bump = fly.travel ? Math.max(0, Math.log(fly.travel * 0.9) - Math.max(l0, l1)) : 0;
-  const d = Math.exp(l0 + (l1 - l0) * e + bump * Math.sin(Math.PI * e));
-  const dir = fly.fromPos.clone().sub(fly.fromTgt).normalize().lerp(fly.dir, e);
-  if (dir.lengthSq() < 1e-6) dir.set(0, 1, 0);
-  camera.position.copy(controls.target).add(dir.normalize().multiplyScalar(d));
+  if (!fly.q) {   // the path, in the frame centred on the destination (the scene is re-based on it every frame)
+    const off = fly.fromPos.clone(); let d0 = off.length(); if (d0 < 1e-9) { off.copy(fly.dir); d0 = fly.dist; }
+    fly.d0 = d0; fly.dir0 = off.normalize(); fly.q = new THREE.Quaternion().setFromUnitVectors(fly.dir0, fly.dir.clone().normalize());
+  }
+  const turn = k >= 0.22 ? 1 : (u => u * u * (3 - 2 * u))(k / 0.22);   // the look swings onto the destination in the first fifth
+  controls.target.lerpVectors(fly.fromTgt, ZERO, turn);
+  const l0 = Math.log(Math.max(fly.d0, 1e-4)), l1 = Math.log(fly.dist), d = Math.exp(l0 + (l1 - l0) * e);
+  const dir = fly.dir0.clone().applyQuaternion(new THREE.Quaternion().slerp(fly.q, e));
+  camera.position.copy(dir.multiplyScalar(d));
   if (k >= 1) fly = null;
 }
 const ALLBODIES = () => [SUN, ...PLANETS, ...MOONS];
@@ -2109,6 +2112,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=38d71463" data-place="header" defer></script>
+<script src="../music/music.js?v=a1397182" data-place="header" defer></script>
 </body>
 </html>
