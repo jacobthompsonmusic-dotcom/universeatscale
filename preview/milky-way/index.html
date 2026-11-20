@@ -167,10 +167,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=8f519149"></script>
-<script src="../shared/clock.js?v=8f519149"></script>
-<script src="../shared/fold.js?v=8f519149"></script>
-<script src="../shared/galaxy-volume.js?v=8f519149"></script>
+<script src="../shared/frame.js?v=f41edd84"></script>
+<script src="../shared/clock.js?v=f41edd84"></script>
+<script src="../shared/fold.js?v=f41edd84"></script>
+<script src="../shared/galaxy-volume.js?v=f41edd84"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -336,18 +336,26 @@ let ssReady = false, following = false;
 const helioToWorld = FRM.helioToWorld, galToWorld = FRM.galToWorld;
 const SUNW = helioToWorld(0, 0, 0);     // (0, ~26,990 ly, +68 ly)
 
-// ---------- spiral arms (log spirals after Reid et al. 2019, anchored to the Sun since they're mapped by maser parallaxes) ----------
-const ARM_DY = SUNW.y - 8.15 * LY_PER_KPC;  // Reid's fit used R0 = 8.15 kpc
+// ---------- spiral arms: Reid et al. 2019 (ApJ 885, 131, Table 2), mapped by maser parallaxes ----------
+// Each arm is a log spiral with a kink: radius R (kpc) at azimuth b0 (° from the Sun–centre line, growing with the Galaxy's
+// rotation), pitch pl before the kink and pg after it. lo–hi is the stretch the masers actually trace (drawn solid); beyond it the
+// arm is carried on with the nearest pitch (or xl, where the paper notes a change) and drawn dashed, as an extrapolation.
+const ARM_DY = SUNW.y - 8.15 * LY_PER_KPC;  // Reid's fit used R0 = 8.15 kpc; anchored to the Sun, since the masers are measured from here
 const ARMS = [
-  { name: 'Scutum–Centaurus Arm', R: 4.91, b0: 23, psi: 13,  min: -250, max: 140, color: '#7fb4ff', w: 1.0, lab: -95 },
-  { name: 'Sagittarius–Carina Arm', R: 6.04, b0: 24, psi: 13, min: -205, max: 150, color: '#ff9ccf', w: 0.9, lab: 40 },
-  { name: 'Perseus Arm',          R: 8.87, b0: 40, psi: 9.5, min: -140, max: 200, color: '#9fe7c4', w: 1.0, lab: -35 },
-  { name: 'Norma–Outer Arm',      R: 4.46, b0: 18, psi: 9.5, min: -400, max: 90,  color: '#ffd38a', w: 0.75, lab: -330 },
-  { name: 'Orion Spur (our arm)', R: 8.26, b0: 8.9, psi: 11.4, min: -22, max: 40, color: '#ffffff', w: 0.45, lab: 26, minor: true },
+  { name: 'Scutum–Centaurus Arm', R: 4.91, b0: 23, pl: 14.1, pg: 12.1, lo: 0, hi: 104, min: -250, max: 140, color: '#7fb4ff', w: 1.0, lab: -95 },
+  { name: 'Sagittarius–Carina Arm', R: 6.04, b0: 24, pl: 17.1, pg: 1.0, xl: 10, lo: 2, hi: 97, min: -205, max: 150, color: '#ff9ccf', w: 0.9, lab: 40 },
+  { name: 'Perseus Arm',          R: 8.87, b0: 40, pl: 10.3, pg: 8.7, lo: -23, hi: 115, min: -140, max: 200, color: '#9fe7c4', w: 1.0, lab: -35 },
+  { name: 'Norma Arm',            R: 4.46, b0: 18, pl: -1.0, pg: 19.5, lo: 5, hi: 54, min: -60, max: 80, color: '#ffd38a', w: 0.75, lab: 32 },
+  { name: 'Outer Arm',            R: 12.24, b0: 18, pl: 3.0, pg: 9.4, lo: -16, hi: 71, min: -160, max: 115, color: '#ffd38a', w: 0.75, lab: 25 },
+  { name: 'Orion Spur (our arm)', R: 8.26, b0: 9, pl: 11.4, pg: 11.4, lo: -8, hi: 34, min: -22, max: 40, color: '#ffffff', w: 0.45, lab: 26, minor: true },
 ];
-function armPoint(a, bDeg) {
-  const R = a.R * Math.exp(-(bDeg - a.b0) * DEG * Math.tan(a.psi * DEG)) * LY_PER_KPC;
-  return { x: -R * Math.sin(bDeg * DEG), y: R * Math.cos(bDeg * DEG) + ARM_DY, R };
+function armPoint(a, bDeg) {   // ln(R / Rkink) = −(β − βkink)·tan ψ, piecewise in β
+  const D = x => x * DEG, t = p => Math.tan(D(p));
+  let lnR;
+  if (bDeg <= a.b0) lnR = bDeg >= a.lo ? -D(bDeg - a.b0) * t(a.pl) : -D(Math.min(a.lo, a.b0) - a.b0) * t(a.pl) - D(bDeg - Math.min(a.lo, a.b0)) * t(a.xl ?? a.pl);
+  else lnR = -D(bDeg - a.b0) * t(a.pg);
+  const R = a.R * Math.exp(lnR) * LY_PER_KPC;
+  return { x: -R * Math.sin(D(bDeg)), y: R * Math.cos(D(bDeg)) + ARM_DY, R };
 }
 
 // ---------- objects ----------
@@ -500,6 +508,7 @@ for (const o of OBJ) if (STAR_T[o.name]) o.col = FRM.starHex(STAR_T[o.name]);
 // ---------- other galaxies (true 3D positions) ----------
 // [name, type, distance ly, l, b, diameter ly, sprite, tilt°, aspect, priority, constellation, blurb]
 const GSRC = {
+  'Sagittarius Dwarf': 'RR Lyrae stars, 26.5 kpc (Hamanowicz et al. 2016; Vasiliev & Belokurov 2020)',
   'Large Magellanic Cloud': 'Eclipsing binaries (Pietrzyński et al. 2019)',
   'Small Magellanic Cloud': 'Eclipsing binaries (Graczyk et al. 2020)',
   'Andromeda Galaxy (M31)': 'HST Cepheids (Li et al. 2021)',
@@ -519,7 +528,7 @@ const GSRC = {
 };
 const GALAXIES = [
   ['Milky Way', 'galaxy', 26989, 0, 0, 100000, null, 0, 1, 0, '—', 'Our galaxy: about 100,000 light-years across but only about 2,000 light-years thick in the disc, and home to somewhere between 100 and 400 billion stars. Zoom in to explore it.'],
-  ['Sagittarius Dwarf', 'dwarf', 70000, 5.6, -14.2, 10000, 'ell', 70, 0.35, 2, 'Sagittarius', 'The closest known galaxy, hidden on the far side of our core. The Milky Way is tearing it apart, and its stars trail around our galaxy in a huge loop. Found in 1994.'],
+  ['Sagittarius Dwarf', 'dwarf', 86400, 5.6, -14.2, 10000, 'ell', 70, 0.35, 2, 'Sagittarius', 'The closest known galaxy, hidden on the far side of our core. The Milky Way is tearing it apart, and its stars trail around our galaxy in a huge loop. Found in 1994.'],
   ['Large Magellanic Cloud', 'galaxy', 161700, 280.5, -32.9, 14000, 'blob', 20, 0.8, 1, 'Dorado', 'Our biggest satellite galaxy, seen from the southern hemisphere as a detached piece of the Milky Way. Home of the Tarantula Nebula and Supernova 1987A.'],
   ['Small Magellanic Cloud', 'galaxy', 203700, 302.8, -44.3, 7000, 'blob', -40, 0.6, 1, 'Tucana', 'The LMC\'s smaller sibling, also visible to the naked eye from southern skies. The two clouds are slowly being pulled into the Milky Way.'],
   ['Draco Dwarf', 'dwarf', 250000, 86.4, 34.7, 2500, 'ell', 10, 0.7, 3, 'Draco', 'One of the most dark-matter-dominated objects known — its stars are a tiny fraction of its mass.'],
@@ -1203,14 +1212,19 @@ function drawGrid() {
 function drawArms() {
   ctx.lineWidth = 1.4;
   for (const a of ARMS) {
-    ctx.strokeStyle = a.color; ctx.globalAlpha = (a.minor ? 0.35 : 0.28) * (0.35 + 0.65 * Math.abs(CT));
-    ctx.beginPath(); let first = true;
-    for (let b = a.min; b <= a.max; b += 1) {
-      const p = armPoint(a, b); if (p.R < 9000 || p.R > 56000) { first = true; continue; }
-      const [X, Y] = proj(p.x, p.y, 0);
-      first ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y); first = false;
+    ctx.strokeStyle = a.color;
+    for (const measured of [true, false]) {   // the stretch the masers trace solid; the extrapolation beyond it dashed and fainter
+      ctx.globalAlpha = (a.minor ? 0.35 : 0.28) * (0.35 + 0.65 * Math.abs(CT)) * (measured ? 1 : 0.6); ctx.setLineDash(measured ? [] : [5, 6]);
+      ctx.beginPath(); let first = true;
+      for (let b = a.min; b <= a.max; b += 1) {
+        const inside = b >= a.lo && b <= a.hi, edge = measured ? inside : (b <= a.lo || b >= a.hi);
+        const p = armPoint(a, b); if (!edge || p.R < 9000 || p.R > 56000) { first = true; continue; }
+        const [X, Y] = proj(p.x, p.y, 0);
+        first ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y); first = false;
+      }
+      ctx.stroke();
     }
-    ctx.stroke();
+    ctx.setLineDash([]);
   }
   ctx.globalAlpha = 1;
   if (!opts.labels || Math.abs(CT) < 0.35) return;
@@ -2605,6 +2619,15 @@ const RHO = 1.42;
 function clampAt(s, x, y, z) {   // clampS, with the zoom limit of the destination rather than of here
   return Math.max(minScale(), Math.min(Math.min(Wd, Ht) / zoomLimit(x, y, z), s));
 }
+// Far away, light has travelled for less time than the distance shown, which is where things are now (comoving distance): space
+// stretched while the light was on its way. Planck 2018 (H0 67.66, Ωm 0.3111): step out in redshift until the comoving distance is
+// reached, adding up the light's travel time on the way. Both in light-years / years.
+function lookbackLy(Dc) {
+  const H = 299792.458 / 67.66 * LY_PER_KPC * 1000, Om = 0.3111, OL = 1 - Om, E = z => Math.sqrt(Om * (1 + z) ** 3 + OL), dz = 1e-4;
+  let z = 0, dc = 0, t = 0;
+  while (dc < Dc && z < 20) { const zm = z + dz / 2, e = E(zm); dc += H * dz / e; t += H * dz / ((1 + zm) * e); z += dz; }
+  return t - Math.max(0, dc - Dc) / (1 + z);   // take back the overshoot of the last step
+}
 function flyTo(x, y, z, span, o = {}) {
   if (typeof o === 'number') o = { max: o };
   const M = Math.min(Wd, Ht), s1 = o.raw ? M / span : clampAt(M / span, x, y, z);
@@ -2699,7 +2722,7 @@ function select(o, fly) {
   const year = Math.floor(CK.year());   // the shared clock's year, so it matches the Solar System's date
   const facts = [];
   let blurb = o.blurb;
-  const lightLeft = d => d >= 1e9 ? `${(d / 1e9).toFixed(1)} billion years ago` : d < year ? (d < 50 ? `${d.toFixed(1)} years ago` : `around ${year - Math.round(d)} AD`) : `${fmtLy(d).replace(' ly', '')} years ago`;
+  const lightLeft = D => { const d = D > 5e7 ? lookbackLy(D) : D; return d >= 1e9 ? `${(d / 1e9).toFixed(1)} billion years ago` : d < year ? (d < 50 ? `${d.toFixed(1)} years ago` : `around ${year - Math.round(d)} AD`) : `${fmtLy(d).replace(' ly', '')} years ago`; };
   if (o.type === 'void') {
     facts.push(['Diameter', o.disputed ? '~2 billion ly (disputed)' : fmtLy(o.diam)]);
     if (o.d) facts.push(['Centre from Sun', fmtLy(o.d)], ['Direction', dirName(o.l)], ['Galactic l / b', `${o.l.toFixed(1)}° / ${signed(o.b)}°`],
@@ -2713,8 +2736,8 @@ function select(o, fly) {
     facts.push(['Width', '~100,000 ly'], ['Thin disc thickness', '~2,000 ly'], ['Sun from centre', fmtLy(R0)], ['Nearest big neighbour', 'Andromeda, 2.48 million ly']);
   } else if (o.type === 'sun') {
     facts.push(['Star system', MULT.Sun], ['From Sun', '8.3 light-minutes (to Earth)'], ['From centre', fmtLy(R0) + ' (8.275 kpc)'],
-      ['Height', '68 ly (20.8 pc) above the midplane'], ['Orbit speed', '~230 km/s around the galaxy'],
-      ['', '<span class="src">Centre distance: S2 orbit, GRAVITY 2021 · height: Bennett &amp; Bovy 2019</span>']);
+      ['Height', '68 ly (20.8 pc) above the midplane'], ['Orbit speed', '~236 km/s around the galaxy'],
+      ['', '<span class="src">Centre distance: S2 orbit, GRAVITY 2021 · height: Bennett &amp; Bovy 2019 · speed: Reid et al. 2019</span>']);
   } else if (o.type === 'field') {
     const i = o.fi, ds = describeStar(i);
     facts.push(['From Sun', fmtLy(o.d)], ['From centre', fmtLy(Math.hypot(o.x, o.y, o.z))]);
@@ -2734,7 +2757,7 @@ function select(o, fly) {
     if (o.acen) facts.push(...acenFacts(o.acen));
     else if (MULT[o.name]) facts.push(['Star system', MULT[o.name]]);
     facts.push(['From Sun', fmtLy(o.d)]);
-    facts.push([o.gal ? 'From our centre' : 'From centre', fmtLy(gc)]);
+    if (o !== GCO) facts.push([o.gal ? 'From our centre' : 'From centre', fmtLy(gc)]);
     if (o.name !== 'Sagittarius A*' && !o.qso && o.d < 1e8) facts.push(['Height', height(o.z)]);
     facts.push(['Direction', dirName(o.l)]);
     if (o.name !== 'Sagittarius A*') facts.push(['Galactic l / b', `${o.l.toFixed(1)}° / ${signed(o.b)}°`]);
@@ -2958,6 +2981,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=8f519149" data-place="info" defer></script>
+<script src="../music/music.js?v=f41edd84" data-place="info" defer></script>
 </body>
 </html>
