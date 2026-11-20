@@ -118,6 +118,11 @@
   #datepick { position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:12px;
     background:rgba(14,15,22,0.96); border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,0.5); font:italic 15px "IM Fell English", Georgia, serif; color:var(--muted); }
   #datepick[hidden] { display:none; }
+  #skybtn[hidden] { display:none; }
+  #time #skybtn { color:#f1dfae; }
+  #time #skybtn.glow { border-color:rgba(255,207,110,0.6); color:#ffe2a0; animation:skyglow 2.6s ease-in-out infinite; }
+  @keyframes skyglow { 0%,100% { box-shadow:0 0 0 0 rgba(255,207,110,0), 0 0 6px rgba(255,207,110,0.2); } 50% { box-shadow:0 0 0 3px rgba(255,207,110,0.16), 0 0 20px rgba(255,207,110,0.55); } }
+  @media (prefers-reduced-motion:reduce) { #time #skybtn.glow { animation:none; box-shadow:0 0 14px rgba(255,207,110,0.4); } }
   #datepick { flex-wrap:wrap; justify-content:center; max-width:min(92vw, 640px); }
   #datepick .dp-or { opacity:0.7; font-style:italic; }
   #datepick select { background:rgba(255,255,255,0.06); border:1px solid var(--line); border-radius:7px; color:var(--text); font:italic 14px "IM Fell English", Georgia, serif; padding:5px 7px; color-scheme:dark; }
@@ -277,14 +282,15 @@
   <span class="date" id="date" role="button" tabindex="0" title="Pick any date from 1800 to 2050 — your birthday, say">​</span>
   <div id="datepick" hidden><label>Date <input id="dp-d" type="date" min="1800-01-01" max="2050-12-31"></label><label>Time <input id="dp-t" type="time" value="12:00"></label><button id="dp-go">Go</button><span class="dp-or">or see the sky from Earth:</span><select id="dp-hemi" aria-label="Hemisphere"><option value="n">Northern hemisphere</option><option value="s">Southern hemisphere</option></select><button id="dp-sky">See the sky</button></div>
   <button id="now">Now</button>
+  <button id="skybtn" hidden title="Stand on Earth and see the sky at this moment">See the sky</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=39425f27"></script>
-<script src="../shared/clock.js?v=39425f27"></script>
-<script src="../shared/fold.js?v=39425f27"></script>
-<script src="../shared/galaxy-volume.js?v=39425f27"></script>
+<script src="../shared/frame.js?v=01efdddf"></script>
+<script src="../shared/clock.js?v=01efdddf"></script>
+<script src="../shared/fold.js?v=01efdddf"></script>
+<script src="../shared/galaxy-volume.js?v=01efdddf"></script>
 <script>
 (() => {
 'use strict';
@@ -2180,7 +2186,8 @@ speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
   const open = () => { const d = new Date(simMs); di.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; box.hidden = false; di.focus(); };
   dEl.onclick = () => box.hidden ? open() : (box.hidden = true); dEl.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dEl.onclick(); } };
   const go = () => { if (!di.value) return; const ms = new Date(`${di.value}T${ti.value || '12:00'}`).getTime(); if (!isFinite(ms)) return;
-    CK.set(Math.min(TMAX, Math.max(TMIN, ms))); simMs = CK.now(); playing = false; CK.setPlaying(false); playBtn.textContent = '▶'; box.hidden = true; };
+    CK.set(Math.min(TMAX, Math.max(TMIN, ms))); simMs = CK.now(); playing = false; CK.setPlaying(false); playBtn.textContent = '▶'; box.hidden = true;
+    if (!SKY.on) document.getElementById('skybtn').classList.add('glow'); };   // a date of your own: invite a look at that sky
   document.getElementById('dp-go').onclick = go; box.onkeydown = e => { if (e.key === 'Enter') go(); if (e.key === 'Escape') box.hidden = true; };
   addEventListener('pointerdown', e => { if (!box.hidden && !box.contains(e.target) && e.target !== dEl) box.hidden = true; });
 }
@@ -2437,6 +2444,13 @@ function skyFrame() {
     if (on) el.style.transform = `translate(${(v.x + 1) / 2 * W}px, ${(1 - v.y) / 2 * H}px) translate(-50%, -100%)`; });
 }
 skyPanel.querySelectorAll('[data-h]').forEach(b => b.onclick = () => skyOn(b.dataset.h));
+// "See the sky" beside Now: there once you're near Earth (or Earth is picked), glowing after you choose a date
+const skyBtn = document.getElementById('skybtn');
+skyBtn.onclick = () => { skyBtn.classList.remove('glow'); skyOn(document.getElementById('dp-hemi').value || 'n'); };
+function skyBtnShow(camD) {
+  const nearEarth = (focus === EARTH && camD < EARTH.R * 400) || selected === EARTH;
+  skyBtn.hidden = SKY.on || !(nearEarth || skyBtn.classList.contains('glow'));
+}
 skyPanel.querySelectorAll('[data-az]').forEach(b => b.onclick = () => { SKY.az = +b.dataset.az; SKY.alt = 22; });
 document.getElementById('sky-exit').onclick = () => skyOff(false);
 document.getElementById('dp-sky').onclick = () => { document.getElementById('dp-go').click(); skyOn(document.getElementById('dp-hemi').value); document.getElementById('datepick').hidden = true; };
@@ -2578,7 +2592,7 @@ function frame(t) {
     frame.lt = t;
     document.getElementById('date').textContent = new Date(simMs).toLocaleString('en-CA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     document.getElementById('spd').textContent = speedLabel(Math.pow(10, logTarget));
-    updateScale(camD);
+    updateScale(camD); skyBtnShow(camD);
     if (selected && !selected.in && document.getElementById('info').style.display === 'block' && !(infoFold && infoFold.folded()) && (selected.isSun || selected.kind !== 'moon')) select(selected); // keep live distances fresh
   }
   if (EMBED) { // tell the page that joins the maps where we are: pixels per light-year, and the direction of view in the galaxy map's terms
@@ -2636,6 +2650,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=39425f27" data-place="info" defer></script>
+<script src="../music/music.js?v=01efdddf" data-place="info" defer></script>
 </body>
 </html>
