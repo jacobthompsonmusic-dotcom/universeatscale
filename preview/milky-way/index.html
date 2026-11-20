@@ -173,10 +173,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=af76d0d7"></script>
-<script src="../shared/clock.js?v=af76d0d7"></script>
-<script src="../shared/fold.js?v=af76d0d7"></script>
-<script src="../shared/galaxy-volume.js?v=af76d0d7"></script>
+<script src="../shared/frame.js?v=742475e9"></script>
+<script src="../shared/clock.js?v=742475e9"></script>
+<script src="../shared/fold.js?v=742475e9"></script>
+<script src="../shared/galaxy-volume.js?v=742475e9"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -268,7 +268,7 @@ void main() {
 <div id="orbpanel" class="panel" hidden>
   <h3>The Sun’s orbit</h3>
   <p id="orb-txt"></p>
-  <canvas id="orb-z" width="560" height="150" aria-label="The Sun's height above and below the midplane of the disc over the last 260 million years"></canvas>
+  <canvas id="orb-z" width="1060" height="250" aria-label="The Sun's height above and below the midplane of the disc over the last 260 million years"></canvas>
   <p class="orb-note" id="orb-note"></p>
 </div>
 <div id="t1panel" class="panel" hidden></div>
@@ -1321,18 +1321,21 @@ function orbitPanel(on) {
     'The bar and spiral arms also tug on the Sun, so the older half of the path is uncertain by a few thousand light-years. The arms on the map are where they are today: the pattern turns more slowly than the Sun, so it has moved since.';
   orbitGraph();
 }
-function orbitGraph() {   // the Sun's height above the midplane, the last 260 Myr, true scale in height (the time axis is squeezed)
-  const cv = document.getElementById('orb-z'), g = cv.getContext('2d'), w = cv.width, h = cv.height, S = SORB, L = 34, Rr = 10, top = 14, bot = h - 26;
+function orbitGraph() {   // the Sun's height above the midplane over the last 260 Myr (height true to scale; the time axis is squeezed)
+  const cv = document.getElementById('orb-z'), g = cv.getContext('2d'), w = cv.width, h = cv.height, S = SORB, L = 96, Rr = 16, top = 46, bot = h - 76;
   const X = t => L + (w - L - Rr) * (1 - t / 260), zM = Math.ceil(S.zmax / PC / 50) * 50, Y = zpc => top + (bot - top) * (0.5 - zpc / (2 * zM));
-  g.clearRect(0, 0, w, h); g.font = '19px "IM Fell English", Georgia, serif'; g.textBaseline = 'middle';
-  g.strokeStyle = 'rgba(255,255,255,0.18)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(L, Y(0)); g.lineTo(w - Rr, Y(0)); g.stroke();
-  g.fillStyle = 'rgba(232,226,210,0.55)'; g.textAlign = 'right'; g.fillText(`+${zM} pc`, L - 3, Y(zM)); g.fillText(`−${zM}`, L - 3, Y(-zM)); g.fillText('0', L - 3, Y(0));
-  for (const [t, , , short] of S.ages) { const x = X(t); g.strokeStyle = 'rgba(255,207,110,0.35)'; g.setLineDash([3, 4]); g.beginPath(); g.moveTo(x, top - 6); g.lineTo(x, bot); g.stroke(); g.setLineDash([]);
-    g.fillStyle = 'rgba(255,207,110,0.8)'; g.textAlign = 'center'; g.fillText(short, Math.min(w - 50, Math.max(L + 40, x)), bot + 14); }
-  g.strokeStyle = '#ffcf6e'; g.lineWidth = 2.5; g.beginPath();
-  S.P.forEach((p, i) => { if (-p.t > 260) return; const x = X(-p.t), y = Y(p.z / PC); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
-  g.fillStyle = '#fff'; g.beginPath(); g.arc(X(0), Y(S.P[0].z / PC), 4, 0, 7); g.fill();
-  g.fillStyle = 'rgba(232,226,210,0.7)'; g.textAlign = 'left'; g.fillText('height above the disc, last 260 million years → now', L + 4, 6);
+  g.clearRect(0, 0, w, h); g.textBaseline = 'middle'; g.font = 'italic 25px "IM Fell English", Georgia, serif';
+  g.fillStyle = 'rgba(232,226,210,0.75)'; g.textAlign = 'center'; g.fillText('The Sun’s height above and below the disc — 260 million years ago → today', w / 2, 16);
+  g.strokeStyle = 'rgba(255,255,255,0.22)'; g.lineWidth = 2; g.beginPath(); g.moveTo(L, Y(0)); g.lineTo(w - Rr, Y(0)); g.stroke();
+  g.fillStyle = 'rgba(232,226,210,0.6)'; g.textAlign = 'right'; g.font = '23px "IM Fell English", Georgia, serif';
+  g.fillText(`+${zM} pc`, L - 10, Y(zM)); g.fillText('midplane', L - 10, Y(0)); g.fillText(`−${zM} pc`, L - 10, Y(-zM));
+  S.ages.forEach(([t, , , short], k) => { const x = X(t);
+    g.strokeStyle = 'rgba(255,207,110,0.35)'; g.lineWidth = 2; g.setLineDash([4, 6]); g.beginPath(); g.moveTo(x, top - 4); g.lineTo(x, bot + 8 + 26 * (k % 2)); g.stroke(); g.setLineDash([]);
+    g.fillStyle = 'rgba(255,207,110,0.9)'; g.textAlign = 'center'; g.fillText(short, Math.min(w - 90, Math.max(L + 70, x)), bot + 22 + 26 * (k % 2)); });
+  g.strokeStyle = '#ffcf6e'; g.lineWidth = 4; g.beginPath(); let first = true;
+  for (const p of S.P) { if (-p.t > 260) break; const x = X(-p.t), y = Y(p.z / PC); first ? g.moveTo(x, y) : g.lineTo(x, y); first = false; }
+  g.stroke();
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(X(0), Y(S.P[0].z / PC), 7, 0, 7); g.fill();
 }
 function drawOrbit() {
   orbitPanel(opts.orbit);
@@ -3098,7 +3101,7 @@ cv.addEventListener('pointerdown', () => { setCollapsed(true); sRes.style.displa
 setCollapsed(UAS_FOLD.phone.matches);   // on a phone the intro starts folded: just the search box and its i
 // on a phone, each menu gets a × and folds to a small tab
 UAS_FOLD.foldable(document.getElementById('legend'), { title: 'Key & layers' });
-for (const id of ['t1panel', 'acpanel', 'qpanel', 'ppanel']) { const el = document.getElementById(id); el._fold = UAS_FOLD.foldable(el, { title: () => (el.querySelector('h3') || {}).textContent || 'Details' }); }
+for (const id of ['t1panel', 'acpanel', 'qpanel', 'ppanel', 'orbpanel']) { const el = document.getElementById(id); el._fold = UAS_FOLD.foldable(el, { title: () => (el.querySelector('h3') || {}).textContent || 'Details' }); }
 
 addEventListener('resize', resize);
 resize();
@@ -3106,6 +3109,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=af76d0d7" data-place="info" defer></script>
+<script src="../music/music.js?v=742475e9" data-place="info" defer></script>
 </body>
 </html>
