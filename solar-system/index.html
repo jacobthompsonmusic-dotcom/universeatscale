@@ -308,10 +308,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=742475e9"></script>
-<script src="../shared/clock.js?v=742475e9"></script>
-<script src="../shared/fold.js?v=742475e9"></script>
-<script src="../shared/galaxy-volume.js?v=742475e9"></script>
+<script src="../shared/frame.js?v=e26ba3b6"></script>
+<script src="../shared/clock.js?v=e26ba3b6"></script>
+<script src="../shared/fold.js?v=e26ba3b6"></script>
+<script src="../shared/galaxy-volume.js?v=e26ba3b6"></script>
 <script>
 (() => {
 'use strict';
@@ -2455,7 +2455,8 @@ document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset
   if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-ss', opt: 'zodiac', on: opts.zodiac }, '*');
   if (EMBED && b.dataset.k === 'helix') parent.postMessage({ src: 'uas-ss', opt: 'orbit', on: opts.helix }, '*'); });   // galactic motion here shows the Sun's orbit on the galaxy map
 const playBtn = document.getElementById('play'), speedIn = document.getElementById('speed');
-playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶'; };
+let playTouched = false;   // the play button glows until it's first pressed, and again whenever time is paused
+playBtn.onclick = () => { playTouched = true; playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶'; };
 speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
 // pick a date (a birthday, say): the planets, moons and probes jump to where they were, and time pauses there
 { const dEl = document.getElementById('date'), box = document.getElementById('datepick'), di = document.getElementById('dp-d'), ti = document.getElementById('dp-t');
@@ -2897,7 +2898,7 @@ function frame(t) {
     frame.lt = t;
     document.getElementById('date').textContent = new Date(simMs).toLocaleString('en-CA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     document.getElementById('spd').textContent = speedLabel(Math.pow(10, logTarget));
-    updateScale(camD); skyBtnShow(camD); playBtn.classList.toggle('invite', !playing);
+    updateScale(camD); skyBtnShow(camD); playBtn.classList.toggle('invite', !playing || !playTouched);
     if (selected && !selected.in && document.getElementById('info').style.display === 'block' && !(infoFold && infoFold.folded()) && (selected.isSun || selected.kind !== 'moon')) select(selected); // keep live distances fresh
   }
   if (EMBED) { // tell the page that joins the maps where we are: pixels per light-year, and the direction of view in the galaxy map's terms
@@ -2955,6 +2956,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=742475e9" data-place="info" defer></script>
+<script src="../music/music.js?v=e26ba3b6" data-place="info" defer></script>
 </body>
 </html>

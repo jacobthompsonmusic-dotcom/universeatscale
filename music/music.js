@@ -38,7 +38,7 @@
     /* open: a small × slides in after the word, saying a second press closes the player */
     '.uas-mu-btn .x{display:inline-block;width:0;margin-left:0;opacity:0;overflow:hidden;vertical-align:-1px;font:13px/1 Georgia,serif;color:#ffcf6e;transition:width .18s,margin .18s,opacity .18s}',
     '.uas-mu-btn.open .x{width:.75em;margin-left:7px;opacity:.9}',
-    /* invitation: a soft gold glow that breathes on arrival, until the note is first opened (or after ~40 s) */
+    /* invitation: a soft gold glow that breathes on arrival, every visit, until the note is opened */
     '.uas-mu-btn.invite{color:#f3e6c8;border-color:rgba(255,207,110,.55);animation:uasglow 2.8s ease-in-out infinite}',
     '.uas-mu-btn.invite .n{text-shadow:0 0 8px rgba(255,207,110,.9)}',
     '@keyframes uasglow{0%,100%{box-shadow:0 0 0 0 rgba(255,207,110,0),0 0 6px rgba(255,207,110,.18)}50%{box-shadow:0 0 0 3px rgba(255,207,110,.14),0 0 22px rgba(255,207,110,.5)}}',
@@ -117,8 +117,7 @@
       document.body.appendChild(btn);
     }
     document.body.appendChild(pop);
-    var seen = false; try { seen = localStorage.getItem('uas-soundtrack-opened') === '1'; } catch (_) {}
-    if (!seen) { btn.classList.add('invite'); setTimeout(function () { btn.classList.remove('invite'); }, 40000); }
+    btn.classList.add('invite');   // breathes softly every visit until it's opened
   }
 
   function position() {
@@ -132,7 +131,7 @@
 
   var loaded = false;
   function open() {
-    btn.classList.remove('invite'); try { localStorage.setItem('uas-soundtrack-opened', '1'); } catch (_) {}
+    btn.classList.remove('invite');
     if (!loaded) {
       loaded = true;
       // Spotify's player only runs on the real site; previews (e.g. the Claude artifact) block outside players, so show a link there
