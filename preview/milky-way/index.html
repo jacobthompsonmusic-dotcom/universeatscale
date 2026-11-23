@@ -181,10 +181,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=64bc80cb"></script>
-<script src="../shared/clock.js?v=64bc80cb"></script>
-<script src="../shared/fold.js?v=64bc80cb"></script>
-<script src="../shared/galaxy-volume.js?v=64bc80cb"></script>
+<script src="../shared/frame.js?v=8036ad9b"></script>
+<script src="../shared/clock.js?v=8036ad9b"></script>
+<script src="../shared/fold.js?v=8036ad9b"></script>
+<script src="../shared/galaxy-volume.js?v=8036ad9b"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1366,7 +1366,7 @@ function orbSet(t, fromSlider) {   // move the playback to time t
 }
 function orbPlay(on) {
   const S = SORB; S.play = on; S.last = 0; document.getElementById('orb-pp').textContent = on ? '❚❚' : '▶';
-  if (on) { if (S.t >= 39.9) S.t = -262; if (viewSpan() < 40000) flyTo(0, 0, 0, 82000, { orient: { yaw: view.yaw, tilt: (Math.abs(view.tilt) > Math.PI / 2 ? 140 : 40) * DEG * (view.tilt < 0 ? -1 : 1) } }); }
+  if (on) { if (S.t >= 39.9 || Math.abs(S.t) < 0.25) orbSet(-262);   // from today (or the end), start one lap and a bit back if (viewSpan() < 40000) flyTo(0, 0, 0, 82000, { orient: { yaw: view.yaw, tilt: (Math.abs(view.tilt) > Math.PI / 2 ? 140 : 40) * DEG * (view.tilt < 0 ? -1 : 1) } }); }
   draw();
 }
 function orbTick(now) {   // called each frame: carry the Sun along at the chosen rate
@@ -3162,6 +3162,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=64bc80cb" data-place="info" defer></script>
+<script src="../music/music.js?v=8036ad9b" data-place="info" defer></script>
 </body>
 </html>
