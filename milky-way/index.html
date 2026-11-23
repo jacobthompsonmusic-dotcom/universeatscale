@@ -73,6 +73,14 @@
   #orbpanel p { margin: 0 0 6px; line-height: 1.4; }
   #orbpanel .orb-note { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
   #orb-z { width: 100%; height: auto; display: block; }
+  #orbpanel .orb-play { display: flex; align-items: center; gap: 8px; margin: 6px 0 2px; }
+  #orb-pp { width: 30px; height: 26px; border-radius: 7px; border: 1px solid var(--line); background: rgba(255,207,110,0.12); color: #ffcf6e; cursor: pointer; font-size: 12px; flex: none; }
+  #orb-t { flex: 1; accent-color: #ffcf6e; min-width: 80px; }
+  #orb-when { width: 128px; text-align: left; font-variant-numeric: tabular-nums; color: #ffe6b4; white-space: nowrap; flex: none; }
+  #orbpanel .orb-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; flex: none; }
+  #orbpanel .orb-seg button { background: none; border: 0; color: var(--text); padding: 2px 8px; font: italic 12.5px "IM Fell English", Georgia, serif; cursor: pointer; }
+  #orbpanel .orb-seg button + button { border-left: 1px solid var(--line); }
+  #orbpanel .orb-seg button.on { background: rgba(255,207,110,0.18); color: #ffcf6e; }
   #t1panel, #acpanel, #qpanel, #ppanel { right: 84px; bottom: 16px; width: 330px; padding: 14px 16px; font-size: 13.5px; }
   #t1panel h3, #acpanel h3, #qpanel h3, #ppanel h3 { margin: 0 0 8px; font-size: 16px; }
   #t1panel table, #acpanel table { width: 100%; border-collapse: collapse; font-family: "UAS Num", "IM Fell English", Georgia, serif; font-variant-numeric: tabular-nums; }
@@ -173,10 +181,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=e26ba3b6"></script>
-<script src="../shared/clock.js?v=e26ba3b6"></script>
-<script src="../shared/fold.js?v=e26ba3b6"></script>
-<script src="../shared/galaxy-volume.js?v=e26ba3b6"></script>
+<script src="../shared/frame.js?v=64bc80cb"></script>
+<script src="../shared/clock.js?v=64bc80cb"></script>
+<script src="../shared/fold.js?v=64bc80cb"></script>
+<script src="../shared/galaxy-volume.js?v=64bc80cb"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -269,6 +277,8 @@ void main() {
   <h3>The Sun’s orbit</h3>
   <p id="orb-txt"></p>
   <canvas id="orb-z" width="1060" height="250" aria-label="The Sun's height above and below the midplane of the disc over the last 260 million years"></canvas>
+  <div class="orb-play"><button id="orb-pp" aria-label="Play the Sun's journey">▶</button><input id="orb-t" type="range" min="-262" max="40" step="0.5" value="0" aria-label="Time"><span id="orb-when">today</span>
+    <span class="orb-seg"><button data-r="2">slow</button><button data-r="10" class="on">medium</button><button data-r="30">fast</button></span></div>
   <p class="orb-note" id="orb-note"></p>
 </div>
 <div id="t1panel" class="panel" hidden></div>
@@ -1052,7 +1062,7 @@ function render(t) {
   if (!drawGalaxy3D()) { drawHaze(); drawDisc(); }
   if (opts.grid) drawGrid();
   if (opts.arms) drawArms();
-  drawOrbit();
+  orbTick(t); drawOrbit();
   drawVoids();
   drawGalaxies();
   drawBubble();
@@ -1305,7 +1315,11 @@ const SORB = (() => {
   const ages = [[66, 'Dinosaurs die out', '66 Myr ago', 'dinosaurs end'], [130, 'First flowering plants', '~130 Myr ago', 'flowers'],
     [201.4, 'End-Triassic extinction', '201 Myr ago', 'Triassic ends'], [231, 'First dinosaurs', '~231 Myr ago', 'first dinosaurs'], [251.9, 'The Great Dying', '252 Myr ago', 'Great Dying']];   // ICS chart 2024; earliest dinosaurs ~231 Myr (Ischigualasto)
   const at = t => { const i = Math.min(P.length - 1, Math.round(t * 2)); return P[i]; };
-  return { P, F, lap, Rmin, Rmax, zmax, cross, zPer, ages, at };
+  const pos = t => {   // the Sun's position t Myr from now (negative: the past), between the half-Myr points
+    const A = t <= 0 ? P : F, u = Math.min(A.length - 1.001, Math.abs(t) * 2), i = Math.floor(u), f = u - i, a = A[i], b = A[i + 1];
+    return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, z: a.z + (b.z - a.z) * f };
+  };
+  return { P, F, lap, Rmin, Rmax, zmax, cross, zPer, ages, at, pos, t: 0, play: false, rate: 10, last: 0 };
 })();
 
 function orbitPanel(on) {
@@ -1336,7 +1350,35 @@ function orbitGraph() {   // the Sun's height above the midplane over the last 2
   for (const p of S.P) { if (-p.t > 260) break; const x = X(-p.t), y = Y(p.z / PC); first ? g.moveTo(x, y) : g.lineTo(x, y); first = false; }
   g.stroke();
   g.fillStyle = '#fff'; g.beginPath(); g.arc(X(0), Y(S.P[0].z / PC), 7, 0, 7); g.fill();
+  if (S.t < -0.25) { const x = X(-S.t), y = Y(S.pos(S.t).z / PC);   // where the playback is
+    g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 2; g.beginPath(); g.moveTo(x, top - 4); g.lineTo(x, bot); g.stroke();
+    g.fillStyle = '#ffcf6e'; g.beginPath(); g.arc(x, y, 8, 0, 7); g.fill(); }
 }
+function orbWhen(t) {
+  const a = Math.abs(t), n = a < 9.95 ? a.toFixed(1) : Math.round(a);
+  return a < 0.25 ? 'today' : t < 0 ? `${n} million years ago` : `in ${n} million years`;
+}
+function orbSet(t, fromSlider) {   // move the playback to time t
+  const S = SORB; S.t = Math.max(-262, Math.min(40, t));
+  if (!fromSlider) document.getElementById('orb-t').value = S.t;
+  document.getElementById('orb-when').textContent = orbWhen(S.t);
+  orbitGraph(); draw();
+}
+function orbPlay(on) {
+  const S = SORB; S.play = on; S.last = 0; document.getElementById('orb-pp').textContent = on ? '❚❚' : '▶';
+  if (on) { if (S.t >= 39.9) S.t = -262; if (viewSpan() < 40000) flyTo(0, 0, 0, 82000, { orient: { yaw: view.yaw, tilt: (Math.abs(view.tilt) > Math.PI / 2 ? 140 : 40) * DEG * (view.tilt < 0 ? -1 : 1) } }); }
+  draw();
+}
+function orbTick(now) {   // called each frame: carry the Sun along at the chosen rate
+  const S = SORB; if (!S.play || !opts.orbit) { S.last = 0; return; }
+  const dt = S.last ? Math.min(100, now - S.last) / 1000 : 0; S.last = now;
+  const t = S.t + dt * S.rate; if (t >= 40) { orbSet(40); orbPlay(false); return; }
+  orbSet(t); draw();
+}
+document.getElementById('orb-pp').onclick = () => orbPlay(!SORB.play);
+document.getElementById('orb-t').oninput = e => { orbPlay(false); orbSet(+e.target.value, true); };
+document.querySelectorAll('#orbpanel .orb-seg button').forEach(b => b.onclick = () => { SORB.rate = +b.dataset.r;
+  document.querySelectorAll('#orbpanel .orb-seg button').forEach(x => x.classList.toggle('on', x === b)); });
 function drawOrbit() {
   orbitPanel(opts.orbit);
   if (!opts.orbit) return;
@@ -1368,6 +1410,17 @@ function drawOrbit() {
       ctx.font = 'italic 14px "IM Fell English", Georgia, serif';
     }
   }
+  // the Sun on its journey, when the playback is away from today
+  if (Math.abs(S.t) >= 0.25) { const q = S.pos(S.t), [X, Y] = proj(q.x, q.y, q.z);
+    if (isFinite(X)) {
+      ctx.globalAlpha = 1; const gr = ctx.createRadialGradient(X, Y, 0, X, Y, 16); gr.addColorStop(0, 'rgba(255,230,160,0.9)'); gr.addColorStop(1, 'rgba(255,207,110,0)');
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y, 16, 0, 7); ctx.fill();
+      ctx.fillStyle = '#fff6dc'; ctx.beginPath(); ctx.arc(X, Y, 4.5, 0, 7); ctx.fill();
+      const ep = S.ages.find(e => Math.abs(-S.t - e[0]) < 4);
+      ctx.font = 'italic 15px "IM Fell English", Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#ffe6b4';
+      ctx.fillText('The Sun, ' + orbWhen(S.t), X + 12, Y - 8);
+      if (ep) { ctx.fillStyle = 'rgba(232,226,210,0.75)'; ctx.font = 'italic 13px "IM Fell English", Georgia, serif'; ctx.fillText(ep[1], X + 12, Y + 8); }
+    } }
   ctx.globalAlpha = 1;
 }
 
@@ -3109,6 +3162,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=e26ba3b6" data-place="info" defer></script>
+<script src="../music/music.js?v=64bc80cb" data-place="info" defer></script>
 </body>
 </html>
