@@ -71,6 +71,7 @@
   #orbpanel[hidden] { display: none; }
   #orbpanel h3 { margin: 0 0 4px; font-size: 16px; font-variant: small-caps; letter-spacing: 0.06em; color: #ffcf6e; font-weight: 400; }
   #orbpanel p { margin: 0 0 6px; line-height: 1.4; }
+  #orbpanel.playing #orb-txt, #orbpanel.playing .orb-note { display: none; }
   #orbpanel .orb-note { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
   #orb-z { width: 100%; height: auto; display: block; }
   #orbpanel .orb-play { display: flex; align-items: center; gap: 8px; margin: 6px 0 2px; }
@@ -181,10 +182,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=289e1024"></script>
-<script src="../shared/clock.js?v=289e1024"></script>
-<script src="../shared/fold.js?v=289e1024"></script>
-<script src="../shared/galaxy-volume.js?v=289e1024"></script>
+<script src="../shared/frame.js?v=5f4b45f5"></script>
+<script src="../shared/clock.js?v=5f4b45f5"></script>
+<script src="../shared/fold.js?v=5f4b45f5"></script>
+<script src="../shared/galaxy-volume.js?v=5f4b45f5"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1354,6 +1355,10 @@ function orbitGraph() {   // the Sun's height above the midplane over the last 2
     g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 2; g.beginPath(); g.moveTo(x, top - 4); g.lineTo(x, bot); g.stroke();
     g.fillStyle = '#ffcf6e'; g.beginPath(); g.arc(x, y, 8, 0, 7); g.fill(); }
 }
+function orbView() {   // the whole orbit, tilted, sitting a little below the middle so the panel doesn't cover it
+  const tilt = (Math.abs(view.tilt) > Math.PI / 2 ? 140 : 40) * DEG * (view.tilt < 0 ? -1 : 1), span = 82000, s1 = Math.min(Wd, Ht) / span, up = 90 / s1;
+  flyTo(-up * Math.sin(view.yaw) * Math.cos(tilt), -up * Math.cos(view.yaw) * Math.cos(tilt), up * Math.sin(tilt), span, { orient: { yaw: view.yaw, tilt } });
+}
 function orbWhen(t) {
   const a = Math.abs(t), n = a < 9.95 ? a.toFixed(1) : Math.round(a);
   return a < 0.25 ? 'today' : t < 0 ? `${n} million years ago` : `in ${n} million years`;
@@ -1365,8 +1370,8 @@ function orbSet(t, fromSlider) {   // move the playback to time t
   orbitGraph(); draw();
 }
 function orbPlay(on) {
-  const S = SORB; S.play = on; S.last = 0; document.getElementById('orb-pp').textContent = on ? '❚❚' : '▶';
-  if (on) { if (S.t >= 39.9 || Math.abs(S.t) < 0.25) orbSet(-262); if (viewSpan() < 40000) flyTo(0, 0, 0, 82000, { orient: { yaw: view.yaw, tilt: (Math.abs(view.tilt) > Math.PI / 2 ? 140 : 40) * DEG * (view.tilt < 0 ? -1 : 1) } }); }
+  const S = SORB; S.play = on; S.last = 0; document.getElementById('orb-pp').textContent = on ? '❚❚' : '▶'; document.getElementById('orbpanel').classList.toggle('playing', on);
+  if (on) { if (S.t >= 39.9 || Math.abs(S.t) < 0.25) orbSet(-262); if (viewSpan() < 40000) orbView(); }
   draw();
 }
 function orbTick(now) {   // called each frame: carry the Sun along at the chosen rate
@@ -3070,7 +3075,7 @@ var infoFold = UAS_FOLD.foldable(document.getElementById('info'), { closeBtn: do
 function cardOpen() { return document.getElementById('info').style.display === 'block' && !(infoFold && infoFold.folded()); }
 document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); draw();
   if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-mw', opt: 'zodiac', on: opts.zodiac }, '*');
-  if (b.dataset.k === 'orbit' && opts.orbit && viewSpan() < 40000) flyTo(0, 0, 0, 82000, { orient: { yaw: view.yaw, tilt: (Math.abs(view.tilt) > Math.PI / 2 ? 140 : 40) * DEG * (view.tilt < 0 ? -1 : 1) } }); });
+  if (b.dataset.k === 'orbit' && opts.orbit && viewSpan() < 40000) orbView(); });
 if (EMBED) {
   document.body.classList.add('embed'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top');
   document.getElementById('info-go').onclick = diveToSun;
@@ -3162,6 +3167,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=289e1024" data-place="info" defer></script>
+<script src="../music/music.js?v=5f4b45f5" data-place="info" defer></script>
 </body>
 </html>
