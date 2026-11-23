@@ -182,10 +182,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=5f4b45f5"></script>
-<script src="../shared/clock.js?v=5f4b45f5"></script>
-<script src="../shared/fold.js?v=5f4b45f5"></script>
-<script src="../shared/galaxy-volume.js?v=5f4b45f5"></script>
+<script src="../shared/frame.js?v=ece6363e"></script>
+<script src="../shared/clock.js?v=ece6363e"></script>
+<script src="../shared/fold.js?v=ece6363e"></script>
+<script src="../shared/galaxy-volume.js?v=ece6363e"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -264,7 +264,7 @@ void main() {
 </script>
 
 <div id="top" class="panel">
-  <a class="homelink" href="../index.html">← All maps · Universe at Scale</a>
+  <a class="homelink" href="../index.html">← All maps · Universe at Scale</a> <a class="homelink" href="../credits/">· Credits</a>
   <h1>The Milky Way in 3D</h1>
   <p>Every star sits where its measured parallax puts it. <b>Drag</b> to move, <b>scroll or pinch</b> to zoom, <b>right-drag or Shift-drag</b> (two fingers on touch) to tilt and spin — all the way round, even underneath. Press <b>3D</b> to flip between overhead and side-on. Click anything, then zoom, to dive straight into it. Keep zooming out — or tap LG, LAN and OBS — to reach the edge of the observable universe.<span class="embed-only"> Zoom in on the <b>Sun</b> and you drop straight into the Solar System.</span><span class="solo"> Or take the <a href="../universe/index.html" style="color:#ffcf6e">whole journey</a>, starting at Earth.</span></p>
   <div class="searchrow">
@@ -3167,6 +3167,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=5f4b45f5" data-place="info" defer></script>
+<script src="../music/music.js?v=ece6363e" data-place="info" defer></script>
 </body>
 </html>

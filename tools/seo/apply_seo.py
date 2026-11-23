@@ -46,6 +46,10 @@ PAGES = {
         desc="Tilt and spin the moon systems of Jupiter, Saturn, Uranus and Neptune in 3D, with rings, moons and orbits to scale and the Milky Way across each planet's sky.",
         about=[thing('Jupiter', 'Jupiter'), thing('Saturn', 'Saturn'), thing('Uranus', 'Uranus'), thing('Neptune', 'Neptune'), thing('Rings of Saturn', 'Rings_of_Saturn')],
         keywords='Jupiter 3D, Saturn rings 3D, Uranus tilt, Neptune Triton, gas giants, ice giants, moons in 3D'),
+    'credits/index.html': dict(
+        path='/credits/', og='home', crumb='Credits & sources', page=True,
+        title='Credits & Sources | Universe at Scale',
+        desc='Where every measurement on Universe at Scale comes from: NASA JPL orbits, Gaia star distances, GRAVITY, maser-mapped spiral arms and more, plus picture credits and what is illustrative.'),
 }
 
 FAQ = [
@@ -91,6 +95,14 @@ def graph(f, p):
              'homeLocation': {'@type': 'Place', 'name': 'Ontario, Canada'}},
             {'@type': 'ItemList', 'name': 'Interactive maps', 'itemListElement': [
                 {'@type': 'ListItem', 'position': i + 1, 'url': SITE + '/' + u, 'name': n} for i, (u, n) in enumerate(MAPS)]},
+        ]}
+    if p.get('page'):
+        return {'@context': 'https://schema.org', '@graph': [
+            {'@type': 'WebPage', '@id': url + '#page', 'name': p['crumb'], 'url': url, 'description': p['desc'], 'inLanguage': 'en',
+             'author': AUTHOR, 'isPartOf': {'@id': SITE + '/#website'}},
+            {'@type': 'BreadcrumbList', 'itemListElement': [
+                {'@type': 'ListItem', 'position': 1, 'name': 'Universe at Scale', 'item': SITE + '/'},
+                {'@type': 'ListItem', 'position': 2, 'name': p['crumb'], 'item': url}]},
         ]}
     return {'@context': 'https://schema.org', '@graph': [
         {'@type': 'WebApplication', '@id': url + '#app', 'name': p['crumb'], 'url': url, 'description': p['desc'],
