@@ -157,9 +157,9 @@
     #readout, #note { display: none; }
     #t1panel, #acpanel, #qpanel, #ppanel { left: 16px; right: 84px; width: auto; bottom: 64px; max-height: 42vh; overflow-y: auto; }
     #legend { max-height: 62vh; overflow-y: auto; z-index: 4; }
-    /* phones: the layer switches first, then the key in two tight columns, so both fit without scrolling */
+    /* phones: the key in two tight columns with the layer switches under it, so both fit without scrolling */
     #legend:not(.uas-folded) { left: 16px; right: 84px; width: auto; display: flex; flex-direction: column; }
-    #legend .toggles { order: -1; margin: 0 0 10px; max-width: none; }
+    #legend .toggles { margin: 10px 0 0; max-width: none; }
     #legend-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; font-size: 11.5px; }
     #legend .row { margin: 2px 0; gap: 6px; line-height: 1.25; }
     #scale { bottom: 24px; }
@@ -187,11 +187,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=4752f039"></script>
-<script src="../shared/clock.js?v=4752f039"></script>
-<script src="../shared/fold.js?v=4752f039"></script>
-<script src="../shared/perf.js?v=4752f039"></script>
-<script src="../shared/galaxy-volume.js?v=4752f039"></script>
+<script src="../shared/frame.js?v=a9465891"></script>
+<script src="../shared/clock.js?v=a9465891"></script>
+<script src="../shared/fold.js?v=a9465891"></script>
+<script src="../shared/perf.js?v=a9465891"></script>
+<script src="../shared/galaxy-volume.js?v=a9465891"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -3413,7 +3413,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=4752f039" data-place="info" defer></script>
+<script src="../music/music.js?v=a9465891" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
