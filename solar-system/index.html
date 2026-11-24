@@ -308,10 +308,11 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=6480097d"></script>
-<script src="../shared/clock.js?v=6480097d"></script>
-<script src="../shared/fold.js?v=6480097d"></script>
-<script src="../shared/galaxy-volume.js?v=6480097d"></script>
+<script src="../shared/frame.js?v=293ff1b7"></script>
+<script src="../shared/clock.js?v=293ff1b7"></script>
+<script src="../shared/fold.js?v=293ff1b7"></script>
+<script src="../shared/perf.js?v=293ff1b7"></script>
+<script src="../shared/galaxy-volume.js?v=293ff1b7"></script>
 <script>
 (() => {
 'use strict';
@@ -1370,11 +1371,12 @@ const SPIN_DAYS = { mercury: 58.646, venus: -243.025, mars: 1.025957 };
 // Earth: real coastlines (Natural Earth 1:50m) coloured by climate, and the night side lit by every town of 1,000+ people (GeoNames), dimmed where the real night-time satellite imagery is dark
 const earthU = { dayMap: { value: null }, nightMap: { value: null }, rcMap: { value: null }, texel: { value: new THREE.Vector2(1 / 1024, 1 / 512) }, relief: { value: 0.9 }, cloudShift: { value: 0 } };
 { const ld = new THREE.TextureLoader(); for (const k of ['day', 'night', 'rc']) { const t = ld.load(EARTH_TEX[k]); t.anisotropy = 8; earthU[k + 'Map'] ? earthU[k + 'Map'].value = t : earthU.rcMap.value = t; } }
-function earthHiRes() {   // swap in the 4K maps once all three have arrived
-  const ld = new THREE.TextureLoader(), got = {}; let n = 0;
-  for (const k of ['day', 'night', 'rc']) ld.load(EARTH_FULL[k], t => {
+function earthHiRes() {   // swap in the 4K maps once all three have arrived (2K on phones and low-memory machines: the three 4K maps
+  // take ~130 MB of graphics memory, enough to make a phone drop the whole 3D view)
+  const ld = new THREE.TextureLoader(), got = {}, k2 = window.UAS_PERF.tier > 0 || renderer.capabilities.maxTextureSize < 4096; let n = 0;
+  for (const k of ['day', 'night', 'rc']) ld.load(k2 ? EARTH_FULL[k].replace('.jpg', '-2k.jpg') : EARTH_FULL[k], t => {
     t.anisotropy = renderer.capabilities.getMaxAnisotropy(); got[k] = t;
-    if (++n === 3) { for (const kk in got) { const u = kk === 'rc' ? earthU.rcMap : earthU[kk + 'Map']; u.value.dispose(); u.value = got[kk]; } earthU.texel.value.set(1 / 4096, 1 / 2048); earthU.relief.value = 2.6; }
+    if (++n === 3) { for (const kk in got) { const u = kk === 'rc' ? earthU.rcMap : earthU[kk + 'Map']; u.value.dispose(); u.value = got[kk]; } earthU.texel.value.set(k2 ? 1 / 2048 : 1 / 4096, k2 ? 1 / 1024 : 1 / 2048); earthU.relief.value = k2 ? 2.2 : 2.6; }
   });
 }
 const EARTH_VS = `#include <common>
@@ -2805,10 +2807,15 @@ function updateScale(camD) {
 function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = skyCam.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); skyCam.updateProjectionMatrix();
   MAXD = SPAN_MAX * LY / (2 * TAN20) / Math.min(1, camera.aspect); controls.maxDistance = MAXD; starMat.uniforms.uPR.value = renderer.getPixelRatio(); }
 addEventListener('resize', resize); resize();
+// smoothness: shared/perf.js lowers the drawing's pixel density on machines that can't keep up, and raises it again with headroom
+const SSQ = { pr: [2, 1.5, 1.25, 1] };
+SSQ.g = window.UAS_PERF.governor('ss', 4, [0, 1, 3][window.UAS_PERF.tier], l => { SSQ.level = l;
+  const pr = Math.min(devicePixelRatio || 1, SSQ.pr[l]); if (pr !== renderer.getPixelRatio()) { renderer.setPixelRatio(pr); resize(); } });
 let lastFG = undefined, paused = false, lastPost = '';
 const camNom = new THREE.Vector3(), _v1 = new THREE.Vector3(), _qn = new THREE.Quaternion(), _dq = new THREE.Quaternion(), _qp = new THREE.Quaternion();
 function frame(t) {
-  if (paused) return;
+  if (paused) { SSQ.g.last = 0; return; }
+  SSQ.g.frame(t);
   const dt = lastT ? Math.min(t - lastT, 100) : 0; lastT = t;
   logCur += (logTarget - logCur) * Math.min(1, dt / 220);
   if (!CK.boosted) { CK.setPlaying(playing); if (playing) CK.setRate(Math.pow(10, logCur)); }   // the galaxy map may be running time fast for the S-stars
@@ -2946,7 +2953,7 @@ function init() {
   const h = location.hash.slice(1); if (byKey(h) && byKey(h).isPlanet) setTimeout(() => flyTo(byKey(h)), 400);
   requestAnimationFrame(frame);
   setTimeout(earthHiRes, 400);
-  if (/[?&]debug=1/.test(location.search)) window.__ss = { MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
+  if (/[?&]debug=1/.test(location.search)) window.__ss = { SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
   if (EMBED) { parent.postMessage({ src: 'uas-ss', ready: true }, '*'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); document.body.classList.add('embed'); }
   // lift the black loading screen once the opening view has actually been drawn, Milky Way included (or after 2.5 s at most)
   const t0 = performance.now(), lift = () => { if (!MWV.ready && performance.now() - t0 < 2500) return setTimeout(lift, 100);
@@ -2956,6 +2963,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=6480097d" data-place="info" defer></script>
+<script src="../music/music.js?v=293ff1b7" data-place="info" defer></script>
 </body>
 </html>
