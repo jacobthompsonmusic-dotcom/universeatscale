@@ -187,11 +187,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=fc059d33"></script>
-<script src="../shared/clock.js?v=fc059d33"></script>
-<script src="../shared/fold.js?v=fc059d33"></script>
-<script src="../shared/perf.js?v=fc059d33"></script>
-<script src="../shared/galaxy-volume.js?v=fc059d33"></script>
+<script src="../shared/frame.js?v=ac4820fa"></script>
+<script src="../shared/clock.js?v=ac4820fa"></script>
+<script src="../shared/fold.js?v=ac4820fa"></script>
+<script src="../shared/perf.js?v=ac4820fa"></script>
+<script src="../shared/galaxy-volume.js?v=ac4820fa"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1060,7 +1060,8 @@ function planeHit(X, Y, zp) {
 // volume's resolution — and back up when there's headroom
 const MWQ = { dpr: [2, 1.5, 1.25, 1], vol: [1, 1, 0.75, 0.55], blur: [1, 1, 0, 0] };
 MWQ.g = window.UAS_PERF.governor('mw2', 4, [0, 0, 3][window.UAS_PERF.tier],   // phones start sharp (2×): without the 3D volume they can afford it
-  l => { MWQ.level = l; if (!Wd) return; if (Math.min(window.devicePixelRatio || 1, MWQ.dpr[l]) !== dpr) resize(); else draw(); });
+  l => { MWQ.level = l; if (!Wd) return; if (Math.min(window.devicePixelRatio || 1, MWQ.dpr[l]) !== dpr) resize(); else draw(); },
+  window.UAS_PERF.tier > 0 ? { slow: 45, fast: 36 } : null);   // phones run at a capped 30 fps
 function resize() {
   dpr = Math.min(window.devicePixelRatio || 1, MWQ.dpr[MWQ.level || 0]);
   Wd = innerWidth; Ht = innerHeight;
@@ -1102,6 +1103,8 @@ const draw = () => { if (!raf) raf = requestAnimationFrame(render); };
 const angDiff = (a, b) => { let d = (b - a) % (2 * Math.PI); if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; return d; };
 
 function render(t) {
+  if (LITE && t - (render.lr || 0) < 30) { raf = requestAnimationFrame(render); return; }   // phones: 30 frames a second is plenty, and keeps them cool
+  render.lr = t;
   raf = 0; pf(); if (PROF) PROF.n++;
   MWQ.g.frame(t);
   if (anim) {
@@ -1179,6 +1182,9 @@ function render(t) {
 // Zoomed in near the Sun you are inside the disc, so it shows only as a faint glow, brighter toward the galactic centre;
 // it gives way to the full picture of the disc as you pull back (the Solar System view draws exactly the same glow)
 const GX = { cv: document.createElement('canvas'), gl: null, u: {}, failed: false, q: 1, last: 0 };
+// a lost graphics context (a phone short of memory) shouldn't freeze the map: start again on a fresh canvas next frame
+function gxWatch() { GX.cv.addEventListener('webglcontextlost', () => { GX.cv = document.createElement('canvas'); gxWatch(); GX.gl = null; GX.key = ''; draw(); }, { once: true }); }
+gxWatch();
 function gxInit() {
   const gl = GX.cv.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false, preserveDrawingBuffer: true });
   if (!gl) { GX.failed = true; return; }
@@ -1553,6 +1559,7 @@ function cmbInit() {
   CMB.cv = document.createElement('canvas');
   const gl = CMB.gl = CMB.cv.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false });
   if (!gl) return false;
+  CMB.cv.addEventListener('webglcontextlost', () => { CMB.gl = null; CMB.ready = false; CMB.key = ''; draw(); });   // lost: rebuilt next time it's drawn
   const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); return o; };
   const pr = CMB.pr = gl.createProgram();
   gl.attachShader(pr, sh(gl.VERTEX_SHADER, 'attribute vec2 p; varying vec2 v; void main() { v = vec2(p.x, -p.y); gl_Position = vec4(p, 0.0, 1.0); }'));
@@ -1707,7 +1714,7 @@ function drawField() {
   const zf = SUNW.z - view.z;
   const sAlpha = 0.16 * g * Math.min(1, (600 - span) / 200) * stalkFade(), near2 = (span * 0.6) ** 2, maxLen = Ht * 0.4;
   // stars too faint for the eye are only complete out to 50 ly, so show them only when zoomed in — otherwise they fake a crowd around the Sun
-  const faint = Math.max(0, Math.min(1, (350 - span) / 200));
+  const faint = Math.max(0, Math.min(1, (350 - span) / 200)), batch = LITE ? new Map() : null;
   for (let i = 0; i < NF; i++) {
     const dx = fx[i] - view.x, dy = fy[i] - view.y, ry = dx * SY + dy * CY, dz = fz[i] - view.z;
     let f = 1; if (PD !== Infinity) { const den = PD - (ry * ST + dz * CT); if (den < PD * 0.01) continue; f = PD / den; }
@@ -1725,12 +1732,18 @@ function drawField() {
         ctx.fillStyle = fcol[i]; ctx.fillRect(Xf - 1, Yf - 0.5, 2, 1);
       }
     }
-    const r = fr[i];
-    ctx.globalAlpha = fa[i] * g * fv; ctx.fillStyle = fcol[i];
-    if (r < 1.2) ctx.fillRect(X - r, Y - r, 2 * r, 2 * r);
-    else { ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill(); }
+    const r = fr[i], al = fa[i] * g * fv;
+    if (batch) {   // phones: gather into one path per colour and brightness step
+      const key = fcol[i] + '|' + Math.min(8, Math.round(al * 8)); let P = batch.get(key); if (!P) batch.set(key, P = new Path2D());
+      if (r < 1.2) P.rect(X - r, Y - r, 2 * r, 2 * r); else { P.moveTo(X + r, Y); P.arc(X, Y, r, 0, 7); }
+    } else {
+      ctx.globalAlpha = al; ctx.fillStyle = fcol[i];
+      if (r < 1.2) ctx.fillRect(X - r, Y - r, 2 * r, 2 * r);
+      else { ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill(); }
+    }
     fieldPts.push(i, X, Y);
   }
+  if (batch) for (const [key, P] of batch) { const j = key.lastIndexOf('|'); ctx.globalAlpha = +key.slice(j + 1) / 8; ctx.fillStyle = key.slice(0, j); ctx.fill(P); }
   ctx.globalAlpha = 1;
   for (const o of [hover, selected]) {
     if (!o || o.type !== 'field') continue;
@@ -1740,6 +1753,14 @@ function drawField() {
 }
 
 let screenPts = [];
+const GLOW = {};
+function glowSprite(c) {   // the same radial glow as before (c + 88 → c + 00 over 14 px), prerendered at the canvas's pixel density
+  const k = c + '|' + dpr; if (GLOW[k]) return GLOW[k];
+  const S = Math.ceil(28 * dpr), cv = document.createElement('canvas'); cv.width = cv.height = S;
+  const g = cv.getContext('2d'), gr = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  gr.addColorStop(0, c + '88'); gr.addColorStop(1, c + '00'); g.fillStyle = gr; g.beginPath(); g.arc(S / 2, S / 2, S / 2, 0, 7); g.fill();
+  return GLOW[k] = cv;
+}
 // ---------- real photographs of the nebulae, clusters and remnants, drawn at (about) their real size ----------
 // Each picture is scaled by its field of view at the object's measured distance (u: image, w: picture width in ly, c/l: credit
 // and licence). Pictures load from Wikimedia Commons only when the object is near enough to fill part of the screen, and are
@@ -1833,9 +1854,7 @@ function drawObjects() {
         ctx.globalAlpha = dimO;
       }
     }
-    const gr = ctx.createRadialGradient(X, Y, 0, X, Y, 14);
-    gr.addColorStop(0, c + '88'); gr.addColorStop(1, c + '00');
-    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y, 14, 0, 7); ctx.fill();
+    ctx.drawImage(glowSprite(c), X - 14, Y - 14, 28, 28);   // the soft glow round each object, drawn once per colour and reused
     if (o.type === 'bh') {
       ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(X, Y, 4, 0, 7); ctx.fill();
       ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, 5.5, 0, 7); ctx.stroke();
@@ -2478,6 +2497,7 @@ function drawQSO(q, yr) {
 function drawQBH(q) {
   const [X, Y, , f] = projO(q, [0, 0, 0]), pxRs = q.Rs * view.s * f;
   if (bhFailed || !isFinite(X) || pxRs < 1.2 || X < -40 * pxRs || X > Wd + 40 * pxRs || Y < -40 * pxRs || Y > Ht + 40 * pxRs) return false;
+  if (bhLost) return false;
   if (!bhGL) { bhInit(); if (!bhGL) return false; }
   const q2 = Math.min(1, 1000 / Math.max(Wd, Ht)) * Math.min(dpr, 1.25) * (drawBH.qs || 1), w = Math.round(Wd * q2), h = Math.round(Ht * q2);
   if (bhCv.width !== w || bhCv.height !== h) { bhCv.width = w; bhCv.height = h; }
@@ -2943,7 +2963,9 @@ function drawGCNear() {
 
 // the black hole itself: every pixel's light traced back through curved spacetime (WebGL)
 const bhCv = document.getElementById('bh'), bhNote = document.getElementById('bhnote'), BH_NOTE = bhNote.innerHTML;
-let bhGL = null, bhProg = null, bhU = {}, bhFailed = false;
+let bhGL = null, bhProg = null, bhU = {}, bhFailed = false, bhLost = false;
+bhCv.addEventListener('webglcontextlost', e => { e.preventDefault(); bhLost = true; bhGL = null; });   // wait for it to come back, then rebuild
+bhCv.addEventListener('webglcontextrestored', () => { bhLost = false; draw(); });
 function bhInit() {
   const gl = bhCv.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false });
   if (!gl) { bhFailed = true; return; }
@@ -2963,6 +2985,7 @@ function drawBH() {
   const [gx, gy, Sg] = gcScale(), pxRs = Sg * RS_LY, shadowPx = 2.6 * pxRs;
   const on = !bhFailed && shadowPx > 1.5 && gx > -40 * pxRs && gx < Wd + 40 * pxRs && gy > -40 * pxRs && gy < Ht + 40 * pxRs;
   if (!on) { if (bhCv.style.display !== 'none') { bhCv.style.display = 'none'; bhNote.style.display = 'none'; } return false; }
+  if (bhLost) return false;
   if (!bhGL) { bhInit(); if (!bhGL) return false; }
   const now = performance.now(), ft = now - (drawBH.last || now); drawBH.last = now;   // too slow on this machine? draw it a little coarser
   if (ft > 45 && ft < 400) drawBH.qs = Math.max(0.4, (drawBH.qs || 1) * 0.92); else if (ft < 22) drawBH.qs = Math.min(1, (drawBH.qs || 1) * 1.02);
@@ -3381,6 +3404,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=fc059d33" data-place="info" defer></script>
+<script src="../music/music.js?v=ac4820fa" data-place="info" defer></script>
 </body>
 </html>

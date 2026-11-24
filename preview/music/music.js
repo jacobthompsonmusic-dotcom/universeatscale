@@ -19,7 +19,7 @@
     var best = null;
     // also the intro/search panel when it stretches across to the right (phones), and only panels hung from the top (on phones the card sits at the bottom)
     ['info', 'zodwheel', 'top'].forEach(function (id) { var e = document.getElementById(id); if (!e || getComputedStyle(e).display === 'none') return;
-      var r = e.getBoundingClientRect(); if (!r.height || r.top > innerHeight * 0.4) return;
+      var r = e.getBoundingClientRect(); if (!r.height || r.top > 140) return;   // hung from the top edge only
       if (id === 'top' && r.right < innerWidth - 200) return;
       if (!best || r.bottom > best.bottom) best = { top: r.top, bottom: r.bottom, left: r.left, right: id === 'top' ? innerWidth - 16 : r.right }; });
     return best;
