@@ -182,10 +182,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=0d037d5a"></script>
-<script src="../shared/clock.js?v=0d037d5a"></script>
-<script src="../shared/fold.js?v=0d037d5a"></script>
-<script src="../shared/galaxy-volume.js?v=0d037d5a"></script>
+<script src="../shared/frame.js?v=e9786529"></script>
+<script src="../shared/clock.js?v=e9786529"></script>
+<script src="../shared/fold.js?v=e9786529"></script>
+<script src="../shared/galaxy-volume.js?v=e9786529"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1028,12 +1028,15 @@ function resize() {
   draw();
 }
 
+// ?prof=1: time each stage of the frame (__mw.PROF), with the GPU work finished inside the stage that asked for it
+const PROF = /[?&]prof=1/.test(location.search) ? { acc: {}, n: 0, t: 0 } : null;
+const pf = PROF ? k => { const n = performance.now(); if (k) PROF.acc[k] = (PROF.acc[k] || 0) + n - PROF.t; PROF.t = n; } : () => {};
 let raf = 0;
 const draw = () => { if (!raf) raf = requestAnimationFrame(render); };
 const angDiff = (a, b) => { let d = (b - a) % (2 * Math.PI); if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; return d; };
 
 function render(t) {
-  raf = 0;
+  raf = 0; pf(); if (PROF) PROF.n++;
   if (anim) {
     const k = Math.min(1, (t - anim.t0) / anim.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
     const f = anim.from, to = anim.to;
@@ -1058,27 +1061,39 @@ function render(t) {
   ctx.fillStyle = '#04050a'; ctx.fillRect(0, 0, Wd, Ht);
   ctx.globalAlpha = 0.9; ctx.drawImage(sky, 0, 0, Wd, Ht); ctx.globalAlpha = 1;
 
+  pf('setup');
   if (!drawGalaxy3D()) { drawHaze(); drawDisc(); }
+  pf('volume');
   if (opts.grid) drawGrid();
   if (opts.arms) drawArms();
   orbTick(t); drawOrbit();
   drawVoids();
+  pf('grid/arms/orbit/voids');
   drawGalaxies();
   drawBubble();
   drawOort();
   if (opts.zodiac) drawZodiac();
   drawNebulae();
+  pf('galaxies/nebulae');
   // Inside another star system, as inside ours, the galaxy steps back: the sky goes darker, the nebulae, gas and other galaxies fade
   // and the background stars dim, so the system's own stars and planets take over
   T1A = t1Vis(); ACEN.IN = acenIn(); qsoScan(); psrScan(); SYSIN = Math.max(T1A, ACEN.IN, QSO.IN, PSR.IN); t1Panel(T1A > 0.5);
   if (SYSIN > 0.002) { ctx.fillStyle = `rgba(0,0,0,${(0.82 * SYSIN).toFixed(3)})`; ctx.fillRect(0, 0, Wd, Ht); }
+  pf('scan');
   drawField();
+  pf('field');
   const qbh = qsoDraw();
   psrDraw();
+  pf('qso/psr');
   drawObjects();
+  pf('objects');
   lblFlush();
+  pf('labels');
   gcTick();
-  const nb = drawGCNear(), s2a = drawS2(), bhOn = drawBH(), t1a = drawTrappist(), aca = drawAcen(); GCT.on = nb > 0 || s2a > 0;
+  const nb = drawGCNear(); pf('gcNear');
+  const s2a = drawS2(); pf('s2');
+  const bhOn = drawBH(); pf('bh');
+  const t1a = drawTrappist(), aca = drawAcen(); GCT.on = nb > 0 || s2a > 0; pf('t1/acen');
   const qOn = !bhOn && qbh ? drawQBH(qbh) : false;
   if (!bhOn && !qOn && bhCv.style.display !== 'none') { bhCv.style.display = 'none'; bhNote.style.display = 'none'; }
   acenPanel(ACEN.IN > 0.5, acenClock());
@@ -1090,6 +1105,7 @@ function render(t) {
   const tb = document.getElementById('go3d'), lab = Math.abs(view.tilt) > 0.05 ? '3D' : 'TOP';
   if (tb.textContent !== lab) tb.textContent = lab;
   const td = Math.round(view.tilt / DEG); document.getElementById('r-tilt').textContent = Math.abs(td) > 90 ? `${td}° (from below)` : td + '°';
+  pf('tail');
   if (EMBED && !following) { const sp = Ht / view.s; if (sp !== render.sp) { render.sp = sp; parent.postMessage({ src: 'uas-mw', span: viewSpan() }, '*'); } }
 }
 
@@ -1145,7 +1161,7 @@ function drawGalaxy3D() {
       gl.uniform1f(U.uOrtho, 1); gl.uniform3f(U.uCam, view.x - fw[0] * k, view.y - fw[1] * k, view.z - fw[2] * k); gl.uniform1f(U.uHalfH, Ht / 2 / view.s); gl.uniform1f(U.uTanH, 0); }
     else { const cx = view.x + F[0] * PD, cy = view.y + F[1] * PD, cz = view.z + F[2] * PD, T = Math.max(0, -(cx * fw[0] + cy * fw[1] + cz * fw[2]) - GB);
       gl.uniform1f(U.uOrtho, 0); gl.uniform3f(U.uCam, cx + fw[0] * T, cy + fw[1] * T, cz + fw[2] * T); gl.uniform1f(U.uTanH, PT); gl.uniform1f(U.uHalfH, T * PT); }
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); if (PROF) gl.finish();
     GX.key = key;
     // drawn coarser to keep up with movement? once you stop, draw it again at full quality
     clearTimeout(GX.tq); if (!settle && qq < 1) GX.tq = setTimeout(() => { GX.settleQ = GX.q; GX.q = 1; GX.settle = true; GX.key = null; draw(); }, 350);
@@ -3107,7 +3123,7 @@ if (EMBED) {
   });
   parent.postMessage({ src: 'uas-mw', ready: true }, '*');
 }
-if (/[?&]debug=1/.test(location.search)) window.__mw = { PSR, QSO, ACEN, ACEN_A, fieldObj, get selected() { return selected; }, spanFor, GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, gcScale, drawGCNear, drawS2, drawBH, GC, get following() { return following; }, get ssReady() { return ssReady; } };
+if (/[?&]debug=1/.test(location.search)) window.__mw = { PROF, PSR, QSO, ACEN, ACEN_A, fieldObj, get selected() { return selected; }, spanFor, GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, gcScale, drawGCNear, drawS2, drawBH, GC, get following() { return following; }, get ssReady() { return ssReady; } };
 
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
@@ -3179,6 +3195,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=0d037d5a" data-place="info" defer></script>
+<script src="../music/music.js?v=e9786529" data-place="info" defer></script>
 </body>
 </html>
