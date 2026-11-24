@@ -159,19 +159,20 @@ addEventListener('message', e => {
   } else if (m.src === 'uas-mw' && e.source === mwEl.contentWindow) {
     if (m.ready) { st.mwReady = true; if (st.ssReady) toMW({ cmd: 'ssready' }); if (st.driver === 'mw' && !st.started) { st.started = true; toMW(STOPS[start].cmd); } return; }
     if (m.opt) { toSS({ cmd: 'opt', k: m.opt, on: m.on }); return; }
+    if (m.go) { go(m.go); return; }   // HOME on the galaxy map
     if (m.dive) { if (st.ssReady && st.driver === 'mw') { if (m.into && !st.pending) st.pending = STOPS['solar-system']; toSolar(m); } return; }   // a double-click on the Sun carries on in to the planets
     if (m.span !== undefined && st.driver === 'mw') mark(m.span);
   }
 });
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-const UAS_V = '329bbed8';
+const UAS_V = 'f618b149';
 mwEl.src = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
 ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 })();
 </script>
-<script src="../shared/fold.js?v=329bbed8"></script>
+<script src="../shared/fold.js?v=f618b149"></script>
 <script>UAS_FOLD.foldable(document.getElementById('ladder'), { title: 'Scale', arrow: '▾', startFolded: false, onToggle: () => dispatchEvent(new Event('resize')) });   // the soundtrack note below it moves up</script>
-<script src="../music/music.js?v=329bbed8" data-place="ladder" defer></script>
+<script src="../music/music.js?v=f618b149" data-place="ladder" defer></script>
 </body>
 </html>

@@ -187,11 +187,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=329bbed8"></script>
-<script src="../shared/clock.js?v=329bbed8"></script>
-<script src="../shared/fold.js?v=329bbed8"></script>
-<script src="../shared/perf.js?v=329bbed8"></script>
-<script src="../shared/galaxy-volume.js?v=329bbed8"></script>
+<script src="../shared/frame.js?v=f618b149"></script>
+<script src="../shared/clock.js?v=f618b149"></script>
+<script src="../shared/fold.js?v=f618b149"></script>
+<script src="../shared/perf.js?v=f618b149"></script>
+<script src="../shared/galaxy-volume.js?v=f618b149"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -321,6 +321,7 @@ void main() {
   <button id="zout" aria-label="Zoom out">−</button>
   <button id="go3d" class="txt hl" aria-label="Toggle 3D tilt" title="Tilt between overhead and side-on">TOP</button>
   <button id="spin" aria-label="Spin the view" title="Rotate the view 45°">↻</button>
+  <button id="gohome" class="txt" aria-label="Fly home to Earth" title="Fly all the way home to Earth">HOME</button>
   <hr class="solo">
   <button id="gosun" class="txt solo" aria-label="Go to the Sun">SUN</button>
   <button id="goall" class="txt solo" aria-label="Show whole galaxy" title="Whole Milky Way">ALL</button>
@@ -3267,6 +3268,12 @@ document.getElementById('gosun').onclick = () => select(SUN, true);
 document.getElementById('goall').onclick = () => flyTo(0, 4000, 0, 118000);
 document.getElementById('golan').onclick = () => { const r = REGIONS[1]; flyTo(r.x * 0.5, r.y * 0.5, r.z * 0.5, 7e8); };
 document.getElementById('goobs').onclick = () => flyTo(0, 0, 0, 1.0e11);
+// HOME: all the way back to Earth — on the joined page the ladder's Earth stop (fly to the Sun, hand over, on to Earth);
+// on its own page, fly to the Sun and open the joined page at Earth
+document.getElementById('gohome').onclick = () => {
+  if (EMBED) { parent.postMessage({ src: 'uas-mw', go: 'earth' }, '*'); return; }
+  select(null); flyTo(SUNW.x, SUNW.y, SUNW.z, DIVE * 1.05, { raw: true, done: () => (location.href = '../universe/#earth') });
+};
 document.getElementById('golg').onclick = () => { const m = gpos('Andromeda'); flyTo(m.x * 0.5, m.y * 0.5, m.z * 0.5, 3.6e6); };
 // the card's × folds it to a tab named after what's selected; the selection stays (click empty space to let go of it)
 var infoFold = UAS_FOLD.foldable(document.getElementById('info'), { closeBtn: document.querySelector('#info .close'), title: () => selected ? selected.name : 'Info', startFolded: false, arrow: '▾' });
@@ -3366,6 +3373,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=329bbed8" data-place="info" defer></script>
+<script src="../music/music.js?v=f618b149" data-place="info" defer></script>
 </body>
 </html>
