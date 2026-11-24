@@ -146,7 +146,7 @@ addEventListener('message', e => {
   if ((m.src === 'uas-ss' && e.source === ssEl.contentWindow && relaySearch(m, true)) || (m.src === 'uas-mw' && e.source === mwEl.contentWindow && relaySearch(m, false))) return;
   if (m.src === 'uas-ss' && e.source === ssEl.contentWindow) {
     if (m.ready) {
-      st.ssReady = true; toMW({ cmd: 'ssready' });
+      st.ssReady = true; toMW({ cmd: 'ssready' }); if (!LAZY_MW) setTimeout(loadMW, 600);   // the two maps share one thread: let the first picture appear before the galaxy map starts up
       if (st.driver === 'ss') { if (!st.started) { st.started = true; if (start !== 'solar-system') toSS(STOPS[start].cmd); } }
       else if (st.pending && st.pending.map === 'ss') toMW({ cmd: 'dive' });
       else toSS({ cmd: 'pause' });
@@ -178,7 +178,8 @@ ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 // phones: load the galaxy map only once it's needed — zooming out past the Oort cloud, or a stop or search result out there —
 // so the phone only holds one 3D view in memory most of the time
 function loadMW() { if (loadMW.done) return; loadMW.done = true; mwEl.src = MW_SRC; }
-if (!LAZY_MW || STOPS[start].map === 'mw') loadMW();
+if (STOPS[start].map === 'mw') loadMW();
+else if (!LAZY_MW) setTimeout(loadMW, 4000);   // desktop: after the Solar System is up (see its ready message), or 4 s at the latest
 })();
 </script>
 <script src="../shared/fold.js?v=4752f039"></script>
