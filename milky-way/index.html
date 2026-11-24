@@ -187,11 +187,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=a9465891"></script>
-<script src="../shared/clock.js?v=a9465891"></script>
-<script src="../shared/fold.js?v=a9465891"></script>
-<script src="../shared/perf.js?v=a9465891"></script>
-<script src="../shared/galaxy-volume.js?v=a9465891"></script>
+<script src="../shared/frame.js?v=4488dd33"></script>
+<script src="../shared/clock.js?v=4488dd33"></script>
+<script src="../shared/fold.js?v=4488dd33"></script>
+<script src="../shared/perf.js?v=4488dd33"></script>
+<script src="../shared/galaxy-volume.js?v=4488dd33"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1723,13 +1723,14 @@ function drawField() {
   const zf = SUNW.z - view.z;
   const sAlpha = 0.16 * g * Math.min(1, (600 - span) / 200) * stalkFade(), near2 = (span * 0.6) ** 2, maxLen = Ht * 0.4;
   // stars too faint for the eye are only complete out to 50 ly, so show them only when zoomed in — otherwise they fake a crowd around the Sun
-  const faint = Math.max(0, Math.min(1, (350 - span) / 200)), batch = LITE ? new Map() : null;
+  const faint = Math.max(0, Math.min(1, (350 - span) / 200)), batch = LITE ? new Map() : null, thin = LITE ? Math.max(1, Math.round(span / 60)) : 1;
   for (let i = 0; i < NF; i++) {
+    if (LITE && (fmag[i] > 6.5 || (thin > 1 && i % thin && !fprop[i] && fmag[i] > 3))) continue;   // phones: naked-eye stars only, thinner as you pull out (named and bright ones stay)
     const dx = fx[i] - view.x, dy = fy[i] - view.y, ry = dx * SY + dy * CY, dz = fz[i] - view.z;
     let f = 1; if (PD !== Infinity) { const den = PD - (ry * ST + dz * CT); if (den < PD * 0.01) continue; f = PD / den; }
     const X = Wd / 2 + (dx * CY - dy * SY) * s * f, Y = Ht / 2 + (ry * CT - dz * ST) * s * f;
     if (X < -10 || X > Wd + 10 || Y < -10 || Y > Ht + 10) continue;
-    const fv = fmag[i] > 6.5 ? faint : 1;
+    const fv = fmag[i] > 6.5 ? (LITE ? 0 : faint) : 1;   // phones: only stars you could see by eye
     if (fv <= 0) continue;
     if (ACEN.show > 0 && (i === ACEN.ST.B.fi || i === ACEN.ST.P.fi)) continue;   // drawn with their system
     if (stalks && dx * dx + dy * dy + (fz[i] - view.z) ** 2 < near2) {
@@ -1899,10 +1900,10 @@ function drawObjects() {
     put(o.name, X, Y, big, o.type === 'sun' ? '#ffe27a' : (big ? '#ffffff' : 'rgba(230,234,245,0.85)'), off, pr, o.type === 'sun' ? 'You are here' : null);
   }
   // named background stars once you're close in
-  if (viewSpan() < 320) {
+  if (viewSpan() < (LITE ? 120 : 320)) {   // phones: names only close in, and only for the brightest stars
     for (let k = 0; k < fieldPts.length; k += 3) {
       const i = fieldPts[k], sel = selected && selected.fi === i;
-      if (!fprop[i] && !sel) continue;
+      if ((!fprop[i] || (LITE && fmag[i] > 3)) && !sel) continue;
       put(fname[i], fieldPts[k + 1], fieldPts[k + 2], false, 'rgba(200,208,230,0.7)', 7, sel ? -10 : 7.5);
     }
   }
@@ -3413,7 +3414,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=a9465891" data-place="info" defer></script>
+<script src="../music/music.js?v=4488dd33" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
