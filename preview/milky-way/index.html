@@ -182,10 +182,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=16e1701e"></script>
-<script src="../shared/clock.js?v=16e1701e"></script>
-<script src="../shared/fold.js?v=16e1701e"></script>
-<script src="../shared/galaxy-volume.js?v=16e1701e"></script>
+<script src="../shared/frame.js?v=0d037d5a"></script>
+<script src="../shared/clock.js?v=0d037d5a"></script>
+<script src="../shared/fold.js?v=0d037d5a"></script>
+<script src="../shared/galaxy-volume.js?v=0d037d5a"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1422,7 +1422,7 @@ function drawOrbit() {
       ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y, 16, 0, 7); ctx.fill();
       ctx.fillStyle = '#fff6dc'; ctx.beginPath(); ctx.arc(X, Y, 4.5, 0, 7); ctx.fill();
       const ep = S.ages.find(e => Math.abs(-S.t - e[0]) < 4), t = 'The Sun, ' + orbWhen(S.t), f1 = 'italic 15px "IM Fell English", Georgia, serif', f2 = 'italic 13px "IM Fell English", Georgia, serif';
-      lbl(-8, [X + 12, Y - 21, Math.max(lblW(f1, t), ep ? lblW(f2, ep[1]) : 0), ep ? 33 : 16], () => { ctx.textAlign = 'left';
+      if (opts.labels) lbl(-8, [X + 12, Y - 21, Math.max(lblW(f1, t), ep ? lblW(f2, ep[1]) : 0), ep ? 33 : 16], () => { ctx.textAlign = 'left';
         ctx.font = f1; ctx.fillStyle = '#ffe6b4'; ctx.fillText(t, X + 12, Y - 8);
         if (ep) { ctx.fillStyle = 'rgba(232,226,210,0.75)'; ctx.font = f2; ctx.fillText(ep[1], X + 12, Y + 8); } });
     } }
@@ -3179,6 +3179,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=16e1701e" data-place="info" defer></script>
+<script src="../music/music.js?v=0d037d5a" data-place="info" defer></script>
 </body>
 </html>
