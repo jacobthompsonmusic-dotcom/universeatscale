@@ -309,11 +309,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=ac4820fa"></script>
-<script src="../shared/clock.js?v=ac4820fa"></script>
-<script src="../shared/fold.js?v=ac4820fa"></script>
-<script src="../shared/perf.js?v=ac4820fa"></script>
-<script src="../shared/galaxy-volume.js?v=ac4820fa"></script>
+<script src="../shared/frame.js?v=4752f039"></script>
+<script src="../shared/clock.js?v=4752f039"></script>
+<script src="../shared/fold.js?v=4752f039"></script>
+<script src="baked/manifest.js?v=4752f039"></script>
+<script src="../shared/perf.js?v=4752f039"></script>
+<script src="../shared/galaxy-volume.js?v=4752f039"></script>
 <script>
 (() => {
 'use strict';
@@ -630,6 +631,41 @@ for (const c of Object.values(CONF)) {
 // ===================================================================
 function tex(c) { const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; return t; }
 function canvas2(W, H) { const c = document.createElement('canvas'); c.width = W; c.height = H; return [c, c.getContext('2d')]; }
+// Pre-painted textures. Painting the planets, moons and the band of the Milky Way pixel by pixel took seconds at every visit
+// (far longer on phones), so tools/bake.js paints them once into image files (baked/, listed in baked/manifest.js). The page
+// loads those in the background — a body shows in its average colour for a moment — and only paints a texture itself if its
+// file is missing (e.g. after the painting code changes and before the next bake). ?bake=1 is how the tool collects them.
+const BAKED = window.UAS_BAKED || {}, BAKING = window.__BAKE = /[?&]bake=1/.test(location.search) ? [] : null;
+function bakeable(name, make) {
+  return function (...args) {
+    const key = name + (args.length ? '-' + JSON.stringify(args.map(a => a && typeof a === 'object' && !Array.isArray(a) ? (a.name || a.key || '') : a)).replace(/[^\w.,-]+/g, '') : '');
+    if (BAKING) { const t = make.apply(this, args); BAKING.push({ key, t }); return t; }
+    const m = BAKED[key]; if (!m) return make.apply(this, args);
+    const t = new THREE.Texture(), ph = document.createElement('canvas'); ph.width = ph.height = 1;
+    const pg = ph.getContext('2d'); pg.fillStyle = m.avg; pg.fillRect(0, 0, 1, 1); t.image = ph; t.needsUpdate = true;
+    t.encoding = m.enc; t.anisotropy = m.an; t.wrapS = m.ws; t.wrapT = m.wt; t.magFilter = m.mag; t.minFilter = m.min; t.generateMipmaps = m.gm; t.flipY = m.fy;
+    const im = new Image(); im.decoding = 'async';
+    im.onload = () => { t.image = im; t.needsUpdate = true; if (typeof IDLE !== 'undefined') IDLE.dirty++; };
+    im.onerror = () => { const g = make.apply(this, args); t.image = g.image; t.needsUpdate = true; if (typeof IDLE !== 'undefined') IDLE.dirty++; };
+    im.src = 'baked/' + m.f;
+    return t;
+  };
+}
+// every painter goes through it (function declarations are hoisted, so this runs before any of them is first called)
+saturnTexture = bakeable('saturn', saturnTexture);
+jupiterTexture = bakeable('jupiter', jupiterTexture);
+uranusTexture = bakeable('uranus', uranusTexture);
+neptuneTexture = bakeable('neptune', neptuneTexture);
+moonTexture = bakeable('moon', moonTexture);
+denseTexture = bakeable('dense', denseTexture);
+milkyWayTexture = bakeable('milkyway', milkyWayTexture);
+sunTexture = bakeable('sun', sunTexture);
+mercuryTexture = bakeable('mercury', mercuryTexture);
+venusTexture = bakeable('venus', venusTexture);
+marsTexture = bakeable('mars', marsTexture);
+ceresTexture = bakeable('ceres', ceresTexture);
+plutoTexture = bakeable('pluto', plutoTexture);
+plainTexture = bakeable('plain', plainTexture);
 function soften(c, g, k = 4, a = 0.5) { const [b, bg] = canvas2(c.width / k, c.height / k); bg.drawImage(c, 0, 0, b.width, b.height); g.globalAlpha = a; g.drawImage(b, 0, 0, c.width, c.height); g.globalAlpha = 1; }
 
 function saturnTexture() {
@@ -1682,6 +1718,7 @@ function plainTexture(seed, base, contrast = 0.3, cap) {
   });
   return tex(c);
 }
+
 const DWARFS = [
   { key: 'ceres', name: 'Ceres', R: 469.7, color: '#9a958e', pole: [291.418, 66.764], spin: 9.074 / 24, dist: 6, tex: ceresTexture, dia: '939 km', disc: '1801 · Giuseppe Piazzi',
     blurb: 'The largest object in the asteroid belt and the only dwarf planet in the inner solar system. NASA\'s Dawn spacecraft orbited it from 2015 to 2018 and found brilliant patches of salt in Occator crater, left by briny water seeping up from below.' },
@@ -2954,7 +2991,7 @@ if (EMBED) addEventListener('message', e => {
   }
   if (m.cmd === 'results') { if (m.id !== searchId || !sIn.value.trim()) return; extHits = m.results.map(r => ({ ...r, ext: true })); hits = [...localHits.slice(0, Math.max(4, 10 - extHits.length)), ...extHits]; renderHits(); return; }
   // phones on the joined page: give the graphics memory back while the galaxy map is showing, and take it again as you come back in
-  if (m.cmd === 'free') { if (paused && !FREED) { FREED = true; try { renderer.forceContextLoss(); } catch (e) {} } return; }
+  if (m.cmd === 'free') { if (paused && !FREED) { FREED = true; window.__uasFreeing = true; try { renderer.forceContextLoss(); } catch (e) {} setTimeout(() => { window.__uasFreeing = false; }, 500); } return; }
   if (m.cmd === 'prewarm' || m.cmd === 'enter' || m.cmd === 'resume' || m.cmd === 'fly' || m.cmd === 'pick') { if (FREED) { FREED = false; try { renderer.forceContextRestore(); } catch (e) {} } if (m.cmd === 'prewarm') return; }
   if (m.cmd === 'pick') { const o = [...LIST, ...PROBES].find(x => x.name === m.name); if (o) { wake(); flyTo(o); select(o); } return; }
   if (m.cmd === 'pause') paused = true;
@@ -2996,6 +3033,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=ac4820fa" data-place="info" defer></script>
+<script src="../music/music.js?v=4752f039" data-place="info" defer></script>
+<script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

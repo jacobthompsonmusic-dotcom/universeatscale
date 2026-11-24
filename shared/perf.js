@@ -29,6 +29,7 @@
     G.frame = function (now) {
       const dt = now - G.last; G.last = now;
       if (dt <= 0 || dt > 250 || document.hidden) { G.win.length = 0; G.good = 0; return; }   // paused, idle or hidden: not a measurement
+      STAT.n++; STAT.b[dt < 20 ? 0 : dt < 36 ? 1 : dt < 55 ? 2 : 3]++; STAT.level = G.level;
       if (now < G.hold) return;
       G.win.push(dt); if (G.win.length > 36) G.win.shift();
       if (G.win.length < 36) return;
@@ -42,5 +43,28 @@
     onChange(G.level);
     return G;
   }
-  window.UAS_PERF = { tier, phone, gpu, soft, governor };
+  // ---- anonymous speed report (Google Analytics, only on universeatscale.com, only where the page already loads it) ----
+  // One 'uas_perf' event per page view, when it's hidden or closed: how the frames went (share at ~60, ~30, ~20 and under 20 fps),
+  // the device class, the quality level the governor settled on, the screen's pixel ratio, the graphics chip's name and how many
+  // times a 3D view lost its graphics. And one 'uas_possible_crash' if the last visit to this view in this tab never closed properly
+  // (phones reload a page that crashed). Nothing about the person.
+  const view = (location.pathname.match(/(solar-system|milky-way)/) || [])[1] || 'other';
+  const STAT = { n: 0, b: [0, 0, 0, 0], level: -1, lost: 0 };
+  addEventListener('webglcontextlost', () => { if (!window.__uasFreeing) STAT.lost++; }, true);
+  const gt = (name, p) => { try { const f = (window.top && window.top.gtag) || window.gtag; if (f) f('event', name, p); } catch (e) {} };
+  let sent = false;
+  function report() {
+    if (sent || STAT.n < 90) return; sent = true;
+    const pc = i => Math.round(100 * STAT.b[i] / STAT.n);
+    gt('uas_perf', { view, tier, phone: phone ? 1 : 0, level: STAT.level, frames: STAT.n, fps60_pct: pc(0), fps30_pct: pc(1), fps20_pct: pc(2), slow_pct: pc(3),
+      lost: STAT.lost, dpr: Math.round((window.devicePixelRatio || 1) * 100) / 100, gpu: gpu.replace(/ANGLE \(|, ANGLE Metal Renderer|Unspecified Version\)?/g, '').slice(0, 90) });
+  }
+  addEventListener('pagehide', report);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') report(); });
+  try {
+    const K = 'uas-alive-' + view;
+    if (sessionStorage.getItem(K)) setTimeout(() => gt('uas_possible_crash', { view, tier, phone: phone ? 1 : 0 }), 3000);
+    sessionStorage.setItem(K, '1'); addEventListener('pagehide', () => { try { sessionStorage.removeItem(K); } catch (e) {} });
+  } catch (e) {}
+  window.UAS_PERF = { tier, phone, gpu, soft, governor, stat: STAT };
 })();

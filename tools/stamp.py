@@ -3,13 +3,13 @@
 # scripts. Idempotent; runs from tools/preview.sh, i.e. before every commit.
 import hashlib, pathlib, re
 root = pathlib.Path(__file__).resolve().parent.parent
-FILES = ['milky-way/index.html', 'solar-system/index.html', 'shared/frame.js', 'shared/clock.js', 'shared/galaxy-volume.js', 'shared/fold.js', 'shared/perf.js', 'music/music.js']
+FILES = ['milky-way/index.html', 'solar-system/index.html', 'shared/frame.js', 'shared/clock.js', 'shared/galaxy-volume.js', 'shared/fold.js', 'shared/perf.js', 'music/music.js', 'solar-system/baked/manifest.js']
 strip = lambda s: re.sub(r'\?v=[0-9a-f]{8}', '', re.sub(r"const UAS_V = '[0-9a-f]{8}'", '', s))
 h = hashlib.sha1(b''.join(strip((root / f).read_text()).encode() for f in FILES)).hexdigest()[:8]
 PAGES = ['index.html', 'universe/index.html', 'milky-way/index.html', 'solar-system/index.html', 'moons/index.html', 'giant-planets-3d/index.html']
 for p in PAGES:
     f = root / p; s = f.read_text(); o = s
-    s = re.sub(r'(src="(?:\.\./)?(?:shared|music)/[a-z-]+\.js)(?:\?v=[0-9a-f]{8})?"', rf'\1?v={h}"', s)
+    s = re.sub(r'(src="(?:\.\./)?(?:shared|music|baked)/[a-z-]+\.js)(?:\?v=[0-9a-f]{8})?"', rf'\1?v={h}"', s)
     if p == 'universe/index.html':
         s = re.sub(r"const UAS_V = '[0-9a-f]{8}';\n", '', s)
         s = s.replace("mwEl.src = '../milky-way/index.html' + dbg;", "mwEl.src = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');")

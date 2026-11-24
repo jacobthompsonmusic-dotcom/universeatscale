@@ -187,11 +187,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=ac4820fa"></script>
-<script src="../shared/clock.js?v=ac4820fa"></script>
-<script src="../shared/fold.js?v=ac4820fa"></script>
-<script src="../shared/perf.js?v=ac4820fa"></script>
-<script src="../shared/galaxy-volume.js?v=ac4820fa"></script>
+<script src="../shared/frame.js?v=4752f039"></script>
+<script src="../shared/clock.js?v=4752f039"></script>
+<script src="../shared/fold.js?v=4752f039"></script>
+<script src="../shared/perf.js?v=4752f039"></script>
+<script src="../shared/galaxy-volume.js?v=4752f039"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -759,9 +759,17 @@ const dirName = l => {
 const signed = (v, dp = 1) => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(dp);
 const height = z => Math.abs(z) < 0.5 ? 'In the midplane' : `${fmtLy(Math.abs(z))} ${z > 0 ? 'above' : 'below'} the midplane`;
 
+// Phones (tier > 0) don't paint the face-on galaxy (a second or more of work there): they load the 2048-px picture the
+// Solar System uses (milky-way/galaxy-disc.jpg, painted from this same canvas by tools/gd recipe, on black) and draw it added on
+// top rather than laid over. Everything else paints it here as before.
+const GAL_JPG = window.UAS_PERF.tier > 0, GAL_WAIT = new Set();
 // ---------- pre-render the galaxy, face-on ----------
-const gal = document.createElement('canvas'); gal.width = gal.height = S;
-(function renderGalaxy() {
+const gal = document.createElement('canvas'); gal.width = gal.height = GAL_JPG ? 2048 : S;
+if (GAL_JPG) { GAL_WAIT.add('gal'); const im = new Image(); im.decoding = 'async';
+  im.onload = () => { gal.getContext('2d').drawImage(im, 0, 0, gal.width, gal.height); GAL_WAIT.delete('gal'); draw(); };
+  im.onerror = () => { GAL_WAIT.delete('gal'); };
+  im.src = 'galaxy-disc.jpg'; }
+else (function renderGalaxy() {
   const g = gal.getContext('2d');
   const k = S / (2 * W);
   const px = x => (x + W) * k;
@@ -1273,6 +1281,7 @@ function drawDisc() {
       dpr * (Wd / 2 - s * (view.x * CY - view.y * SY)), dpr * (Ht / 2 - s * CT * (view.x * SY + view.y * CY) + s * ST * view.z));
     ctx.globalAlpha = alpha * Math.min(1, aC / 0.3) * (0.2 + 0.8 * Math.sqrt(aC));
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    if (GAL_JPG) ctx.globalCompositeOperation = 'lighter';   // the phone picture is on black: add it
     ctx.drawImage(gal, -W, -W, 2 * W, 2 * W);
     ctx.restore();
   }
@@ -3404,6 +3413,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=ac4820fa" data-place="info" defer></script>
+<script src="../music/music.js?v=4752f039" data-place="info" defer></script>
+<script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
