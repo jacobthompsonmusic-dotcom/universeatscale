@@ -187,11 +187,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=7030c064"></script>
-<script src="../shared/clock.js?v=7030c064"></script>
-<script src="../shared/fold.js?v=7030c064"></script>
-<script src="../shared/perf.js?v=7030c064"></script>
-<script src="../shared/galaxy-volume.js?v=7030c064"></script>
+<script src="../shared/frame.js?v=f2c16c4e"></script>
+<script src="../shared/clock.js?v=f2c16c4e"></script>
+<script src="../shared/fold.js?v=f2c16c4e"></script>
+<script src="../shared/perf.js?v=f2c16c4e"></script>
+<script src="../shared/galaxy-volume.js?v=f2c16c4e"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1199,8 +1199,11 @@ function gxInit() {
   gl.uniform1i(GX.u.uGal, 0); GX.gl = gl;
 }
 // the Milky Way as a volume, seen from wherever the camera is: the band of light from inside, the disc from outside
+// phones (LITE) never build the 3D volume — it's the heaviest thing here, and loading it mid-hand-over crashed them: near the Sun
+// the view just goes dark, and the picture of the Milky Way fades in as you pull out
+const LITE = window.UAS_PERF.tier > 0;
 function drawGalaxy3D() {
-  if (GX.failed || viewSpan() > 4e6) return false;
+  if (LITE || GX.failed || viewSpan() > 4e6) return false;
   if (viewSpan() < 2e5 && Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z) > 3e7) return true;   // zoomed in somewhere far beyond the Local Group: nothing of ours to draw
   if (!GX.gl) { gxInit(); if (!GX.gl) return false; }
   // the volume only changes when the view does: keep the last picture while just the stars and gas on top move
@@ -1241,6 +1244,7 @@ function drawGalaxy3D() {
   return true;
 }
 function drawHaze() {
+  if (LITE) return;   // phones: plain dark near the Sun
   const span = viewSpan(), k = 1 - Math.max(0, Math.min(1, Math.log(span / 3000) / Math.log(20)));
   if (k <= 0) return;
   const k2 = k * k * (3 - 2 * k), [gx, gy] = proj(GC.x, GC.y, GC.z), cx = Wd / 2, cy = Ht / 2;
@@ -1252,7 +1256,8 @@ function drawHaze() {
 }
 function drawDisc() {
   const zoomedIn = view.s * (2 * W / S);
-  const alpha = Math.max(0.22, Math.min(1, 1.15 - Math.log10(Math.max(zoomedIn, 1e-6)) * 0.42));
+  const alpha = Math.max(0.22, Math.min(1, 1.15 - Math.log10(Math.max(zoomedIn, 1e-6)) * 0.42)) * (LITE ? sstep(viewSpan(), 20000, 60000) : 1);
+  if (alpha <= 0.002) return;
   const s = view.s;
   const aC = Math.abs(CT);
   if (aC > 0.01) {
@@ -3373,6 +3378,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=7030c064" data-place="info" defer></script>
+<script src="../music/music.js?v=f2c16c4e" data-place="info" defer></script>
 </body>
 </html>

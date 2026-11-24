@@ -171,7 +171,7 @@ addEventListener('message', e => {
 });
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-const UAS_V = '7030c064';
+const UAS_V = 'f2c16c4e';
 const MW_SRC = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
 ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 // phones: load the galaxy map only once it's needed — zooming out past the Oort cloud, or a stop or search result out there —
@@ -180,8 +180,8 @@ function loadMW() { if (loadMW.done) return; loadMW.done = true; mwEl.src = MW_S
 if (!LAZY_MW || STOPS[start].map === 'mw') loadMW();
 })();
 </script>
-<script src="../shared/fold.js?v=7030c064"></script>
+<script src="../shared/fold.js?v=f2c16c4e"></script>
 <script>UAS_FOLD.foldable(document.getElementById('ladder'), { title: 'Scale', arrow: '▾', startFolded: false, onToggle: () => dispatchEvent(new Event('resize')) });   // the soundtrack note below it moves up</script>
-<script src="../music/music.js?v=7030c064" data-place="ladder" defer></script>
+<script src="../music/music.js?v=f2c16c4e" data-place="ladder" defer></script>
 </body>
 </html>
