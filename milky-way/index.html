@@ -182,11 +182,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=293ff1b7"></script>
-<script src="../shared/clock.js?v=293ff1b7"></script>
-<script src="../shared/fold.js?v=293ff1b7"></script>
-<script src="../shared/perf.js?v=293ff1b7"></script>
-<script src="../shared/galaxy-volume.js?v=293ff1b7"></script>
+<script src="../shared/frame.js?v=616d15f9"></script>
+<script src="../shared/clock.js?v=616d15f9"></script>
+<script src="../shared/fold.js?v=616d15f9"></script>
+<script src="../shared/perf.js?v=616d15f9"></script>
+<script src="../shared/galaxy-volume.js?v=616d15f9"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -304,6 +304,7 @@ void main() {
     <button class="tg on" data-k="labels">Labels</button>
     <button class="tg on" data-k="stars">Star field</button>
     <button class="tg on" data-k="voids">Voids</button>
+    <button class="tg on" data-k="cmb" title="The cosmic microwave background: the oldest light there is">CMB</button>
     <button class="tg" data-k="stalks">Depth lines</button>
     <button class="tg" data-k="zodiac">Zodiac</button>
     <button class="tg" data-k="orbit">Sun’s orbit</button>
@@ -549,6 +550,14 @@ const GSRC = {
   'Stephan\'s Quintet': 'Redshift z = 0.0215 (comoving distance, Planck 2018)',
   'Cartwheel Galaxy': 'Redshift z = 0.0302 (comoving distance, Planck 2018)',
   'Hoag\'s Object': 'Redshift z = 0.0427 (comoving distance, Planck 2018)',
+  'MoM-z14': 'Redshift z = 14.44, JWST NIRSpec (Naidu et al. 2025); comoving distance, Planck 2018',
+  'JADES-GS-z14-0': 'Redshift z = 14.18, ALMA oxygen line (Schouws et al. 2025); comoving distance, Planck 2018',
+  'GN-z11': 'Redshift z = 10.60, JWST NIRSpec (Bunker et al. 2023); comoving distance, Planck 2018',
+  'Earendel': 'Redshift z ≈ 6.2 of the Sunrise Arc (Welch et al. 2022); comoving distance, Planck 2018',
+  'Bullet Cluster': 'Redshift z = 0.296 (comoving distance, Planck 2018)',
+  'El Gordo': 'Redshift z = 0.870 (comoving distance, Planck 2018)',
+  "Pandora's Cluster (Abell 2744)": 'Redshift z = 0.308 (comoving distance, Planck 2018)',
+  "SMACS 0723 (Webb's First Deep Field)": 'Redshift z = 0.390 (comoving distance, Planck 2018)',
   '3C 273': 'Redshift z = 0.158 (comoving distance, Planck 2018)', 'TON 618': 'Redshift z = 2.219 (comoving distance, Planck 2018)', 'J0529-4351': 'Redshift z = 3.962 (comoving distance, Planck 2018)', 'Einstein Cross quasar': 'Redshift z = 1.695 (comoving distance, Planck 2018)', "Huchra's Lens": 'Redshift z = 0.0394 (comoving distance, Planck 2018)',
 };
 const GALAXIES = [
@@ -601,6 +610,15 @@ const GALAXIES = [
   ['Perseus Cluster', 'gcluster', 240000000, 150.6, -13.3, 12000000, 'cl', 0, 0.85, 2, 'Perseus', 'The brightest cluster in X-rays. The black hole at its centre makes pressure waves in the hot gas — a B-flat about 57 octaves below middle C.'],
   ['Coma Cluster', 'gcluster', 321000000, 58.1, 88.0, 20000000, 'cl', 0, 0.9, 1, 'Coma Berenices', 'Over a thousand galaxies. In 1933 Fritz Zwicky noticed they move too fast to be held together by visible matter — the first evidence for dark matter.'],
   ['Shapley Supercluster', 'gcluster', 650000000, 311.8, 30.7, 300000000, 'cl', 0, 0.75, 1, 'Centaurus', 'The biggest pile-up of galaxies in our part of the universe. Its gravity pulls on our supercluster too.'],
+  // the edge of what we can see: the most distant galaxies and star measured, and famous far-away clusters (comoving distance, Planck 2018)
+  ['MoM-z14', 'galaxy', 3.3857e10, 236.728, 42.140, 241, 'blob', 0, 0.9, 1, 'Sextans', 'The most distant object ever measured: a galaxy seen as it was just 280 million years after the Big Bang, confirmed by the Webb telescope in 2025. Its light has travelled for 13.5 billion years, and the galaxy is now about 34 billion light-years away. It is tiny — a few hundred light-years across — yet surprisingly bright, and already rich in nitrogen.'],
+  ['JADES-GS-z14-0', 'galaxy', 3.3745e10, 223.646, -54.474, 1600, 'blob', 0, 0.9, 2, 'Fornax', 'The record holder before MoM-z14, found by Webb in 2024 and seen 290 million years after the Big Bang. ALMA then found oxygen in it — so a whole earlier generation of stars had already lived and died there.'],
+  ['GN-z11', 'galaxy', 3.1837e10, 125.964, 54.798, 4000, 'blob', 0, 0.9, 2, 'Ursa Major', 'Hubble\'s record breaker of 2016, seen 430 million years after the Big Bang. Webb later found signs of a feeding black hole of about 1.6 million suns at its heart (Maiolino et al. 2024).'],
+  ['Earendel', 'star', 2.775e10, 155.283, -68.400, 0, null, 0, 1, 2, 'Cetus', 'The most distant single star known (2022): its light left almost 13 billion years ago. We can only see it because a galaxy cluster in front, WHL0137-08, magnifies it thousands of times, lying on a stretched-out galaxy called the Sunrise Arc. Probably a hot star of tens of solar masses — though it may be a pair, or a tight star cluster.'],
+  ['Bullet Cluster', 'gcluster', 3.9711e9, 266.033, -21.233, 3.3e6, 'cl', 0, 0.8, 1, 'Carina', 'Two galaxy clusters that smashed through each other. Their hot gas (pink, X-rays) was slowed by the crash, but most of the mass (blue, mapped by how it bends light) passed straight through — some of the most direct evidence that dark matter exists.'],
+  ['El Gordo', 'gcluster', 9.9795e9, 297.995, -67.769, 6.5e6, 'cl', 0, 0.8, 1, 'Phoenix', '"The Fat One": the biggest, hottest cluster known in the distant universe, about 2 million billion suns, made by two clusters colliding at millions of km/h. We see it as it was when the universe was less than half its present age.'],
+  ["Pandora's Cluster (Abell 2744)", 'gcluster', 4.119e9, 8.898, -81.241, 3.5e6, 'cl', 0, 0.85, 2, 'Sculptor', 'Three or four clusters piling into one another, named for all the strange effects the pile-up let loose. Webb\'s UNCOVER image (2023) uses its gravity as a magnifying glass on some 50,000 more distant sources.'],
+  ["SMACS 0723 (Webb's First Deep Field)", 'gcluster', 5.1022e9, 284.993, -23.700, 1.6e6, 'cl', 0, 0.85, 1, 'Volans', 'The cluster in Webb\'s First Deep Field, the telescope\'s first full-colour image (July 2022). Its gravity bends the light of galaxies far behind it into arcs. The whole picture covers a patch of sky about the size of a grain of sand held at arm\'s length.'],
   // quasars: placed at their comoving distance (where they are now, on the same footing as the 46.5-billion-ly edge); Planck 2018 cosmology
   ['3C 273', 'quasar', 2.197e9, 289.951, 64.360, 0, null, 0, 1, 1, 'Virgo', 'The first quasar ever identified (1963): a black hole of about 260 million suns, feeding so hard it outshines its whole galaxy, and the only quasar bright enough for a backyard telescope. A jet 200,000 light-years long streams out of it. Zoom in to fall all the way down to the black hole.'],
   ['TON 618', 'quasar', 1.8315e10, 170.644, 83.361, 0, null, 0, 1, 1, 'Canes Venatici', 'One of the heaviest black holes known — tens of billions of suns, more than all the stars in the Milky Way — inside a glowing cloud of hydrogen twice the width of our galaxy. Zoom in to fall all the way down to the black hole.'],
@@ -614,14 +632,31 @@ const GALAXIES = [
 OBJ.push(...GALAXIES);
 const GCO = OBJ.find(o => o.name === 'Sagittarius A*');
 const gpos = n => GALAXIES.find(g => g.name.startsWith(n));
+const SGW_PTS = [[230.982,33.04,1022800000],[244.476,47.9,1050700000],[265.656,59.598,1078600000],[296.227,64.723,1134200000],[321.55,63.688,1175900000],[342.295,58.891,1217500000]], GA_PTS = [[90.669,75.923,9371800000.0],[84.302,75.085,9371800000.0],[78.997,74.029,9371800000.0],[74.707,72.804,9371800000.0],[71.318,71.449,9371800000.0],[68.7,69.996,9371800000.0],[66.728,68.466,9371800000.0],[65.292,66.874,9371800000.0],[64.299,65.233,9371800000.0],[63.673,63.547,9371800000.0],[63.351,61.822,9371800000.0],[63.281,60.059,9371800000.0],[63.421,58.261,9371800000.0]], BR_PTS = [[87.179,58.186,9371800000.0],[88.801,57.613,9371800000.0],[90.609,57.257,9371800000.0],[92.51,57.136,9371800000.0],[94.412,57.255,9371800000.0],[96.222,57.608,9371800000.0],[97.846,58.18,9371800000.0],[99.192,58.94,9371800000.0],[100.17,59.849,9371800000.0],[100.693,60.853,9371800000.0],[100.684,61.89,9371800000.0],[100.09,62.889,9371800000.0],[98.894,63.774,9371800000.0],[97.143,64.473,9371800000.0],[94.958,64.921,9371800000.0],[92.531,65.077,9371800000.0],[90.104,64.924,9371800000.0],[87.915,64.478,9371800000.0],[86.159,63.782,9371800000.0],[84.958,62.898,9371800000.0],[84.357,61.9,9371800000.0],[84.343,60.863,9371800000.0],[84.861,59.858,9371800000.0],[85.836,58.948,9371800000.0]];
+function shapeOf(pts) { const P = pts.map(([l, b, d]) => galToWorld(d, l, b)); P.c = P.reduce((a, q) => ({ x: a.x + q.x / P.length, y: a.y + q.y / P.length, z: a.z + q.z / P.length }), { x: 0, y: 0, z: 0 });
+  P.r = Math.max(...P.map(q => Math.hypot(q.x - P.c.x, q.y - P.c.y, q.z - P.c.z))); return P; }
 const REGIONS = [
   { name: 'Local Group', type: 'region', x: gpos('Andromeda').x * 0.5, y: gpos('Andromeda').y * 0.5, z: gpos('Andromeda').z * 0.5, r: 5e6, d: 1.25e6,   // centred about halfway: the two big galaxies weigh about the same
     blurb: 'Our home group of galaxies: the Milky Way, Andromeda, Triangulum and about 100 known smaller galaxies, some 10 million light-years across. Andromeda and the Milky Way are its heavyweights, of roughly equal weight, so the group\'s centre lies about halfway between them.' },
   { name: 'Laniakea Supercluster', type: 'region', x: gpos('Norma').x, y: gpos('Norma').y, z: gpos('Norma').z, r: 2.6e8, d: 2.2e8,
     blurb: 'Our home supercluster, mapped in 2014 by following how galaxies flow. About 520 million light-years across with some 100,000 galaxies. Laniakea is Hawaiian for "immeasurable heaven". Its real boundary is irregular; the sphere here is a simplification. Newer data (Cosmicflows-4, Valade et al. 2024) give about a 60% chance that Laniakea is itself part of a basin around ten times bigger, centred on the Shapley Supercluster.' },
+  // the largest structures claimed: drawn along their measured spines (outlines simplified), at their comoving distance
+  { name: 'Sloan Great Wall', type: 'region', shape: shapeOf(SGW_PTS), size: ['Length', '~1.4 billion ly'], con: 'Sextans, Leo & Virgo', d: 1.1e9,
+    src: 'SDSS galaxy maps (Gott et al. 2005; Sheth & Diaferio 2011); spine simplified',
+    blurb: 'A wall of galaxies and superclusters about 1.4 billion light-years long, found in the Sloan Digital Sky Survey in 2003. For a while it was the largest structure known. It may not be one thing: a 2011 study suggests three separate structures that happen to line up.' },
+  { name: 'Giant Arc', type: 'region', shape: shapeOf(GA_PTS), size: ['Length', '~3.3 billion ly'], con: 'Boötes', d: 9.37e9, debated: true,
+    src: 'Magnesium absorption in the light of background quasars, z ≈ 0.80 (Lopez et al. 2022); shape simplified',
+    blurb: 'A crescent of galaxies about 3.3 billion light-years long, seen 7 billion years ago. It was found in 2021 by a PhD student, Alexia Lopez, from the shadows its galaxies cast on the light of quasars far behind. It is debated: some argue patterns like it turn up by chance; its finders say they don\'t.' },
+  { name: 'Big Ring', type: 'region', shape: shapeOf(BR_PTS), size: ['Width', '~1.3 billion ly (4 billion ly round)'], closed: true, con: 'Boötes', d: 9.37e9, debated: true,
+    src: 'Magnesium absorption in quasar light, z ≈ 0.80 (Lopez, Clowes & Williger 2024); position approximate (about 12° north of the Giant Arc)',
+    blurb: 'An almost perfect ring of galaxies about 1.3 billion light-years across, found in 2024 by the same team as the Giant Arc, at the same distance and only about 12° away on the sky. Nobody knows what could make a ring this big, and some doubt it is real.' },
+  { name: 'Cosmic microwave background', type: 'region', x: SUNW.x, y: SUNW.y, z: SUNW.z, r: 4.527e10, d: 4.527e10, cmb: true, con: 'The whole sky',
+    src: 'Planck 2018 map (ESA and the Planck Collaboration); distance from the Planck 2018 cosmology',
+    blurb: 'The oldest light there is. For its first 370,000 years the universe was a glowing fog; when it cleared, the light set off — and we still see it in every direction, cooled to 2.7 degrees above absolute zero. The place it came from is now about 45 billion light-years away. The speckles are real: Planck\'s map of hotter and cooler spots, differing by about 1 part in 100,000 — the seeds of every galaxy. Each point here shows the temperature Planck measured in that direction.' },
   { name: 'Observable universe', type: 'region', x: 0, y: 0, z: 0, r: 4.65e10, d: 0, edge: true,
     blurb: 'As far as light could possibly have reached us in 13.8 billion years. Because space kept stretching while that light travelled, the edge is now about 46.5 billion light-years away in every direction. Beyond it is just more universe we can\'t see yet.' },
 ];
+for (const rg of REGIONS) if (rg.shape) Object.assign(rg, { x: rg.shape.c.x, y: rg.shape.c.y, z: rg.shape.c.z, r: rg.shape.r });
 // ---------- cosmic voids: measured centres and sizes ----------
 // [name, centre distance ly, l, b, diameter ly, constellation, how it was measured, blurb, disputed]
 const VOIDS = [
@@ -937,7 +972,7 @@ function drawVoids() {
 const cv = document.getElementById('map'), ctx = cv.getContext('2d');
 let Wd = 0, Ht = 0, dpr = 1;
 const view = { x: 0, y: 4000, z: 0, s: 0.01, yaw: 0, tilt: 0 };
-const opts = { arms: true, grid: true, labels: true, stars: true, stalks: false, voids: true, zodiac: false, orbit: false };   // depth lines start off, to keep the view clean
+const opts = { arms: true, grid: true, labels: true, stars: true, stalks: false, voids: true, cmb: true, zodiac: false, orbit: false };   // depth lines start off, to keep the view clean
 let sky = null, hover = null, selected = null, anim = null;
 let CY = 1, SY = 0, CT = 1, ST = 0;
 // Close in, the map is drawn through a real camera with a 40° lens (the same as the Solar System view), so you see the Milky Way
@@ -1472,6 +1507,85 @@ function drawOrbit() {
   ctx.globalAlpha = 1;
 }
 
+// ---------- the largest structures: a line along each one's measured spine, once it's big enough on screen to read ----------
+function drawShape(rg, Rr) {
+  rg.scr = null;
+  if (Rr < 10 || Rr > 30 * Math.max(Wd, Ht)) return;
+  const sel = rg === selected || rg === hover, a = Math.min(1, (Rr - 10) / 25), P = rg.shape.map(q => proj(q.x, q.y, q.z));
+  if (P.some(p => !isFinite(p[0]))) return;
+  ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); PEN.start(); for (const [X, Y] of P) PEN.to(X, Y); if (rg.closed) PEN.to(P[0][0], P[0][1]);
+  ctx.globalAlpha = a * 0.22; ctx.strokeStyle = '#c9b6ff'; ctx.lineWidth = 9; ctx.stroke();   // a soft glow under the line
+  ctx.globalAlpha = a; ctx.strokeStyle = `rgba(214,198,255,${sel ? 0.95 : 0.65})`; ctx.lineWidth = sel ? 2.6 : 1.8;
+  ctx.setLineDash(rg.debated ? [7, 5] : []); ctx.stroke(); ctx.restore();
+  rg.scr = P;
+  if (opts.labels) {
+    const top = P.reduce((m, p) => p[1] < m[1] ? p : m), X = P.reduce((t, p) => t + p[0], 0) / P.length, ly = top[1] - 14;
+    const f = 'italic 14px "IM Fell English", Georgia, serif', t = rg.name.toUpperCase().split('').join(' '), w = lblW(f, t);
+    lbl(sel ? -9 : 1.4, [X - w / 2, ly - 7, w, 14], () => { ctx.globalAlpha = a; ctx.font = f; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(220,206,255,0.9)'; ctx.fillText(t, X, ly); });
+  }
+}
+function nearShape(rg, X, Y) {   // pixels from (X, Y) to the structure's line as last drawn
+  const P = rg.scr; if (!P) return Infinity;
+  let best = Infinity; const n = P.length + (rg.closed ? 1 : 0);
+  for (let i = 1; i < n; i++) { const [x0, y0] = P[i - 1], [x1, y1] = P[i % P.length], dx = x1 - x0, dy = y1 - y0, L = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((X - x0) * dx + (Y - y0) * dy) / L)); best = Math.min(best, Math.hypot(X - x0 - t * dx, Y - y0 - t * dy)); }
+  return best;
+}
+
+// ---------- the cosmic microwave background: a shell just inside the edge, painted with Planck's real map ----------
+// Each point of the shell shows the temperature Planck measured in that direction (we see its near side from outside). The map is
+// ESA's Planck 2018 image in galactic coordinates (Mollweide projection, longitude 0 in the middle, increasing to the left).
+const CMB = { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Cosmic_Microwave_Background_%28CMB%29.jpeg/1920px-Cosmic_Microwave_Background_%28CMB%29.jpeg' };
+function cmbInit() {
+  CMB.cv = document.createElement('canvas');
+  const gl = CMB.gl = CMB.cv.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false });
+  if (!gl) return false;
+  const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); return o; };
+  const pr = CMB.pr = gl.createProgram();
+  gl.attachShader(pr, sh(gl.VERTEX_SHADER, 'attribute vec2 p; varying vec2 v; void main() { v = vec2(p.x, -p.y); gl_Position = vec4(p, 0.0, 1.0); }'));
+  gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, `precision highp float;
+    uniform sampler2D T; uniform vec3 E1, E2, E3, GX, GY, GZ; uniform float px; varying vec2 v;
+    void main() {
+      float r2 = dot(v, v); if (r2 > 1.0) discard;
+      float mu = sqrt(1.0 - r2);
+      vec3 n = v.x * E1 + v.y * E2 + mu * E3;                    // the shell's near side, as a direction from the Sun
+      vec3 h = vec3(dot(n, GX), dot(n, GY), dot(n, GZ));         // in galactic coordinates
+      float l = atan(h.y, h.x), b = asin(clamp(h.z, -1.0, 1.0)), t = b;
+      for (int i = 0; i < 6; i++) t -= (2.0 * t + sin(2.0 * t) - 3.14159265 * sin(b)) / (2.0 + 2.0 * cos(2.0 * t) + 1e-4);   // Mollweide's auxiliary angle
+      float x = 0.90031632 * l * cos(t), y = 1.41421356 * sin(t);   // 2√2/π · λ cos θ, √2 sin θ
+      vec2 uv = vec2(0.5 - 0.4813 * x / 2.82842712, 0.5 - 0.4805 * y / 1.41421356);
+      vec3 c = texture2D(T, uv).rgb * (0.8 + 0.4 * (1.0 - mu));   // a little brighter towards the rim, like a glowing shell
+      float a = clamp((1.0 - sqrt(r2)) / px, 0.0, 1.0);
+      gl_FragColor = vec4(c * a, a);
+    }`));
+  gl.linkProgram(pr); gl.useProgram(pr);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const g0 = galToWorld(0, 0, 0), dir = (l, b) => { const q = galToWorld(1e9, l, b), d = [q.x - g0.x, q.y - g0.y, q.z - g0.z], L = Math.hypot(...d); return d.map(c => c / L); };
+  gl.uniform3fv(gl.getUniformLocation(pr, 'GX'), dir(0, 0)); gl.uniform3fv(gl.getUniformLocation(pr, 'GY'), dir(90, 0)); gl.uniform3fv(gl.getUniformLocation(pr, 'GZ'), dir(0, 90));
+  const im = new Image(); im.crossOrigin = 'anonymous'; im.decoding = 'async';
+  im.onload = () => { const tx = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tx);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, im);
+    for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+    CMB.ready = true; CMB.key = ''; draw(); };
+  im.src = CMB.url;
+  return true;
+}
+function cmbDraw(X, Y, Rr) {
+  const M = Math.max(Wd, Ht), a = 0.4 * sstep(Rr, 60, 170) * (1 - sstep(Rr, 1.1 * M, 2.4 * M));   // fades in as you pull out to the whole universe
+  if (a <= 0.01 || (!CMB.gl && !cmbInit()) || !CMB.ready) return;
+  const gl = CMB.gl, N = Math.max(64, Math.min(900, Math.round(2 * Rr * Math.min(dpr, 1.5)))), key = [N, SY, CY, ST, CT].join();
+  if (key !== CMB.key) {
+    if (CMB.cv.width !== N) { CMB.cv.width = CMB.cv.height = N; }
+    gl.viewport(0, 0, N, N); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    const u = n => gl.getUniformLocation(CMB.pr, n);
+    gl.uniform3fv(u('E1'), [CY, -SY, 0]); gl.uniform3fv(u('E2'), [SY * CT, CY * CT, -ST]); gl.uniform3fv(u('E3'), [SY * ST, CY * ST, CT]); gl.uniform1f(u('px'), 2.5 / N);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); CMB.key = key;
+  }
+  ctx.save(); ctx.globalAlpha = a; ctx.drawImage(CMB.cv, X - Rr, Y - Rr, 2 * Rr, 2 * Rr); ctx.restore();
+}
+
 function drawGalaxies() {
   for (const o of GALAXIES) {
     if (!o.sprite) continue;
@@ -1494,12 +1608,14 @@ function drawGalaxies() {
   for (const rg of REGIONS) {
     const [X, Y, , pf] = proj(rg.x, rg.y, rg.z), Rr = rg.r * view.s * pf;
     if (!isFinite(X)) continue;
+    if (rg.shape) { drawShape(rg, Rr); continue; }
+    if (rg.cmb) { if (!opts.cmb) continue; cmbDraw(X, Y, Rr); }
     if (Rr < 40 || Rr > 40 * Math.max(Wd, Ht)) continue;
     if (X + Rr < 0 || X - Rr > Wd || Y + Rr < 0 || Y - Rr > Ht) continue;
     if (PD !== Infinity && Math.hypot(view.x - rg.x, view.y - rg.y, view.z - rg.z) < rg.r) continue;   // zoomed in somewhere inside it: its outline means nothing here
     const sel = rg === selected || rg === hover;
-    ctx.strokeStyle = rg.edge ? 'rgba(255,170,120,0.55)' : `rgba(201,182,255,${sel ? 0.8 : 0.4})`;
-    ctx.lineWidth = sel ? 2 : rg.edge ? 2 : 1.2; ctx.setLineDash(rg.edge ? [] : [6, 6]);
+    ctx.strokeStyle = rg.edge ? 'rgba(255,170,120,0.55)' : rg.cmb ? `rgba(150,200,255,${sel ? 0.8 : 0.35})` : `rgba(201,182,255,${sel ? 0.8 : 0.4})`;
+    ctx.lineWidth = sel ? 2 : rg.edge ? 2 : 1.2; ctx.setLineDash(rg.edge || rg.cmb ? [] : [6, 6]);
     ctx.beginPath(); ctx.arc(X, Y, Rr, 0, 7); ctx.stroke(); ctx.setLineDash([]);
     if (rg.edge) {
       const gg = ctx.createRadialGradient(X, Y, Rr * 0.97, X, Y, Rr * 1.03);
@@ -1508,9 +1624,9 @@ function drawGalaxies() {
     }
     if (opts.labels) {
       const f = 'italic 14px "IM Fell English", Georgia, serif', t = rg.name.toUpperCase().split('').join('\u200A'), w = lblW(f, t), edge = rg.edge;
-      const ly = Y - Rr - 10 > 14 ? Y - Rr - 10 : Y + Rr + 14 < Ht ? Y + Rr + 14 : 14;
+      const ly = rg.cmb ? (Y + Rr - 16 < Ht - 30 ? Y + Rr - 16 : Ht - 30) : Y - Rr - 10 > 14 ? Y - Rr - 10 : Y + Rr + 14 < Ht ? Y + Rr + 14 : 14, cmb = rg.cmb;   // the CMB's name sits just inside its bottom edge
       lbl(sel ? -9 : 1, [X - w / 2, ly - 7, w, 14], () => { ctx.font = f; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillStyle = edge ? 'rgba(255,190,150,0.9)' : 'rgba(215,200,255,0.85)'; ctx.fillText(t, X, ly); });
+        ctx.fillStyle = edge ? 'rgba(255,190,150,0.9)' : cmb ? 'rgba(180,215,255,0.9)' : 'rgba(215,200,255,0.85)'; ctx.fillText(t, X, ly); });
     }
   }
 }
@@ -1613,6 +1729,17 @@ let screenPts = [];
 // feathered at the edges and added as light, so their black sky drops away.
 // var: zoomLimit() may look before this line has run
 var NEB = {"Orion Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg/960px-Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg", "w": 10, "c": "NASA, ESA, M. Robberto (STScI/ESA) & the Hubble Orion Treasury team", "l": "public domain", "f": "Orion Nebula - Hubble 2006 mosaic 18000.jpg"}, "Carina Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Carina_Nebula_by_ESO.jpg/960px-Carina_Nebula_by_ESO.jpg", "w": 200, "c": "ESO", "l": "CC BY 4.0", "f": "Carina Nebula by ESO.jpg"}, "Eagle Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/ESO-The_Eagle_Nebula.jpg/960px-ESO-The_Eagle_Nebula.jpg", "w": 60, "c": "ESO", "l": "CC BY 4.0", "f": "ESO-The Eagle Nebula.jpg"}, "Lagoon Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/VST_images_the_Lagoon_Nebula.jpg/960px-VST_images_the_Lagoon_Nebula.jpg", "w": 110, "c": "ESO/VPHAS+ team", "l": "CC BY 4.0", "f": "VST images the Lagoon Nebula.jpg"}, "Rosette Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Rosette_nebula_s.jpg/960px-Rosette_nebula_s.jpg", "w": 185, "c": "Nick Wright (UCL)", "l": "public domain", "f": "Rosette nebula s.jpg"}, "Crab Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/960px-Crab_Nebula.jpg", "w": 13, "c": "NASA, ESA, J. Hester & A. Loll (Arizona State Univ.)", "l": "public domain", "f": "Crab Nebula.jpg"}, "Cassiopeia A": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Cassiopeia_A_Spitzer_Crop.jpg/960px-Cassiopeia_A_Spitzer_Crop.jpg", "w": 16, "c": "NASA/JPL-Caltech, O. Krause (Steward Observatory)", "l": "public domain", "f": "Cassiopeia A Spitzer Crop.jpg"}, "Kepler's Supernova": {"u": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Keplers_supernova.jpg", "w": 17.5, "c": "NASA/ESA/JHU/R. Sankrit & W. Blair", "l": "public domain", "f": "Keplers supernova.jpg"}, "Tycho's Supernova": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Tycho-supernova-xray.jpg/960px-Tycho-supernova-xray.jpg", "w": 24, "c": "NASA/CXC/Rutgers/J. Warren & J. Hughes", "l": "public domain", "f": "Tycho-supernova-xray.jpg"}, "Vela Supernova Remnant": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Vela_supernova_-_VST_-_Eso2214a.jpg/960px-Vela_supernova_-_VST_-_Eso2214a.jpg", "w": 150, "c": "ESO/VPHAS+ team & M. Kornmesser", "l": "CC BY 4.0", "f": "Vela supernova - VST - Eso2214a.jpg"}, "Ring Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Hubble_image_of_the_Ring_Nebula_%28Messier_57%29.jpg/960px-Hubble_image_of_the_Ring_Nebula_%28Messier_57%29.jpg", "w": 1.9, "c": "NASA, ESA & C. Robert O'Dell (Vanderbilt Univ.)", "l": "public domain", "f": "Hubble image of the Ring Nebula (Messier 57).jpg"}, "Cat's Eye Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/NGC6543.jpg/960px-NGC6543.jpg", "w": 0.5, "c": "J.P. Harrington & K.J. Borkowski (Univ. of Maryland), NASA", "l": "public domain", "f": "NGC6543.jpg"}, "Helix Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/NGC7293_%282004%29.jpg/960px-NGC7293_%282004%29.jpg", "w": 5, "c": "NASA, ESA, C.R. O'Dell (Vanderbilt Univ.) et al.", "l": "public domain", "f": "NGC7293 (2004).jpg"}, "Pleiades": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Pleiades_large.jpg/960px-Pleiades_large.jpg", "w": 16, "c": "NASA, ESA, AURA/Caltech, Palomar Observatory", "l": "public domain", "f": "Pleiades large.jpg"}, "Omega Centauri": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Omega_Centauri_by_ESO.jpg/960px-Omega_Centauri_by_ESO.jpg", "w": 180, "c": "ESO", "l": "CC BY 4.0", "f": "Omega Centauri by ESO.jpg"}, "Hercules Cluster (M13)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Heart_of_M13_Hercules_Globular_Cluster.jpg/960px-Heart_of_M13_Hercules_Globular_Cluster.jpg", "w": 20, "c": "NASA, ESA & the Hubble Heritage Team (STScI/AURA)", "l": "public domain", "f": "Heart of M13 Hercules Globular Cluster.jpg"}, "M4": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Messier_4_HST.jpg/960px-Messier_4_HST.jpg", "w": 7, "c": "ESA/Hubble & NASA", "l": "CC BY 3.0", "f": "Messier 4 HST.jpg"}, "Double Cluster": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Double_cluster_t%C3%B5rva.jpg/960px-Double_cluster_t%C3%B5rva.jpg", "w": 260, "c": "Taavi Niittee", "l": "CC BY-SA 4.0", "f": "Double cluster tõrva.jpg"}, "Westerlund 1": {"u": "https://upload.wikimedia.org/wikipedia/commons/9/94/Westerlund_1.jpg", "w": 18, "c": "2MASS/UMass/IPAC-Caltech/NASA/NSF", "l": "public domain", "f": "Westerlund 1.jpg"}, "Hyades": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/The_Hyades_star_cluster_%28noirlab2018e%29.jpg/960px-The_Hyades_star_cluster_%28noirlab2018e%29.jpg", "w": 30, "c": "NOIRLab/NSF/AURA/Digitized Sky Survey 2", "l": "CC BY 4.0", "f": "The Hyades star cluster (noirlab2018e).jpg"}, "Large Magellanic Cloud": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/LMC_snapped_by_the_ESO_1-metre_Schmidt_telescope.jpg/960px-LMC_snapped_by_the_ESO_1-metre_Schmidt_telescope.jpg", "fill": 0.8, "c": "ESO", "l": "CC BY 4.0", "f": "LMC snapped by the ESO 1-metre Schmidt telescope.jpg"}, "Small Magellanic Cloud": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Small_Magellanic_Cloud.jpg/960px-Small_Magellanic_Cloud.jpg", "fill": 0.45, "c": "Martin Bernardi", "l": "CC BY-SA 4.0", "f": "Small Magellanic Cloud.jpg"}, "Andromeda Galaxy (M31)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Andromeda_Galaxy_%28with_h-alpha%29.jpg/960px-Andromeda_Galaxy_%28with_h-alpha%29.jpg", "fill": 0.9, "c": "Adam Evans", "l": "CC BY 2.0", "f": "Andromeda Galaxy (with h-alpha).jpg"}, "Triangulum Galaxy (M33)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/VST_snaps_a_very_detailed_view_of_the_Triangulum_Galaxy.jpg/960px-VST_snaps_a_very_detailed_view_of_the_Triangulum_Galaxy.jpg", "fill": 0.6, "c": "ESO", "l": "CC BY 4.0", "f": "VST snaps a very detailed view of the Triangulum Galaxy.jpg"}, "IC 1613": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Dwarf_galaxy_IC_1613.jpg/960px-Dwarf_galaxy_IC_1613.jpg", "fill": 0.6, "c": "ESO", "l": "CC BY 4.0", "f": "Dwarf galaxy IC 1613.jpg"}, "WLM": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Wolf-Lundmark-Melotte_-_Noao-wlm.jpg/960px-Wolf-Lundmark-Melotte_-_Noao-wlm.jpg", "fill": 0.3, "c": "Local Group Survey Team / NOIRLab / NSF / AURA", "l": "CC BY 4.0", "f": "Wolf-Lundmark-Melotte - Noao-wlm.jpg"}, "Maffei 1": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Maffei_1_and_2_cropped.jpg/960px-Maffei_1_and_2_cropped.jpg", "fill": 0.25, "c": "NASA/JPL-Caltech/UCLA (WISE, infrared)", "l": "public domain", "f": "Maffei 1 and 2 cropped.jpg"}, "IC 342": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Spiral_Galaxy_IC_342_%28noao0703a%29.jpg/960px-Spiral_Galaxy_IC_342_%28noao0703a%29.jpg", "fill": 0.6, "c": "NOIRLab/NSF/AURA/T.A. Rector", "l": "CC BY 4.0", "f": "Spiral Galaxy IC 342 (noao0703a).jpg"}, "Sculptor Galaxy": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Sculptor_Galaxy%2C_NGC_253_%28noao-ngc-253%29.jpg/960px-Sculptor_Galaxy%2C_NGC_253_%28noao-ngc-253%29.jpg", "fill": 0.95, "c": "SSRO/PROMPT/CTIO/NOIRLab/NSF/AURA", "l": "CC BY 4.0", "f": "Sculptor Galaxy, NGC 253 (noao-ngc-253).jpg"}, "Cigar Galaxy (M82)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/M82_HST_ACS_2006-14-a-large_web.jpg/960px-M82_HST_ACS_2006-14-a-large_web.jpg", "fill": 0.8, "c": "NASA, ESA & the Hubble Heritage Team (STScI/AURA)", "l": "public domain", "f": "M82 HST ACS 2006-14-a-large web.jpg"}, "Centaurus A": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/ESO_Centaurus_A_LABOCA.jpg/960px-ESO_Centaurus_A_LABOCA.jpg", "fill": 0.6, "c": "ESO/WFI (optical); MPIfR/ESO/APEX (submm); NASA/CXC (X-ray)", "l": "CC BY 4.0", "f": "ESO Centaurus A LABOCA.jpg"}, "Southern Pinwheel (M83)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Messier83_-_Heic1403a.jpg/960px-Messier83_-_Heic1403a.jpg", "fill": 0.95, "c": "NASA, ESA & the Hubble Heritage Team", "l": "public domain", "f": "Messier83 - Heic1403a.jpg"}, "Pinwheel Galaxy (M101)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/M101_hires_STScI-PRC2006-10a.jpg/960px-M101_hires_STScI-PRC2006-10a.jpg", "fill": 0.9, "c": "ESA/Hubble & NASA", "l": "CC BY 4.0", "f": "M101 hires STScI-PRC2006-10a.jpg"}, "Whirlpool Galaxy (M51)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Messier51_sRGB.jpg/960px-Messier51_sRGB.jpg", "fill": 0.55, "c": "NASA & ESA", "l": "public domain", "f": "Messier51 sRGB.jpg"}, "Sombrero Galaxy (M104)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/M104_ngc4594_sombrero_galaxy_hi-res.jpg/960px-M104_ngc4594_sombrero_galaxy_hi-res.jpg", "fill": 0.75, "c": "NASA/ESA & the Hubble Heritage Team", "l": "public domain", "f": "M104 ngc4594 sombrero galaxy hi-res.jpg"}, "Leo Triplet": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Leo_triplet_t%C3%B5rva.jpg/960px-Leo_triplet_t%C3%B5rva.jpg", "fill": 0.9, "c": "Taavi Niittee", "l": "CC BY-SA 4.0", "f": "Leo triplet tõrva.jpg"}, "Horsehead Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Barnard_33.jpg/960px-Barnard_33.jpg", "w": 10, "c": "Ken Crawford", "l": "CC BY-SA 3.0", "f": "Barnard 33.jpg"}, "Trifid Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Messier_20_Nebulosa_Trifida_en_LRGB.jpg/960px-Messier_20_Nebulosa_Trifida_en_LRGB.jpg", "w": 50, "c": "Cappellettiariel", "l": "CC BY-SA 4.0", "f": "Messier 20 Nebulosa Trifida en LRGB.jpg"}, "North America Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Nord_america.jpg/960px-Nord_america.jpg", "w": 130, "c": "Luc Viatour", "l": "CC BY-SA 3.0", "f": "Nord america.jpg"}, "Dumbbell Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/M27%2C_NGC_6853%2C_Dumbbell_Nebula_%28noao-02184%29.jpg/960px-M27%2C_NGC_6853%2C_Dumbbell_Nebula_%28noao-02184%29.jpg", "w": 7, "c": "Bill Schoening, Nigel Sharp/NOIRLab/NSF/AURA", "l": "CC BY 4.0", "f": "M27, NGC 6853, Dumbbell Nebula (noao-02184).jpg"}, "Butterfly Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/NGC_6302_Hubble_2009.full.jpg/960px-NGC_6302_Hubble_2009.full.jpg", "w": 3, "c": "NASA, ESA & the Hubble SM4 ERO Team", "l": "public domain", "f": "NGC 6302 Hubble 2009.full.jpg"}, "Owl Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Owl_Nebula%2C_M97%2C_NGC_3587_%28noao0310a%29.jpg/960px-Owl_Nebula%2C_M97%2C_NGC_3587_%28noao0310a%29.jpg", "w": 4, "c": "Karen Kwitter (Williams College), Ron Downes (STScI), You-Hua Chu (Univ. of Illinois)/NOIRLab/NSF/AURA", "l": "CC BY 4.0", "f": "Owl Nebula, M97, NGC 3587 (noao0310a).jpg"}, "Heart Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Heart_Nebula_IC_1805_NGC_896.jpg/960px-Heart_Nebula_IC_1805_NGC_896.jpg", "w": 330, "c": "Hunter Wilson", "l": "CC BY 3.0", "f": "Heart Nebula IC 1805 NGC 896.jpg"}, "Christmas Tree Cluster": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/NGC_2264_Christmas_Tree_Nebula.jpg/960px-NGC_2264_Christmas_Tree_Nebula.jpg", "w": 45, "c": "Dylan O’Donnell", "l": "CC0", "f": "NGC 2264 Christmas Tree Nebula.jpg"}, "Tarantula Nebula": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/A_New_View_of_the_Tarantula_Nebula.jpg/960px-A_New_View_of_the_Tarantula_Nebula.jpg", "w": 1000, "c": "NASA, ESA, CSA, STScI (Webb)", "l": "public domain", "f": "A New View of the Tarantula Nebula.jpg"}, "Rho Ophiuchi Cloud": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Rho_Ophiuchi_imaged_with_a_61mm_refractor_at_the_Kchi_Waasa_Debaabing_Dome_of_the_Killarney_Provincial_Park_Observatory_Complex.jpg/960px-Rho_Ophiuchi_imaged_with_a_61mm_refractor_at_the_Kchi_Waasa_Debaabing_Dome_of_the_Killarney_Provincial_Park_Observatory_Complex.jpg", "w": 60, "c": "Bruce Waters", "l": "CC BY-SA 4.0", "f": "Rho Ophiuchi imaged with a 61mm refractor at the Kchi Waasa Debaabing Dome of the Killarney Provincial Park Observatory Complex.jpg"}, "Bode's Galaxy (M81)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Messier_81_HST.jpg/960px-Messier_81_HST.jpg", "fill": 0.9, "c": "NASA, ESA & the Hubble Heritage Team (STScI/AURA)", "l": "public domain", "f": "Messier 81 HST.jpg"}, "Black Eye Galaxy (M64)": {"u": "https://upload.wikimedia.org/wikipedia/commons/c/c4/Blackeyegalaxy.jpg", "fill": 1.16, "cx": 0.53, "cy": 0.45, "c": "NASA & the Hubble Heritage Team (AURA/STScI)", "l": "public domain", "f": "Blackeyegalaxy.jpg"}, "Fireworks Galaxy (NGC 6946)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/NGC_6946_%E2%80%9CFireworks_Galaxy%E2%80%9D_(noao-ngc6946).jpg/960px-NGC_6946_%E2%80%9CFireworks_Galaxy%E2%80%9D_(noao-ngc6946).jpg", "fill": 1.4, "c": "International Gemini Observatory/T. Rector (Univ. of Alaska Anchorage)", "l": "CC BY 4.0", "f": "NGC 6946 “Fireworks Galaxy” (noao-ngc6946).jpg"}, "Sunflower Galaxy (M63)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/M63_(Sunflower_Galaxy)_(noao-m63hugo).jpg/1280px-M63_(Sunflower_Galaxy)_(noao-m63hugo).jpg", "fill": 1.0, "cy": 0.51, "max": 1280, "c": "KPNO/NOIRLab/NSF/AURA/B. Hugo, L. Gaul & A. Block", "l": "CC BY 4.0", "f": "M63 (Sunflower Galaxy) (noao-m63hugo).jpg"}, "Phantom Galaxy (M74)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Messier_74_by_HST.jpg/960px-Messier_74_by_HST.jpg", "fill": 1.3, "c": "NASA, ESA & the Hubble Heritage Team (STScI/AURA)", "l": "public domain", "f": "Messier 74 by HST.jpg"}, "Needle Galaxy (NGC 4565)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Needle_galaxy_t%C3%B5rva.jpg/1920px-Needle_galaxy_t%C3%B5rva.jpg", "fill": 0.28, "max": 1920, "c": "Taavi Niittee", "l": "CC BY-SA 4.0", "f": "Needle galaxy tõrva.jpg"}, "NGC 1300": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Hubble2005-01-barred-spiral-galaxy-NGC1300.jpg/960px-Hubble2005-01-barred-spiral-galaxy-NGC1300.jpg", "fill": 0.95, "c": "NASA, ESA & the Hubble Heritage Team (STScI/AURA)", "l": "public domain", "f": "Hubble2005-01-barred-spiral-galaxy-NGC1300.jpg"}, "Great Barred Spiral (NGC 1365)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Barred_Spiral_Galaxy_NGC_1365_(noao-ngc1365).jpg/960px-Barred_Spiral_Galaxy_NGC_1365_(noao-ngc1365).jpg", "fill": 1.1, "cx": 0.49, "cy": 0.48, "c": "SSRO/PROMPT & NOIRLab/NSF/AURA", "l": "CC BY 4.0", "f": "Barred Spiral Galaxy NGC 1365 (noao-ngc1365).jpg"}, "Antennae Galaxies": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Antennae_galaxies_xl.jpg/960px-Antennae_galaxies_xl.jpg", "fill": 1.0, "c": "NASA, ESA & the Hubble Heritage Team (STScI/AURA)-ESA/Hubble", "l": "public domain", "f": "Antennae galaxies xl.jpg"}, "Stephan's Quintet": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Stephan's_Quintet_taken_by_James_Webb_Space_Telescope.jpg/1920px-Stephan's_Quintet_taken_by_James_Webb_Space_Telescope.jpg", "fill": 0.65, "cx": 0.45, "cy": 0.48, "soft": 0.75, "max": 1920, "c": "NASA, ESA, CSA & STScI (Webb)", "l": "public domain", "f": "Stephan's Quintet taken by James Webb Space Telescope.jpg"}, "Cartwheel Galaxy": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Cartwheel_Galaxy_(NIRCam_and_MIRI_Composite_Image)_(weic2211a).jpeg/1920px-Cartwheel_Galaxy_(NIRCam_and_MIRI_Composite_Image)_(weic2211a).jpeg", "fill": 0.675, "cx": 0.63, "cy": 0.53, "soft": 0.82, "max": 1920, "c": "NASA, ESA, CSA & STScI (Webb)", "l": "public domain", "f": "Cartwheel Galaxy (NIRCam and MIRI Composite Image) (weic2211a).jpeg"}, "Hoag's Object": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Hoag's_object.jpg/1280px-Hoag's_object.jpg", "fill": 0.7, "cx": 0.53, "cy": 0.49, "soft": 0.72, "max": 1280, "c": "NASA & the Hubble Heritage Team (STScI/AURA)", "l": "public domain", "f": "Hoag's object.jpg"}, "Barnard's Galaxy (NGC 6822)": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/NGC_6822_(Barnard%E2%80%99s_Galaxy).jpg/1920px-NGC_6822_(Barnard%E2%80%99s_Galaxy).jpg", "fill": 0.7, "max": 1920, "c": "ESO", "l": "CC BY 4.0", "f": "NGC 6822 (Barnard’s Galaxy).jpg"}, "Fornax Dwarf": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Fornax_dwarf_galaxy.jpg/1920px-Fornax_dwarf_galaxy.jpg", "fill": 0.57, "max": 1920, "c": "ESO/Digitized Sky Survey 2", "l": "CC BY 4.0", "f": "Fornax dwarf galaxy.jpg"}, "Sculptor Dwarf": {"u": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Sculptor_Dwarf_Galaxy_ESO.jpg/960px-Sculptor_Dwarf_Galaxy_ESO.jpg", "fill": 0.9, "c": "ESO", "l": "CC BY 4.0", "f": "Sculptor Dwarf Galaxy ESO.jpg"}};
+// far-away clusters, each photo drawn at its real width: the image's field of view × the angular-diameter distance (Planck 2018)
+Object.assign(NEB, {
+  'Bullet Cluster': { u: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Visible-Light_and_X-Ray_Composite_Image_of_Galaxy_Cluster_1E_0657-556_%282006-39-1981%29.jpg/1920px-Visible-Light_and_X-Ray_Composite_Image_of_Galaxy_Cluster_1E_0657-556_%282006-39-1981%29.jpg', fill: 0.494, cx: 0.5, cy: 0.5, soft: 0.8, max: 1920,
+    c: 'X-ray: NASA/CXC/M. Markevitch et al.; optical: NASA/STScI, Magellan/U. Arizona/D. Clowe et al.', l: 'public domain', f: 'Visible-Light and X-Ray Composite Image of Galaxy Cluster 1E 0657-556 (2006-39-1981).jpg' },   // 7.5′ wide
+  'El Gordo': { u: 'https://upload.wikimedia.org/wikipedia/commons/a/a7/ACT-CL_J0102%E2%88%924915.jpg', fill: 0.651, cx: 0.52, cy: 0.52, soft: 0.8, max: 1530,
+    c: 'ESO/SOAR/NASA', l: 'CC BY 3.0', f: 'ACT-CL J0102−4915.jpg' },   // 6.43′ wide
+  "Pandora's Cluster (Abell 2744)": { u: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Webb_Uncovers_New_Details_in_Pandora%E2%80%99s_Cluster_%28weic2305a%29.jpeg/1920px-Webb_Uncovers_New_Details_in_Pandora%E2%80%99s_Cluster_%28weic2305a%29.jpeg', fill: 0.65, cx: 0.5, cy: 0.5, soft: 0.8, max: 1920,
+    c: 'NASA, ESA, CSA, I. Labbé, R. Bezanson & A. Pagan (Webb)', l: 'public domain', f: 'Webb Uncovers New Details in Pandora’s Cluster (weic2305a).jpeg' },   // 5.88′ wide
+  "SMACS 0723 (Webb's First Deep Field)": { u: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Webb%27s_First_Deep_Field.jpg/1920px-Webb%27s_First_Deep_Field.jpg', fill: 0.66, cx: 0.5, cy: 0.5, soft: 0.85, max: 1920,
+    c: 'NASA, ESA, CSA & STScI (Webb)', l: 'public domain', f: "Webb's First Deep Field.jpg" },   // 2.27′ wide
+});
 for (const g of GALAXIES) { const e = NEB[g.name]; if (e && e.fill) e.w = g.diam / e.fill; }   // galaxy pictures: width from the galaxy's measured width
 const NEBI = {};
 function nebImg(name) {
@@ -1758,6 +1885,8 @@ function pick(X, Y) {
   }
   if (bi >= 0) return fieldObj(bi);
   for (const rg of REGIONS) {
+    if (rg.shape) { if (nearShape(rg, X, Y) < 8) return rg; continue; }
+    if (rg.cmb && !opts.cmb) continue;
     const [RX, RY] = proj(rg.x, rg.y, rg.z), Rr = rg.r * view.s;
     if (Rr < 40 || Rr > 40 * Math.max(Wd, Ht)) continue;
     if (Math.abs(Math.hypot(RX - X, RY - Y) - Rr) < 7) return rg;
@@ -1838,7 +1967,7 @@ const zoomTo = (X, Y, f, viaWheel) => {
 let wheelHover = null, lastWheel = 0;
 function steerIn(X, Y, f, viaWheel) {
   if (viaWheel) { const now = performance.now(); if (now - lastWheel > 280) wheelHover = pick(X, Y); lastWheel = now; if (wheelHover && wheelHover !== selected) return false; }
-  const o = selected; if (o.type === 'region' && !o.d) return false;
+  const o = selected; if (o.type === 'region' && (!o.d || o.cmb)) return false;
   if ((o.type === 'sun' && sunDive(Wd / 2, Ht / 2, f)) || (o === GCO && gcSteer(Wd / 2, Ht / 2, f))) return true;   // their own approaches (hand-over; down to the black hole)
   setupView();
   const T = { x: o.x, y: o.y, z: o.z || 0 }, k = Math.pow(f, -1.6);   // the gap closes faster than the zoom, so the object slides to the middle
@@ -2971,6 +3100,12 @@ function select(o, fly) {
     facts.push(['Constellation', o.con], ['Measured by', `<span class="src">${o.src}</span>`]);
   } else if (o.type === 'region') {
     if (o.edge) facts.push(['Distance to edge', '46.5 billion ly (in every direction)'], ['Age of the light', '13.8 billion years'], ['What we see there', 'The afterglow of the Big Bang']);
+    else if (o.cmb) facts.push(['Where it left from', 'Now ~45.3 billion ly away, in every direction'], ['Light left', '13.8 billion years ago, 370,000 years after the Big Bang'],
+      ['Temperature', '2.725 K, hotter and cooler by ~1 part in 100,000'], ['Map', `<span class="src">ESA and the Planck Collaboration · CC BY 4.0, via <a href="https://commons.wikimedia.org/wiki/File:Cosmic_Microwave_Background_(CMB).jpeg" target="_blank" rel="noopener">Wikimedia Commons</a></span>`],
+      ['Measured by', `<span class="src">${o.src}</span>`]);
+    else if (o.shape) { facts.push(o.size, ['From Sun', fmtLy(o.d)], ['Light left', lightLeft(o.d)], ['Constellation', o.con]);
+      if (o.debated) facts.push(['Status', 'Debated']);
+      facts.push(['Measured by', `<span class="src">${o.src}</span>`]); }
     else facts.push(['Width', fmtLy(o.r * 2)], ['Centre from Sun', fmtLy(o.d)]);
   } else if (o.mw) {
     facts.push(['Width', '~100,000 ly'], ['Thin disc thickness', '~2,000 ly'], ['Sun from centre', fmtLy(R0)], ['Nearest big neighbour', 'Andromeda, 2.48 million ly']);
@@ -3222,6 +3357,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=293ff1b7" data-place="info" defer></script>
+<script src="../music/music.js?v=616d15f9" data-place="info" defer></script>
 </body>
 </html>
