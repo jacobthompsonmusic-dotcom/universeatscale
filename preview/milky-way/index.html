@@ -182,11 +182,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=616d15f9"></script>
-<script src="../shared/clock.js?v=616d15f9"></script>
-<script src="../shared/fold.js?v=616d15f9"></script>
-<script src="../shared/perf.js?v=616d15f9"></script>
-<script src="../shared/galaxy-volume.js?v=616d15f9"></script>
+<script src="../shared/frame.js?v=0d6918b7"></script>
+<script src="../shared/clock.js?v=0d6918b7"></script>
+<script src="../shared/fold.js?v=0d6918b7"></script>
+<script src="../shared/perf.js?v=0d6918b7"></script>
+<script src="../shared/galaxy-volume.js?v=0d6918b7"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1554,7 +1554,7 @@ function cmbInit() {
       float l = atan(h.y, h.x), b = asin(clamp(h.z, -1.0, 1.0)), t = b;
       for (int i = 0; i < 6; i++) t -= (2.0 * t + sin(2.0 * t) - 3.14159265 * sin(b)) / (2.0 + 2.0 * cos(2.0 * t) + 1e-4);   // Mollweide's auxiliary angle
       float x = 0.90031632 * l * cos(t), y = 1.41421356 * sin(t);   // 2√2/π · λ cos θ, √2 sin θ
-      vec2 uv = vec2(0.5 - 0.4813 * x / 2.82842712, 0.5 - 0.4805 * y / 1.41421356);
+      vec2 uv = vec2(0.5 - 0.4775 * x / 2.82842712, 0.5 - 0.4765 * y / 1.41421356);   // the map's ellipse (0.4813 × 0.4805 of the frame), pulled in a hair so its black surround never bleeds in
       vec3 c = texture2D(T, uv).rgb * (0.8 + 0.4 * (1.0 - mu));   // a little brighter towards the rim, like a glowing shell
       float a = clamp((1.0 - sqrt(r2)) / px, 0.0, 1.0);
       gl_FragColor = vec4(c * a, a);
@@ -1573,7 +1573,7 @@ function cmbInit() {
   return true;
 }
 function cmbDraw(X, Y, Rr) {
-  const M = Math.max(Wd, Ht), a = 0.4 * sstep(Rr, 60, 170) * (1 - sstep(Rr, 1.1 * M, 2.4 * M));   // fades in as you pull out to the whole universe
+  const M = Math.max(Wd, Ht), a = 0.34 * sstep(Rr, 60, 170) * (1 - sstep(Rr, 1.1 * M, 2.4 * M));   // fades in as you pull out to the whole universe
   if (a <= 0.01 || (!CMB.gl && !cmbInit()) || !CMB.ready) return;
   const gl = CMB.gl, N = Math.max(64, Math.min(900, Math.round(2 * Rr * Math.min(dpr, 1.5)))), key = [N, SY, CY, ST, CT].join();
   if (key !== CMB.key) {
@@ -1624,7 +1624,7 @@ function drawGalaxies() {
     }
     if (opts.labels) {
       const f = 'italic 14px "IM Fell English", Georgia, serif', t = rg.name.toUpperCase().split('').join('\u200A'), w = lblW(f, t), edge = rg.edge;
-      const ly = rg.cmb ? (Y + Rr - 16 < Ht - 30 ? Y + Rr - 16 : Ht - 30) : Y - Rr - 10 > 14 ? Y - Rr - 10 : Y + Rr + 14 < Ht ? Y + Rr + 14 : 14, cmb = rg.cmb;   // the CMB's name sits just inside its bottom edge
+      const ly = rg.cmb ? Math.max(40, Y - Rr + 24) : Y - Rr - 10 > 14 ? Y - Rr - 10 : Y + Rr + 14 < Ht ? Y + Rr + 14 : 14, cmb = rg.cmb;   // the CMB's name sits just inside its top edge
       lbl(sel ? -9 : 1, [X - w / 2, ly - 7, w, 14], () => { ctx.font = f; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillStyle = edge ? 'rgba(255,190,150,0.9)' : cmb ? 'rgba(180,215,255,0.9)' : 'rgba(215,200,255,0.85)'; ctx.fillText(t, X, ly); });
     }
@@ -3357,6 +3357,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=616d15f9" data-place="info" defer></script>
+<script src="../music/music.js?v=0d6918b7" data-place="info" defer></script>
 </body>
 </html>
