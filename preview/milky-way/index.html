@@ -157,6 +157,7 @@
     #readout, #note { display: none; }
     #t1panel, #acpanel, #qpanel, #ppanel { left: 16px; right: 84px; width: auto; bottom: 64px; max-height: 42vh; overflow-y: auto; }
     #legend { max-height: 62vh; overflow-y: auto; z-index: 4; }
+    #info.uas-folded { left: auto; right: 84px; }   /* a folded card's tab sits beside the key's tab, not on it */
     /* phones: the key in two tight columns with the layer switches under it, so both fit without scrolling */
     #legend:not(.uas-folded) { left: 16px; right: 84px; width: auto; display: flex; flex-direction: column; }
     #legend .toggles { margin: 10px 0 0; max-width: none; }
@@ -167,6 +168,7 @@
 
   .homelink { display:inline-block; margin-bottom:10px; font:italic 15px "IM Fell English", Georgia, serif; letter-spacing:0.02em; color:var(--muted); text-decoration:none; }
   .homelink:hover, .homelink:focus-visible { color:var(--accent); }
+  .arrsvg { width:1em; height:0.72em; vertical-align:-0.02em; display:inline-block; }
 </style>
 <style id="globe-type">
   /* clean lining figures for read-outs (distances, dates, coordinates): digits come from a plain system face, letters stay in Fell */
@@ -187,11 +189,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=4488dd33"></script>
-<script src="../shared/clock.js?v=4488dd33"></script>
-<script src="../shared/fold.js?v=4488dd33"></script>
-<script src="../shared/perf.js?v=4488dd33"></script>
-<script src="../shared/galaxy-volume.js?v=4488dd33"></script>
+<script src="../shared/frame.js?v=bd9ba961"></script>
+<script src="../shared/clock.js?v=bd9ba961"></script>
+<script src="../shared/fold.js?v=bd9ba961"></script>
+<script src="../shared/perf.js?v=bd9ba961"></script>
+<script src="../shared/galaxy-volume.js?v=bd9ba961"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -284,7 +286,7 @@ void main() {
   <h3>The Sun’s orbit</h3>
   <p id="orb-txt"></p>
   <canvas id="orb-z" width="1060" height="250" aria-label="The Sun's height above and below the midplane of the disc over the last 260 million years"></canvas>
-  <div class="orb-play"><button id="orb-pp" aria-label="Play the Sun's journey">▶</button><input id="orb-t" type="range" min="-262" max="40" step="0.5" value="0" aria-label="Time"><span id="orb-when">today</span>
+  <div class="orb-play"><button id="orb-pp" aria-label="Play the Sun's journey">▶︎</button><input id="orb-t" type="range" min="-262" max="40" step="0.5" value="0" aria-label="Time"><span id="orb-when">today</span>
     <span class="orb-seg"><button data-r="2">slow</button><button data-r="10" class="on">medium</button><button data-r="30">fast</button></span></div>
   <p class="orb-note" id="orb-note"></p>
 </div>
@@ -1474,7 +1476,7 @@ function orbSet(t, fromSlider) {   // move the playback to time t
   orbitGraph(); draw();
 }
 function orbPlay(on) {
-  const S = SORB; S.play = on; S.last = 0; document.getElementById('orb-pp').textContent = on ? '❚❚' : '▶'; document.getElementById('orbpanel').classList.toggle('playing', on);
+  const S = SORB; S.play = on; S.last = 0; document.getElementById('orb-pp').textContent = on ? '❚❚' : '▶\ufe0e'; document.getElementById('orbpanel').classList.toggle('playing', on);
   if (on) { if (S.t >= 39.9 || Math.abs(S.t) < 0.25) orbSet(-262); if (viewSpan() < 40000) orbView(); }
   draw();
 }
@@ -2042,7 +2044,7 @@ function updateGC() {
   let dx = (X - Wd / 2) / (Wd / 2), dy = (Y - Ht / 2) / (Ht / 2);
   const m = Math.max(Math.abs(dx) / 0.9, Math.abs(dy) / 0.86) || 1; dx /= m; dy /= m;
   const ex = (dx + 1) / 2 * Wd, ey = (dy + 1) / 2 * Ht, bw = 150;
-  gcEl.innerHTML = `<span class="arr" style="transform:rotate(${(Math.atan2(dy, dx) / DEG).toFixed(0)}deg)">➜</span>Galactic centre`;
+  gcEl.innerHTML = `<span class="arr" style="transform:rotate(${(Math.atan2(dy, dx) / DEG).toFixed(0)}deg)"><svg class="arrsvg" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 3.9h7.4V1.2L13.2 5 8.4 8.8V6.1H1z" fill="currentColor"/></svg></span>Galactic centre`;
   gcEl.style.display = 'block';
   let lx = Math.min(Wd - bw - 8, Math.max(8, ex - bw / 2)), ly = ey;
   const rects = ['top', 'info', 'legend', 'controls', 'readout'].map(id => document.getElementById(id)).filter(Boolean).map(e => e.getBoundingClientRect()).filter(r => r.width);
@@ -2745,7 +2747,7 @@ function psrListen(p) {
   const src = ctxA.createBufferSource(), gain = ctxA.createGain(); src.buffer = buf; src.loop = true; gain.gain.value = 0.32; src.connect(gain).connect(ctxA.destination); src.start();
   PSR.audio.src = src; PSR.audio.name = p.name; psrBtn();
 }
-function psrBtn() { const b = document.getElementById('psr-listen'); if (!b) return; const on = PSR.audio && PSR.audio.src && PSR.audio.name === b.dataset.p; b.textContent = on ? '■ Stop' : '▶ Listen at its true speed'; b.classList.toggle('on', !!on); }
+function psrBtn() { const b = document.getElementById('psr-listen'); if (!b) return; const on = PSR.audio && PSR.audio.src && PSR.audio.name === b.dataset.p; b.textContent = on ? '■ Stop' : '▶︎ Listen at its true speed'; b.classList.toggle('on', !!on); }
 function psrPanel(p, rate) {
   const el = document.getElementById('ppanel');
   if (!p) { if (!el.hidden) { el.hidden = true; if (PSR.audio && PSR.audio.src) psrListen({ name: PSR.audio.name }); } return; }
@@ -2760,7 +2762,7 @@ function psrPanel(p, rate) {
       (p.mag ? row('Magnetic field', `${magTxt(p.B)} at the surface — ${earthTimes(p.B)} Earth’s, and strong enough to distort atoms`) : '') +
       (p.bin ? row('Orbit', p.bin.P2 ? `2 h 27 min, ${Math.round(p.bin.a).toLocaleString('en-CA')} km apart; pulsar B turns every 2.77 s (its beam has pointed away from us since 2009)` : `5.74 days around a ${p.bin.name}, ${(p.bin.a / 1e6).toFixed(1)} million km apart`) : '') +
       `</table><p class="more">${slow > 1.05 ? `Spin shown ${Math.round(slow).toLocaleString('en-CA')}× slower than real. ` : 'Spin shown at its real speed. '}${p.mag ? `Magnetars mostly pulse in X-rays, from hot spots on the surface; ${p.radio ? 'this one has also been seen pulsing in radio, so its beams are drawn faintly. ' : 'no steady radio beams are drawn. '}The twisted field lines are illustrated; ${p.axisTxt}.</p>` : `Field lines and beams are illustrated (a simple dipole; the beam tilt is chosen so it sweeps Earth, as it must for us to see pulses); ${p.axisTxt}.</p>`}` +
-      `<p><button id="psr-listen" data-p="${p.name}">▶ Listen at its true speed</button> <span id="psr-rate"></span></p>`;
+      `<p><button id="psr-listen" data-p="${p.name}">▶︎ Listen at its true speed</button> <span id="psr-rate"></span></p>`;
     el.dataset.p = p.name; document.getElementById('psr-listen').onclick = () => psrListen(p); psrBtn();
   }
   const bl = document.getElementById('psr-blip'), pu = psrPulse(p, performance.now() / 1000); bl.style.opacity = (0.15 + 0.85 * pu).toFixed(2);
@@ -3414,7 +3416,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=4488dd33" data-place="info" defer></script>
+<script src="../music/music.js?v=bd9ba961" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

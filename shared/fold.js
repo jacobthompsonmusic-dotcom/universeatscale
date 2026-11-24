@@ -44,6 +44,6 @@
     return it;
   }
   // a tap on the map puts every open menu away
-  function foldAll() { if (!phone.matches) return; for (const it of items) if (!it.el.classList.contains('uas-folded')) it.set(true); }
+  function foldAll() { if (!phone.matches) return; for (const it of items) if (!it.opts.keep && !it.el.classList.contains('uas-folded')) it.set(true); }   // (opts.keep: only its own × folds it)
   window.UAS_FOLD = { foldable, foldAll, phone };
 })();

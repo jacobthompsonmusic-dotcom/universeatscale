@@ -120,9 +120,9 @@
   #datepick[hidden] { display:none; }
   #skybtn[hidden] { display:none; }
   /* while time stands still, the play button breathes softly (like the soundtrack note) to say it sets things moving */
-  #time #play.invite { color:#f3e6c8; border-color:rgba(255,207,110,0.55); animation:playglow 2.8s ease-in-out infinite; }
-  @keyframes playglow { 0%,100% { box-shadow:0 0 0 0 rgba(255,207,110,0), 0 0 6px rgba(255,207,110,0.18); } 50% { box-shadow:0 0 0 3px rgba(255,207,110,0.14), 0 0 22px rgba(255,207,110,0.5); } }
-  @media (prefers-reduced-motion:reduce) { #time #play.invite { animation:none; box-shadow:0 0 14px rgba(255,207,110,0.35); } }
+  #time #play.invite { color:#ece2c8; border-color:rgba(255,207,110,0.3); animation:playglow 3.6s ease-in-out infinite; }
+  @keyframes playglow { 0%,100% { box-shadow:0 0 4px rgba(255,207,110,0.06); } 50% { box-shadow:0 0 10px rgba(255,207,110,0.2); } }   /* a touch softer than the music note */
+  @media (prefers-reduced-motion:reduce) { #time #play.invite { animation:none; box-shadow:0 0 8px rgba(255,207,110,0.14); } }
   #time #skybtn { color:#f1dfae; }
   #time #skybtn.glow { border-color:rgba(255,207,110,0.6); color:#ffe2a0; animation:skyglow 2.6s ease-in-out infinite; }
   @keyframes skyglow { 0%,100% { box-shadow:0 0 0 0 rgba(255,207,110,0), 0 0 6px rgba(255,207,110,0.2); } 50% { box-shadow:0 0 0 3px rgba(255,207,110,0.16), 0 0 20px rgba(255,207,110,0.55); } }
@@ -186,7 +186,12 @@
     #time input[type=range] { flex:1 1 90px; width:auto; height:28px; }
     #time .date { flex:1 1 auto; min-width:0; font-size:14px; }
     #scale { bottom:130px; }
+    #info.uas-folded { left:auto; right:98px; bottom:150px; }   /* a folded card's tab sits beside the Layers tab, not on it */
+    #time.uas-folded { right:auto; }
+    #time #timex { display:block; }
   }
+  #timex { display:none; border:0; background:none; color:rgba(236,228,206,0.6); font:22px/1 Georgia, serif; padding:4px 8px; cursor:pointer; }
+  .arrsvg { width:1em; height:0.72em; vertical-align:-0.02em; display:inline-block; }
 </style>
 <style id="globe-type">
   /* clean lining figures for read-outs (distances, dates, coordinates): digits come from a plain system face, letters stay in Fell */
@@ -298,23 +303,24 @@
 </div>
 <div id="skydirs"><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span></div>
 <div id="time" class="panel">
-  <button id="play" aria-label="Play">▶</button>
+  <button id="play" aria-label="Play">▶︎</button>
   <input id="speed" type="range" min="0" max="1000" step="1" value="418" aria-label="Speed">
   <span class="spd" id="spd"></span>
   <span class="date" id="date" role="button" tabindex="0" title="Pick any date from 1800 to 2050 — your birthday, say">​</span>
   <div id="datepick" hidden><label>Date <input id="dp-d" type="date" min="1800-01-01" max="2050-12-31"></label><label>Time <input id="dp-t" type="time" value="12:00"></label><button id="dp-go">Go</button><span class="dp-or">or see the sky from Earth:</span><select id="dp-hemi" aria-label="Hemisphere"><option value="n">Northern hemisphere</option><option value="s">Southern hemisphere</option></select><button id="dp-sky">See the sky</button></div>
   <button id="now">Now</button>
   <button id="skybtn" hidden title="Stand on Earth and see the sky at this moment">See the sky</button>
+  <button id="timex" aria-label="Put the clock away" title="Put the clock away">×</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=4488dd33"></script>
-<script src="../shared/clock.js?v=4488dd33"></script>
-<script src="../shared/fold.js?v=4488dd33"></script>
-<script src="baked/manifest.js?v=4488dd33"></script>
-<script src="../shared/perf.js?v=4488dd33"></script>
-<script src="../shared/galaxy-volume.js?v=4488dd33"></script>
+<script src="../shared/frame.js?v=bd9ba961"></script>
+<script src="../shared/clock.js?v=bd9ba961"></script>
+<script src="../shared/fold.js?v=bd9ba961"></script>
+<script src="baked/manifest.js?v=bd9ba961"></script>
+<script src="../shared/perf.js?v=bd9ba961"></script>
+<script src="../shared/galaxy-volume.js?v=bd9ba961"></script>
 <script>
 (() => {
 'use strict';
@@ -2363,7 +2369,7 @@ function updateGC() {
   let dx = v.x, dy = v.y; if (v.z > 1) { dx = -dx; dy = -dy; }   // behind you: point the other way
   const m = Math.max(Math.abs(dx) / 0.9, Math.abs(dy) / 0.86) || 1; dx /= m; dy /= m;
   const ex = (dx + 1) / 2 * W, ey = (1 - dy) / 2 * H, ang = Math.atan2(-dy, dx) / DEG, bw = 150;
-  gcEl.innerHTML = `<span class="arr" style="transform:rotate(${ang.toFixed(0)}deg)">➜</span>Galactic centre`;
+  gcEl.innerHTML = `<span class="arr" style="transform:rotate(${ang.toFixed(0)}deg)"><svg class="arrsvg" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 3.9h7.4V1.2L13.2 5 8.4 8.8V6.1H1z" fill="currentColor"/></svg></span>Galactic centre`;
   gcEl.classList.add('edge'); gcEl.style.display = 'block';
   let lx = Math.min(W - bw - 8, Math.max(8, ex - bw / 2)), ly = ey;
   const rects = ['top', 'info', 'legend', 'controls', 'time'].map(id => document.getElementById(id)).filter(Boolean).map(e => e.getBoundingClientRect()).filter(r => r.width);
@@ -2423,7 +2429,7 @@ function updateLabels() {
       let dx = o.ndc.x, dy = o.ndc.y; if (o.ndc.z > 1) { dx = -dx; dy = -dy; }
       const m = Math.max(Math.abs(dx) / 0.9, Math.abs(dy) / 0.86) || 1; dx /= m; dy /= m;
       const ex = (dx + 1) / 2 * W, ey = (1 - dy) / 2 * H, ang = Math.atan2(-dy, dx) / DEG;
-      o.el.innerHTML = `<span class="arr" style="transform:rotate(${ang.toFixed(0)}deg)">➜</span>Sun`;
+      o.el.innerHTML = `<span class="arr" style="transform:rotate(${ang.toFixed(0)}deg)"><svg class="arrsvg" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 3.9h7.4V1.2L13.2 5 8.4 8.8V6.1H1z" fill="currentColor"/></svg></span>Sun`;
       o.el.classList.add('edge'); o.el.style.display = 'block';
       let lx = Math.min(W - 90, Math.max(8, ex - 30)), ly = ey;
       for (const id of ['top', 'info', 'legend', 'controls', 'time']) {
@@ -2498,9 +2504,9 @@ document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset
   if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-ss', opt: 'zodiac', on: opts.zodiac }, '*');
   if (EMBED && b.dataset.k === 'helix') parent.postMessage({ src: 'uas-ss', opt: 'orbit', on: opts.helix }, '*'); });   // galactic motion here shows the Sun's orbit on the galaxy map
 const playBtn = document.getElementById('play'), speedIn = document.getElementById('speed');
-playBtn.textContent = playing ? '❚❚' : '▶';   // the planets start still: press play to set them moving
+playBtn.textContent = playing ? '❚❚' : '▶\ufe0e';   // the planets start still: press play to set them moving
 let playTouched = false;   // the play button glows until it's first pressed, and again whenever time is paused
-playBtn.onclick = () => { playTouched = true; playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶'; };
+playBtn.onclick = () => { playTouched = true; playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶\ufe0e'; };
 speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
 // pick a date (a birthday, say): the planets, moons and probes jump to where they were, and time pauses there
 { const dEl = document.getElementById('date'), box = document.getElementById('datepick'), di = document.getElementById('dp-d'), ti = document.getElementById('dp-t');
@@ -2508,7 +2514,7 @@ speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
   const open = () => { const d = new Date(simMs); di.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; box.hidden = false; di.focus(); };
   dEl.onclick = () => box.hidden ? open() : (box.hidden = true); dEl.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dEl.onclick(); } };
   const go = () => { if (!di.value) return; const ms = new Date(`${di.value}T${ti.value || '12:00'}`).getTime(); if (!isFinite(ms)) return;
-    CK.set(Math.min(TMAX, Math.max(TMIN, ms))); simMs = CK.now(); playing = false; CK.setPlaying(false); playBtn.textContent = '▶'; box.hidden = true;
+    CK.set(Math.min(TMAX, Math.max(TMIN, ms))); simMs = CK.now(); playing = false; CK.setPlaying(false); playBtn.textContent = '▶\ufe0e'; box.hidden = true;
     if (!SKY.on) document.getElementById('skybtn').classList.add('glow'); };   // a date of your own: invite a look at that sky
   document.getElementById('dp-go').onclick = go; box.onkeydown = e => { if (e.key === 'Enter') go(); if (e.key === 'Escape') box.hidden = true; };
   addEventListener('pointerdown', e => { if (!box.hidden && !box.contains(e.target) && e.target !== dEl) box.hidden = true; });
@@ -2815,6 +2821,7 @@ aboutBtn.onclick = () => collapse(!topPanel.classList.contains('collapsed'));
 collapse(UAS_FOLD.phone.matches);   // on a phone the intro starts folded: just the search box and its i
 UAS_FOLD.foldable(document.getElementById('legend'), { title: 'Layers' });
 UAS_FOLD.foldable(topPanel, { title: 'Planets', arrow: '▾' });   // starts put away on a phone
+UAS_FOLD.foldable(document.getElementById('time'), { title: 'Clock', arrow: '▴', closeBtn: document.getElementById('timex'), startFolded: false, keep: true });   // phones: × puts the clock away (a tap on the map leaves it be)
 const kindLabel = o => o.isSun ? 'Star' : o.kind === 'probe' ? 'Spacecraft' : o.kind === 'giant' ? 'Giant planet' : o.kind === 'planet' ? 'Planet' : o.kind === 'dwarf' ? 'Dwarf planet' : `Moon of ${o.parent.name}`;
 const sIn = document.getElementById('search'), sRes = document.getElementById('results'); let hits = [], active = 0;
 // On the joined page the search box also finds things in the Milky Way map (asked through the page that holds both maps)
@@ -2869,7 +2876,7 @@ function frame(t) {
   if (!CK.boosted) { CK.setPlaying(playing); if (playing) CK.setRate(Math.pow(10, logCur)); }   // the galaxy map may be running time fast for the S-stars
   else if (!playing) { playing = true; playBtn.textContent = '❚❚'; }
   simMs = CK.now();
-  if (simMs > TMAX || simMs < TMIN) { simMs = Math.min(TMAX, Math.max(TMIN, simMs)); CK.set(simMs); playing = false; CK.setPlaying(false); playBtn.textContent = '▶'; }
+  if (simMs > TMAX || simMs < TMIN) { simMs = Math.min(TMAX, Math.max(TMIN, simMs)); CK.set(simMs); playing = false; CK.setPlaying(false); playBtn.textContent = '▶\ufe0e'; }
   // far from the Sun: stay centred on it, and turn the scene from the frame of Earth's orbit to the galaxy's
   { const r0 = camera.position.distanceTo(controls.target) / AUS;
     if (r0 > 1500 && !fly) { if (focus !== SUN) setFocus(SUN); if (selected && !selected.isSun && selected.kind !== 'probe' && r0 > 4000) select(null); if (controls.target.lengthSq() > 0) { _v1.copy(controls.target).multiplyScalar(0.2); controls.target.sub(_v1); camera.position.sub(_v1); } }
@@ -3033,7 +3040,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=4488dd33" data-place="info" defer></script>
+<script src="../music/music.js?v=bd9ba961" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

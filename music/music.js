@@ -42,9 +42,9 @@
     '.uas-mu-btn .x{display:inline-block;width:0;margin-left:0;opacity:0;overflow:hidden;vertical-align:-1px;font:13px/1 Georgia,serif;color:#ffcf6e;transition:width .18s,margin .18s,opacity .18s}',
     '.uas-mu-btn.open .x{width:.75em;margin-left:7px;opacity:.9}',
     /* invitation: a soft gold glow that breathes on arrival, every visit, until the note is opened */
-    '.uas-mu-btn.invite{color:#e9dfc6;border-color:rgba(255,207,110,.32);animation:uasglow 3.6s ease-in-out infinite}',
+    '.uas-mu-btn.invite{color:#e9dfc6;border-color:rgba(255,207,110,.38);animation:uasglow 3.6s ease-in-out infinite}',
     '.uas-mu-btn.invite .n{text-shadow:0 0 6px rgba(255,207,110,.45)}',
-    '@keyframes uasglow{0%,100%{box-shadow:0 0 4px rgba(255,207,110,.06)}50%{box-shadow:0 0 10px rgba(255,207,110,.2)}}',
+    '@keyframes uasglow{0%,100%{box-shadow:0 0 5px rgba(255,207,110,.1)}50%{box-shadow:0 0 12px rgba(255,207,110,.28)}}',
     '@media (prefers-reduced-motion:reduce){.uas-mu-btn.invite{animation:none;box-shadow:0 0 8px rgba(255,207,110,.15)}}',
     '.uas-mu-btn.playing .n{animation:uasmu 1.6s ease-in-out infinite}',
     '@keyframes uasmu{50%{opacity:.35}}',
