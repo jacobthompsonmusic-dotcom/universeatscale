@@ -14,6 +14,6 @@ for p in PAGES:
         s = re.sub(r"const UAS_V = '[0-9a-f]{8}';\n", '', s)
         s = s.replace("mwEl.src = '../milky-way/index.html' + dbg;", "mwEl.src = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');")
         s = s.replace("ssEl.src = '../solar-system/index.html' + dbg;", "ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');")
-        s = s.replace("mwEl.src = '../milky-way/index.html?v='", f"const UAS_V = '{h}';\nmwEl.src = '../milky-way/index.html?v='", 1)
+        s = s.replace("const MW_SRC = '../milky-way/index.html?v='", f"const UAS_V = '{h}';\nconst MW_SRC = '../milky-way/index.html?v='", 1)
     if s != o: f.write_text(s)
 print('stamped', h)

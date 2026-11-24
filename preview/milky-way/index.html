@@ -187,11 +187,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=f618b149"></script>
-<script src="../shared/clock.js?v=f618b149"></script>
-<script src="../shared/fold.js?v=f618b149"></script>
-<script src="../shared/perf.js?v=f618b149"></script>
-<script src="../shared/galaxy-volume.js?v=f618b149"></script>
+<script src="../shared/frame.js?v=7030c064"></script>
+<script src="../shared/clock.js?v=7030c064"></script>
+<script src="../shared/fold.js?v=7030c064"></script>
+<script src="../shared/perf.js?v=7030c064"></script>
+<script src="../shared/galaxy-volume.js?v=7030c064"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1182,7 +1182,7 @@ function gxInit() {
   const gl = GX.cv.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false, preserveDrawingBuffer: true });
   if (!gl) { GX.failed = true; return; }
   const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(o)); return null; } return o; };
-  const v = sh(gl.VERTEX_SHADER, 'attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }'), f = sh(gl.FRAGMENT_SHADER, 'precision highp float;\n#define MAX_STEPS 360\n' + window.UAS_GALAXY_FS);
+  const v = sh(gl.VERTEX_SHADER, 'attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }'), f = sh(gl.FRAGMENT_SHADER, 'precision highp float;\n#define MAX_STEPS ' + (window.UAS_PERF.tier > 0 ? 160 : 360) + '\n' + window.UAS_GALAXY_FS);
   if (!v || !f) { GX.failed = true; return; }
   const pr = gl.createProgram(); gl.attachShader(pr, v); gl.attachShader(pr, f); gl.linkProgram(pr);
   if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { GX.failed = true; return; }
@@ -1210,7 +1210,7 @@ function drawGalaxy3D() {
     const settle = GX.settle; GX.settle = false;   // the one full-quality redraw after moving: don't let it adjust quality or schedule another
     if (!settle) { if (ft > 50 && ft < 400) GX.q = Math.max(0.35, GX.q * 0.9); else if (ft < 24) GX.q = Math.min(1, GX.q * 1.03); }
     const qq = Math.min(MWQ.vol[MWQ.level], GX.q > 0.86 ? 1 : GX.q > 0.64 ? 0.75 : GX.q > 0.47 ? 0.55 : 0.4);   // a few fixed steps, so the resolution doesn't change every frame
-    const q = Math.min(1, 1100 / Math.max(Wd, Ht)) * Math.min(dpr, 1.25) * qq, w = Math.max(2, Math.round(Wd * q)), h = Math.max(2, Math.round(Ht * q));
+    const q = Math.min(1, 1100 / Math.max(Wd, Ht)) * Math.min(dpr, 1.25) * qq * (window.UAS_PERF.tier > 0 ? 0.7 : 1) /* phones: a lighter volume */, w = Math.max(2, Math.round(Wd * q)), h = Math.max(2, Math.round(Ht * q));
     if (GX.cv.width !== w || GX.cv.height !== h) { GX.cv.width = w; GX.cv.height = h; }
     const gl = GX.gl, U = GX.u, F = [SY * ST, CY * ST, CT];
     gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
@@ -3373,6 +3373,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=f618b149" data-place="info" defer></script>
+<script src="../music/music.js?v=7030c064" data-place="info" defer></script>
 </body>
 </html>

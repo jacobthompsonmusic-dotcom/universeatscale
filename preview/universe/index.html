@@ -98,6 +98,7 @@ const PLANETS = ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'nep
 for (const k of PLANETS) STOPS[k] = { map: 'ss', cmd: { cmd: 'fly', key: k }, log: -6 };
 const hash = () => { const h = location.hash.slice(1); return STOPS[h] ? h : 'solar-system'; };   // a fresh visit opens on the whole Solar System
 const start = hash();
+const LAZY_MW = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820;
 const st = { driver: STOPS[start].map, ssReady: false, mwReady: false, pending: null, started: false };
 const post = (el, m) => { try { el.contentWindow.postMessage(m, '*'); } catch (e) {} };
 const toSS = m => post(ssEl, { to: 'uas-ss', ...m }), toMW = m => post(mwEl, { to: 'uas-mw', ...m });
@@ -112,6 +113,7 @@ function toSolar(m) { st.driver = 'ss'; ssEl.style.opacity = 0; show(); toSS({ c
 
 function go(key) {
   const s = STOPS[key]; if (!s) return;
+  if (s.map === 'mw') loadMW();
   if (s.map === st.driver) { st.pending = null; (s.map === 'ss' ? toSS : toMW)(s.cmd); return; }
   st.pending = s;
   if (s.map === 'ss') { if (st.ssReady) toMW({ cmd: 'dive' }); }           // fly to the Sun on the galaxy map, hand over, then carry on in
@@ -130,7 +132,7 @@ function relaySearch(m, fromSS) {
   if (m.search !== undefined) { (fromSS ? toMW : toSS)({ cmd: 'search', q: m.search, id: m.id }); return true; }
   if (m.results !== undefined) { (fromSS ? toMW : toSS)({ cmd: 'results', results: m.results, id: m.id }); return true; }
   if (m.pick) {   // travel there the way the ladder does: pull out to the galaxy map, or dive back through the Sun, then fly to it
-    const s = { map: m.pick.map, cmd: { cmd: 'pick', name: m.pick.name } };
+    const s = { map: m.pick.map, cmd: { cmd: 'pick', name: m.pick.name } }; if (s.map === 'mw') loadMW();
     if (s.map === st.driver) { (s.map === 'ss' ? toSS : toMW)(s.cmd); return true; }
     st.pending = s;
     if (s.map === 'ss') { if (st.ssReady) toMW({ cmd: 'dive' }); } else toSS({ cmd: 'fly', key: 'far', span: 6.15 });
@@ -152,12 +154,15 @@ addEventListener('message', e => {
     if (m.opt) { toMW({ cmd: 'opt', k: m.opt, on: m.on }); return; }
     if (m.go) { go(m.go); return; }
     if (st.driver !== 'ss' || m.s === undefined) return;
+    st.lastSS = m; if (m.span > 0.05) loadMW();   // out past ~3,000 AU: get the galaxy map ready
+    if (!st.mwReady) { ssEl.style.opacity = 1; mark(m.span); return; }   // still loading: stay on the Solar System until it's there
     ssEl.style.opacity = (1 - m.q).toFixed(3);
     if (m.q > 0) toMW({ cmd: 'follow', s: m.s, yaw: m.yaw, tilt: m.tilt });   // keep the galaxy map lined up underneath while one fades into the other
     mark(m.span);
     if (m.q >= 0.999) toMap();
   } else if (m.src === 'uas-mw' && e.source === mwEl.contentWindow) {
-    if (m.ready) { st.mwReady = true; if (st.ssReady) toMW({ cmd: 'ssready' }); if (st.driver === 'mw' && !st.started) { st.started = true; toMW(STOPS[start].cmd); } return; }
+    if (m.ready) { st.mwReady = true; if (st.ssReady) toMW({ cmd: 'ssready' });
+      const L = st.lastSS; if (st.driver === 'ss' && L && L.q > 0) { toMW({ cmd: 'follow', s: L.s, yaw: L.yaw, tilt: L.tilt }); ssEl.style.opacity = (1 - L.q).toFixed(3); if (L.q >= 0.999) toMap(); }   /* it loaded while we waited at the edge */ if (st.driver === 'mw' && !st.started) { st.started = true; toMW(STOPS[start].cmd); } return; }
     if (m.opt) { toSS({ cmd: 'opt', k: m.opt, on: m.on }); return; }
     if (m.go) { go(m.go); return; }   // HOME on the galaxy map
     if (m.dive) { if (st.ssReady && st.driver === 'mw') { if (m.into && !st.pending) st.pending = STOPS['solar-system']; toSolar(m); } return; }   // a double-click on the Sun carries on in to the planets
@@ -166,13 +171,17 @@ addEventListener('message', e => {
 });
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-const UAS_V = 'f618b149';
-mwEl.src = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
+const UAS_V = '7030c064';
+const MW_SRC = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
 ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
+// phones: load the galaxy map only once it's needed — zooming out past the Oort cloud, or a stop or search result out there —
+// so the phone only holds one 3D view in memory most of the time
+function loadMW() { if (loadMW.done) return; loadMW.done = true; mwEl.src = MW_SRC; }
+if (!LAZY_MW || STOPS[start].map === 'mw') loadMW();
 })();
 </script>
-<script src="../shared/fold.js?v=f618b149"></script>
+<script src="../shared/fold.js?v=7030c064"></script>
 <script>UAS_FOLD.foldable(document.getElementById('ladder'), { title: 'Scale', arrow: '▾', startFolded: false, onToggle: () => dispatchEvent(new Event('resize')) });   // the soundtrack note below it moves up</script>
-<script src="../music/music.js?v=f618b149" data-place="ladder" defer></script>
+<script src="../music/music.js?v=7030c064" data-place="ladder" defer></script>
 </body>
 </html>
