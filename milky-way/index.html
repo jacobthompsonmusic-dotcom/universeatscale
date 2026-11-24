@@ -187,11 +187,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=ef383a6d"></script>
-<script src="../shared/clock.js?v=ef383a6d"></script>
-<script src="../shared/fold.js?v=ef383a6d"></script>
-<script src="../shared/perf.js?v=ef383a6d"></script>
-<script src="../shared/galaxy-volume.js?v=ef383a6d"></script>
+<script src="../shared/frame.js?v=fc059d33"></script>
+<script src="../shared/clock.js?v=fc059d33"></script>
+<script src="../shared/fold.js?v=fc059d33"></script>
+<script src="../shared/perf.js?v=fc059d33"></script>
+<script src="../shared/galaxy-volume.js?v=fc059d33"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1700,7 +1700,9 @@ function drawField() {
   const span = viewSpan();
   if (!opts.stars || span > 14000) return;
   if (Math.hypot(view.x - SUNW.x, view.y - SUNW.y, view.z - SUNW.z) > 3e5) return;   // far from home: the catalogue stars are all back there
-  const g = (span < 1500 ? 1 : Math.max(0, 1 - Math.log(span / 1500) / Math.log(9.3))) * (1 - 0.72 * SYSIN);   // dimmer inside another star system, as in ours
+  const f0 = LITE ? 400 : 1500, f1 = LITE ? 7.5 : 9.3;   // phones: the cloud of stars round the Sun fades sooner (gone by ~3,000 ly), so the small screen stays clean
+  if (span > f0 * f1) return;
+  const g = (span < f0 ? 1 : Math.max(0, 1 - Math.log(span / f0) / Math.log(f1))) * (1 - 0.72 * SYSIN);   // dimmer inside another star system, as in ours
   const s = view.s, stalks = opts.stalks && stalkFade() > 0 && span < 600;
   const zf = SUNW.z - view.z;
   const sAlpha = 0.16 * g * Math.min(1, (600 - span) / 200) * stalkFade(), near2 = (span * 0.6) ** 2, maxLen = Ht * 0.4;
@@ -3379,6 +3381,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=ef383a6d" data-place="info" defer></script>
+<script src="../music/music.js?v=fc059d33" data-place="info" defer></script>
 </body>
 </html>
