@@ -297,7 +297,7 @@
 </div>
 <div id="skydirs"><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span></div>
 <div id="time" class="panel">
-  <button id="play" aria-label="Pause">❚❚</button>
+  <button id="play" aria-label="Play">▶</button>
   <input id="speed" type="range" min="0" max="1000" step="1" value="418" aria-label="Speed">
   <span class="spd" id="spd"></span>
   <span class="date" id="date" role="button" tabindex="0" title="Pick any date from 1800 to 2050 — your birthday, say">​</span>
@@ -308,11 +308,11 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=6766003b"></script>
-<script src="../shared/clock.js?v=6766003b"></script>
-<script src="../shared/fold.js?v=6766003b"></script>
-<script src="../shared/perf.js?v=6766003b"></script>
-<script src="../shared/galaxy-volume.js?v=6766003b"></script>
+<script src="../shared/frame.js?v=329bbed8"></script>
+<script src="../shared/clock.js?v=329bbed8"></script>
+<script src="../shared/fold.js?v=329bbed8"></script>
+<script src="../shared/perf.js?v=329bbed8"></script>
+<script src="../shared/galaxy-volume.js?v=329bbed8"></script>
 <script>
 (() => {
 'use strict';
@@ -1022,7 +1022,7 @@ haze.frustumCulled = false; haze.renderOrder = -3; skyScene.add(haze);
 // The Milky Way as a volume: the same 3D model and face-on picture the galaxy map uses (stars in a thin and a thick disc and a bulge,
 // with a thinner layer of dust), seen from wherever the camera really is. From here it is the band across the sky, dust lane and all;
 // the galaxy map carries on with the same picture as you pull out of the disc.
-const GALAXY_FS = '#define MAX_STEPS 260\n' + window.UAS_GALAXY_FS;
+const GALAXY_FS = '#define MAX_STEPS ' + (window.UAS_PERF.tier > 0 ? 150 : 260) + '\n' + window.UAS_GALAXY_FS;   // fewer ray steps on phones
 const MWV = { ready: false };
 {
   const tex = new THREE.TextureLoader().load('../milky-way/galaxy-disc.jpg', () => { MWV.ready = true; });
@@ -1062,7 +1062,7 @@ function updateMWV() {
   const key = [c.x, c.y, c.z].map(v => v.toFixed(2)).join() + [f.x, f.y, f.z, up.x, up.y, up.z].map(v => v.toFixed(4)).join();
   const db = renderer.getDrawingBufferSize(_v2b), moving = key !== MWV.key;
   MWV.still = moving ? 0 : MWV.still + 1;
-  const sc = moving ? 0.34 : 0.62, w = Math.max(2, Math.round(db.x * sc)), h = Math.max(2, Math.round(db.y * sc));
+  const L = (typeof SSQ !== 'undefined' && SSQ.level) || 0, sc = moving ? [0.34, 0.28, 0.22, 0.18][L] : [0.62, 0.5, 0.4, 0.33][L], w = Math.max(2, Math.round(db.x * sc)), h = Math.max(2, Math.round(db.y * sc));
   if (moving || (MWV.still === 6 && MWV.rt.width !== w) || MWV.rt.width === 4) {
     if (MWV.rt.width !== w || MWV.rt.height !== h) { MWV.rt.setSize(w, h); MWV.mesh.material.uniforms.px.value.set(1 / w, 1 / h); }
     u.uRes.value.set(w, h); MWV.key = key;
@@ -2245,7 +2245,7 @@ function select(o) {
   const go = document.getElementById('info-go'); go.style.display = isRing || (o.kind === 'probe' && !o.au) ? 'none' : 'inline-block'; showSee(o);
   go.textContent = focus === o ? 'Centred here' : 'Fly here'; go.classList.toggle('on', focus === o);
   info.style.display = 'block';
-  if (typeof infoFold !== 'undefined' && infoFold) { if (o !== prevSel) infoFold.set(false); else infoFold.relabel(); }   // a new pick opens its card
+  if (typeof infoFold !== 'undefined' && infoFold) { if (o !== prevSel) { infoFold.set(false); document.getElementById('info').scrollTop = 0; } else infoFold.relabel(); }   // a new pick opens its card, at the top
 }
 // the card's × folds it to a tab named after what's selected; the selection stays (click empty space to let go of it)
 var infoFold = UAS_FOLD.foldable(document.getElementById('info'), { closeBtn: document.querySelector('#info .close'), title: () => selected ? (selected.name || document.getElementById('info-nm').textContent) : 'Info', startFolded: false, arrow: '▾' });
@@ -2457,6 +2457,7 @@ document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset
   if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-ss', opt: 'zodiac', on: opts.zodiac }, '*');
   if (EMBED && b.dataset.k === 'helix') parent.postMessage({ src: 'uas-ss', opt: 'orbit', on: opts.helix }, '*'); });   // galactic motion here shows the Sun's orbit on the galaxy map
 const playBtn = document.getElementById('play'), speedIn = document.getElementById('speed');
+playBtn.textContent = playing ? '❚❚' : '▶';   // the planets start still: press play to set them moving
 let playTouched = false;   // the play button glows until it's first pressed, and again whenever time is paused
 playBtn.onclick = () => { playTouched = true; playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶'; };
 speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
@@ -2772,7 +2773,7 @@ const collapse = c => { topPanel.classList.toggle('collapsed', c); aboutBtn.text
 aboutBtn.onclick = () => collapse(!topPanel.classList.contains('collapsed'));
 collapse(UAS_FOLD.phone.matches);   // on a phone the intro starts folded: just the search box and its i
 UAS_FOLD.foldable(document.getElementById('legend'), { title: 'Layers' });
-UAS_FOLD.foldable(topPanel, { title: 'Planets', arrow: '▾', startFolded: false });
+UAS_FOLD.foldable(topPanel, { title: 'Planets', arrow: '▾' });   // starts put away on a phone
 const kindLabel = o => o.isSun ? 'Star' : o.kind === 'probe' ? 'Spacecraft' : o.kind === 'giant' ? 'Giant planet' : o.kind === 'planet' ? 'Planet' : o.kind === 'dwarf' ? 'Dwarf planet' : `Moon of ${o.parent.name}`;
 const sIn = document.getElementById('search'), sRes = document.getElementById('results'); let hits = [], active = 0;
 // On the joined page the search box also finds things in the Milky Way map (asked through the page that holds both maps)
@@ -2951,6 +2952,11 @@ function init() {
   camera.position.copy(d); controls.target.set(0, 0, 0); controls.update();
   updateWorld();
   const h = location.hash.slice(1); if (byKey(h) && byKey(h).isPlanet) setTimeout(() => flyTo(byKey(h)), 400);
+  // compile every shader now, behind the loading screen, so nothing stalls the first time it comes into view
+  // (on phones a first-time compile mid-flight — say, coming in past the Oort cloud — can freeze the view for seconds)
+  { const hid = []; for (const sc of [scene, skyScene, MWV.scene]) sc.traverse(o => { if (!o.visible) { hid.push(o); o.visible = true; } });
+    try { renderer.compile(scene, camera); renderer.compile(skyScene, skyCam); renderer.compile(MWV.scene, skyCam); } catch (e) {}
+    for (const o of hid) o.visible = false; }
   requestAnimationFrame(frame);
   setTimeout(earthHiRes, 400);
   if (/[?&]debug=1/.test(location.search)) window.__ss = { SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
@@ -2963,6 +2969,6 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=6766003b" data-place="info" defer></script>
+<script src="../music/music.js?v=329bbed8" data-place="info" defer></script>
 </body>
 </html>

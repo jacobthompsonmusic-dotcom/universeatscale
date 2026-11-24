@@ -63,7 +63,9 @@ void main() {
     t += dt;
     if (max(T.r, max(T.g, T.b)) < 0.003) break;
   }
-  vec3 col = pow(1.0 - exp(-I * uExpo), vec3(uGam));   // a deep black point: faint light off the band falls to near-black, the band itself keeps most of its glow
+  vec3 col = pow(clamp(1.0 - exp(-I * uExpo), 0.0, 1.0), vec3(uGam));   // a deep black point: faint light off the band falls to near-black, the band itself keeps most of its glow
+  // phones' GPUs can slip a hair below zero or to NaN here (pow of a negative), which the view's blur then spreads into coloured specks
+  if (!(col.r >= 0.0 && col.g >= 0.0 && col.b >= 0.0 && col.r <= 1.0 && col.g <= 1.0 && col.b <= 1.0)) col = vec3(0.0);
   gl_FragColor = vec4(col * uAlpha, max(col.r, max(col.g, col.b)) * uAlpha);
 }
 `;

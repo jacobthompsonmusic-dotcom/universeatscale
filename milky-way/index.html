@@ -156,7 +156,12 @@
     #info { top: auto; bottom: 16px; left: 16px; right: 84px; width: auto; max-height: 50vh; overflow-y: auto; z-index: 5; }
     #readout, #note { display: none; }
     #t1panel, #acpanel, #qpanel, #ppanel { left: 16px; right: 84px; width: auto; bottom: 64px; max-height: 42vh; overflow-y: auto; }
-    #legend { max-height: 50vh; overflow-y: auto; }
+    #legend { max-height: 62vh; overflow-y: auto; z-index: 4; }
+    /* phones: the layer switches first, then the key in two tight columns, so both fit without scrolling */
+    #legend:not(.uas-folded) { left: 16px; right: 84px; width: auto; display: flex; flex-direction: column; }
+    #legend .toggles { order: -1; margin: 0 0 10px; max-width: none; }
+    #legend-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; font-size: 11.5px; }
+    #legend .row { margin: 2px 0; gap: 6px; line-height: 1.25; }
     #scale { bottom: 24px; }
   }
 
@@ -182,11 +187,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=6766003b"></script>
-<script src="../shared/clock.js?v=6766003b"></script>
-<script src="../shared/fold.js?v=6766003b"></script>
-<script src="../shared/perf.js?v=6766003b"></script>
-<script src="../shared/galaxy-volume.js?v=6766003b"></script>
+<script src="../shared/frame.js?v=329bbed8"></script>
+<script src="../shared/clock.js?v=329bbed8"></script>
+<script src="../shared/fold.js?v=329bbed8"></script>
+<script src="../shared/perf.js?v=329bbed8"></script>
+<script src="../shared/galaxy-volume.js?v=329bbed8"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -3154,7 +3159,7 @@ function select(o, fly) {
     go.textContent = o.psr ? 'Fly down to the neutron star' : bh || o.qso ? 'Fly down to the black hole' : 'Dive into the Solar System';
     go.onclick = o.psr ? () => flyTo(o.x, o.y, o.z, Math.max(9e-11, o.psr.lc * 3 * PSR.KM), { raw: true }) : o.qso ? () => flyTo(o.x, o.y, o.z, 60 * o.qso.Rs, { raw: true }) : bh ? () => { select(null); flyTo(GCO.x, GCO.y, GCO.z, 1.4e-5, { raw: true }); } : diveToSun; }
   info.style.display = 'block';
-  if (typeof infoFold !== 'undefined' && infoFold) { if (o !== prevSel) infoFold.set(false); else infoFold.relabel(); }   // a new pick opens its card
+  if (typeof infoFold !== 'undefined' && infoFold) { if (o !== prevSel) { infoFold.set(false); document.getElementById('info').scrollTop = 0; } else infoFold.relabel(); }   // a new pick opens its card, at the top
   if (fly) flyTo(o.x, o.y, o.z || 0, spanFor(o));
 }
 
@@ -3352,6 +3357,7 @@ cv.addEventListener('pointerdown', () => { setCollapsed(true); sRes.style.displa
 setCollapsed(UAS_FOLD.phone.matches);   // on a phone the intro starts folded: just the search box and its i
 // on a phone, each menu gets a × and folds to a small tab
 UAS_FOLD.foldable(document.getElementById('legend'), { title: 'Key & layers' });
+UAS_FOLD.foldable(document.getElementById('top'), { title: 'Search', arrow: '▾' });   // on a phone the search panel starts put away too
 for (const id of ['t1panel', 'acpanel', 'qpanel', 'ppanel', 'orbpanel']) { const el = document.getElementById(id); el._fold = UAS_FOLD.foldable(el, { title: () => (el.querySelector('h3') || {}).textContent || 'Details' }); }
 
 addEventListener('resize', resize);
@@ -3360,6 +3366,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=6766003b" data-place="info" defer></script>
+<script src="../music/music.js?v=329bbed8" data-place="info" defer></script>
 </body>
 </html>

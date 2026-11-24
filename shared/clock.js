@@ -5,7 +5,7 @@
 (() => {
   let root = window;
   try { if (window.top !== window && window.top.location.origin === location.origin) root = window.top; } catch (e) { root = window; }
-  const S = root.__uasClock || (root.__uasClock = { base: Date.now(), wall: Date.now(), rate: 3600, playing: true, boost: null, ver: 0 });
+  const S = root.__uasClock || (root.__uasClock = { base: Date.now(), wall: Date.now(), rate: 3600, playing: false, boost: null, ver: 0 });
   const now = () => S.playing ? S.base + (Date.now() - S.wall) * S.rate : S.base;
   const rebase = () => { S.base = now(); S.wall = Date.now(); };
   const C = {

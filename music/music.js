@@ -1,5 +1,5 @@
 /* Universe at Scale — soundtrack note.
-   A small "♪ Soundtrack" note in a corner that opens Jacob Thompson's album "First Time Again" in Spotify's own player.
+   A small glowing "♪" note in a corner that opens Jacob Thompson's album "First Time Again" in Spotify's own player.
    Nothing plays and nothing loads from Spotify until the visitor opens the note and presses play.
    Usage: <script src="../music/music.js" data-place="ladder|corner|header" defer></script>
      ladder  — under the scale ladder (joined page)
@@ -35,21 +35,21 @@
 
   var css = [
     '.uas-mu-btn{font:italic 12.5px "IM Fell English",Georgia,serif;color:#8d93a8;background:rgba(12,13,20,.78);border:1px solid rgba(255,255,255,.09);',
-    ' border-radius:999px;padding:6px 11px;cursor:pointer;white-space:nowrap;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:color .15s,border-color .15s}',
+    ' border-radius:999px;padding:7px 10px;cursor:pointer;white-space:nowrap;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:color .15s,border-color .15s}',
     '.uas-mu-btn:hover,.uas-mu-btn:focus-visible,.uas-mu-btn.open{color:#e9ecf5;border-color:rgba(255,207,110,.45);outline:none}',
-    '.uas-mu-btn .n{color:#ffcf6e;margin-right:5px}',
+    '.uas-mu-btn .n{color:#ffcf6e;font:15px/1 Georgia,serif;display:inline-block;width:1em;text-align:center}',
     /* open: a small × slides in after the word, saying a second press closes the player */
     '.uas-mu-btn .x{display:inline-block;width:0;margin-left:0;opacity:0;overflow:hidden;vertical-align:-1px;font:13px/1 Georgia,serif;color:#ffcf6e;transition:width .18s,margin .18s,opacity .18s}',
     '.uas-mu-btn.open .x{width:.75em;margin-left:7px;opacity:.9}',
     /* invitation: a soft gold glow that breathes on arrival, every visit, until the note is opened */
-    '.uas-mu-btn.invite{color:#f3e6c8;border-color:rgba(255,207,110,.55);animation:uasglow 2.8s ease-in-out infinite}',
-    '.uas-mu-btn.invite .n{text-shadow:0 0 8px rgba(255,207,110,.9)}',
-    '@keyframes uasglow{0%,100%{box-shadow:0 0 0 0 rgba(255,207,110,0),0 0 6px rgba(255,207,110,.18)}50%{box-shadow:0 0 0 3px rgba(255,207,110,.14),0 0 22px rgba(255,207,110,.5)}}',
-    '@media (prefers-reduced-motion:reduce){.uas-mu-btn.invite{animation:none;box-shadow:0 0 14px rgba(255,207,110,.35)}}',
+    '.uas-mu-btn.invite{color:#e9dfc6;border-color:rgba(255,207,110,.32);animation:uasglow 3.6s ease-in-out infinite}',
+    '.uas-mu-btn.invite .n{text-shadow:0 0 6px rgba(255,207,110,.45)}',
+    '@keyframes uasglow{0%,100%{box-shadow:0 0 4px rgba(255,207,110,.06)}50%{box-shadow:0 0 10px rgba(255,207,110,.2)}}',
+    '@media (prefers-reduced-motion:reduce){.uas-mu-btn.invite{animation:none;box-shadow:0 0 8px rgba(255,207,110,.15)}}',
     '.uas-mu-btn.playing .n{animation:uasmu 1.6s ease-in-out infinite}',
     '@keyframes uasmu{50%{opacity:.35}}',
     '.uas-mu-fixed{position:fixed;z-index:30}',
-    '.uas-mu-ladder{top:262px;right:16px;width:130px;text-align:center}',
+    '.uas-mu-ladder{top:262px;right:16px;text-align:center}',
     '.uas-mu-corner{right:18px;bottom:18px}',
     '.uas-mu-header{border:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0 0 0 10px;font-size:12px}',
     '.uas-mu-header:hover,.uas-mu-header.open{border:0}',
@@ -76,7 +76,8 @@
   btn.className = 'uas-mu-btn';
   btn.setAttribute('aria-haspopup', 'dialog');
   btn.title = 'Soundtrack: First Time Again by Jacob Thompson';
-  btn.innerHTML = '<span class="n">♪</span>Soundtrack<span class="x" aria-hidden="true">×</span>';
+  btn.innerHTML = '<span class="n">♪</span><span class="x" aria-hidden="true">×</span>';   // just the glowing note: it says enough
+  btn.setAttribute('aria-label', 'Soundtrack');
 
   var pop = document.createElement('div');
   pop.className = 'uas-mu-pop';
@@ -110,7 +111,7 @@
         var fit = function () {
           var c = cardRect(), r = lad && lad.getBoundingClientRect();
           if (c && c.bottom + 44 < innerHeight) { btn.style.top = (c.bottom + 8) + 'px'; btn.style.right = Math.max(8, innerWidth - c.right) + 'px'; btn.style.width = ''; }
-          else if (r && r.height) { btn.style.top = (r.bottom + 8) + 'px'; btn.style.right = Math.max(8, innerWidth - r.right) + 'px'; btn.style.width = r.width + 'px'; }
+          else if (r && r.height) { btn.style.top = (r.bottom + 8) + 'px'; btn.style.right = Math.max(8, innerWidth - r.right) + 'px'; btn.style.width = ''; }
           else { btn.style.top = '16px'; btn.style.right = '16px'; btn.style.width = ''; }
           if (!pop.hidden) position();
         };
