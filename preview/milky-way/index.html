@@ -182,10 +182,10 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=ece6363e"></script>
-<script src="../shared/clock.js?v=ece6363e"></script>
-<script src="../shared/fold.js?v=ece6363e"></script>
-<script src="../shared/galaxy-volume.js?v=ece6363e"></script>
+<script src="../shared/frame.js?v=16e1701e"></script>
+<script src="../shared/clock.js?v=16e1701e"></script>
+<script src="../shared/fold.js?v=16e1701e"></script>
+<script src="../shared/galaxy-volume.js?v=16e1701e"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -426,21 +426,21 @@ const OBJ = [
   ['Kepler\'s Supernova', 'remnant', 17000, 4.5, 3, 'Ophiuchus', 'The last supernova in our galaxy seen with the naked eye, in 1604.'],
   ['Tycho\'s Supernova', 'remnant', 8000, 120.1, 3, 'Cassiopeia', 'Exploded in 1572. Tycho Brahe\'s observations of it helped prove the heavens could change.'],
   ['Vela Supernova Remnant', 'remnant', 940, 263.6, 3, 'Vela', 'The expanding wreckage of a star that exploded about 11,000 years ago, now 100 light-years across. The Vela Pulsar, its collapsed core, spins at its heart.'],
-  ['Crab Pulsar', 'pulsar', 6523, 184.557, -5.784, 'Taurus', 'The collapsed core of the star that exploded in 1054 AD: a ball about 24 km wide, heavier than the Sun, spinning 30 times a second. Its wind of particles lights up the whole Crab Nebula. Zoom in to watch its beams sweep round.'],
-  ['Vela Pulsar', 'pulsar', 936, 263.552, -2.787, 'Vela', 'A neutron star spinning 11 times a second, left by a supernova about 11,000 years ago, and the brightest steady source of gamma rays in the sky. Zoom in to watch its beams sweep round.'],
-  ['PSR B1919+21', 'pulsar', 1000, 55.777, 3.501, 'Vulpecula', 'The first pulsar ever found, spotted by Jocelyn Bell Burnell in 1967 as a bit of “scruff” on her chart recorder. Its pulses come every 1.337 seconds, so regular it was nicknamed LGM-1, for “little green men”. A plot of its pulses later became the cover of Joy Division’s Unknown Pleasures.'],
-  ['PSR J0437-4715', 'pulsar', 511.9, 253.394, -41.963, 'Pictor', 'The nearest and brightest millisecond pulsar: an old neutron star spun up to 174 turns a second by feeding off its companion, now a cool white dwarf it circles every 5.7 days. NASA’s NICER telescope measured its width, about 23 km.'],
-  ['Double Pulsar', 'pulsar', 2398, 245.236, -4.505, 'Puppis', 'The only known pair of pulsars circling each other: two neutron stars closer together than the width of the Sun, going round every 2 hours 27 minutes. Timing them has tested Einstein’s general relativity to about one part in ten thousand.'],
-  ["SGR 1806-20", 'magnetar', 28375, 9.996, 2, 'Sagittarius', "One of the most strongly magnetic objects known. On 27 December 2004 it let off a giant flare: in a fifth of a second, more energy than the Sun gives out in 250,000 years. From 28,000 light-years away it still disturbed Earth’s upper atmosphere."],
-  ["SGR 1900+14", 'magnetar', 40770, 43.021, 2, 'Aquila', "Its giant flare of 27 August 1998 was so bright in gamma rays that it briefly ionised the upper atmosphere on Earth’s night side and saturated detectors on spacecraft across the Solar System."],
-  ["SGR 0526-66", 'magnetar', 161700, 276.087, 2, 'Dorado', "Where it all began: on 5 March 1979 a burst of gamma rays from this star in the Large Magellanic Cloud swept past nine spacecraft — the first giant flare ever recorded, and the first clue that magnetars exist. It sits in the supernova remnant N49."],
-  ["SGR 1935+2154", 'magnetar', 21530, 57.247, 2, 'Vulpecula', "On 28 April 2020 it fired a fast radio burst — the first ever traced to a source inside our own galaxy, showing that magnetars make at least some of these mysterious millisecond flashes."],
-  ["XTE J1810-197", 'magnetar', 8150, 10.727, 2, 'Sagittarius', "The first magnetar found pulsing in radio (2006), switched on by an X-ray outburst — proof that magnetars and ordinary radio pulsars are close relatives. One of the nearest magnetars."],
-  ["1E 1547.0-5408", 'magnetar', 14680, 327.237, 2, 'Norma', "One of the fastest-spinning magnetars, turning every 2.07 seconds. Its 2009 outbursts lit up rings of dust between it and us — light echoes that gave away its distance."],
-  ["Swift J1818.0-1607", 'magnetar', 15660, 14.827, 2, 'Sagittarius', "Found in 2020, and judging by how quickly it is slowing down, only a few centuries old — one of the youngest neutron stars known. It also pulses in radio."],
-  ["1E 2259+586", 'magnetar', 10440, 109.087, 2, 'Cassiopeia', "Sits at the heart of the supernova remnant CTB 109. In 2012 its spin suddenly slowed — an “anti-glitch”, the first ever seen."],
-  ["4U 0142+61", 'magnetar', 11740, 129.384, 2, 'Cassiopeia', "A magnetar with a disc of debris around it, glowing in infrared: material that fell back after its supernova."],
-  ["CXOU J164710.2-455216", 'magnetar', 13209, 339.546, 2, 'Ara', "A magnetar in the giant young cluster Westerlund 1. Its neighbours are massive stars only a few million years old, so the star that made it must have been more than about 40 Suns — a heavyweight that left a neutron star, not a black hole."],
+  ['Crab Pulsar', 'pulsar', 6523, 184.557, 3, 'Taurus', 'The collapsed core of the star that exploded in 1054 AD: a ball about 24 km wide, heavier than the Sun, spinning 30 times a second. Its wind of particles lights up the whole Crab Nebula. Zoom in to watch its beams sweep round.'],
+  ['Vela Pulsar', 'pulsar', 936, 263.552, 3, 'Vela', 'A neutron star spinning 11 times a second, left by a supernova about 11,000 years ago, and the brightest steady source of gamma rays in the sky. Zoom in to watch its beams sweep round.'],
+  ['PSR B1919+21', 'pulsar', 1000, 55.777, 4, 'Vulpecula', 'The first pulsar ever found, spotted by Jocelyn Bell Burnell in 1967 as a bit of “scruff” on her chart recorder. Its pulses come every 1.337 seconds, so regular it was nicknamed LGM-1, for “little green men”. A plot of its pulses later became the cover of Joy Division’s Unknown Pleasures.'],
+  ['PSR J0437-4715', 'pulsar', 511.9, 253.394, 4, 'Pictor', 'The nearest and brightest millisecond pulsar: an old neutron star spun up to 174 turns a second by feeding off its companion, now a cool white dwarf it circles every 5.7 days. NASA’s NICER telescope measured its width, about 23 km.'],
+  ['Double Pulsar', 'pulsar', 2398, 245.236, 4, 'Puppis', 'The only known pair of pulsars circling each other: two neutron stars closer together than the width of the Sun, going round every 2 hours 27 minutes. Timing them has tested Einstein’s general relativity to about one part in ten thousand.'],
+  ["SGR 1806-20", 'magnetar', 28375, 9.996, 3, 'Sagittarius', "One of the most strongly magnetic objects known. On 27 December 2004 it let off a giant flare: in a fifth of a second, more energy than the Sun gives out in 250,000 years. From 28,000 light-years away it still disturbed Earth’s upper atmosphere."],
+  ["SGR 1900+14", 'magnetar', 40770, 43.021, 4, 'Aquila', "Its giant flare of 27 August 1998 was so bright in gamma rays that it briefly ionised the upper atmosphere on Earth’s night side and saturated detectors on spacecraft across the Solar System."],
+  ["SGR 0526-66", 'magnetar', 161700, 276.087, 4, 'Dorado', "Where it all began: on 5 March 1979 a burst of gamma rays from this star in the Large Magellanic Cloud swept past nine spacecraft — the first giant flare ever recorded, and the first clue that magnetars exist. It sits in the supernova remnant N49."],
+  ["SGR 1935+2154", 'magnetar', 21530, 57.247, 4, 'Vulpecula', "On 28 April 2020 it fired a fast radio burst — the first ever traced to a source inside our own galaxy, showing that magnetars make at least some of these mysterious millisecond flashes."],
+  ["XTE J1810-197", 'magnetar', 8150, 10.727, 4, 'Sagittarius', "The first magnetar found pulsing in radio (2006), switched on by an X-ray outburst — proof that magnetars and ordinary radio pulsars are close relatives. One of the nearest magnetars."],
+  ["1E 1547.0-5408", 'magnetar', 14680, 327.237, 4, 'Norma', "One of the fastest-spinning magnetars, turning every 2.07 seconds. Its 2009 outbursts lit up rings of dust between it and us — light echoes that gave away its distance."],
+  ["Swift J1818.0-1607", 'magnetar', 15660, 14.827, 4, 'Sagittarius', "Found in 2020, and judging by how quickly it is slowing down, only a few centuries old — one of the youngest neutron stars known. It also pulses in radio."],
+  ["1E 2259+586", 'magnetar', 10440, 109.087, 4, 'Cassiopeia', "Sits at the heart of the supernova remnant CTB 109. In 2012 its spin suddenly slowed — an “anti-glitch”, the first ever seen."],
+  ["4U 0142+61", 'magnetar', 11740, 129.384, 4, 'Cassiopeia', "A magnetar with a disc of debris around it, glowing in infrared: material that fell back after its supernova."],
+  ["CXOU J164710.2-455216", 'magnetar', 13209, 339.546, 4, 'Ara', "A magnetar in the giant young cluster Westerlund 1. Its neighbours are massive stars only a few million years old, so the star that made it must have been more than about 40 Suns — a heavyweight that left a neutron star, not a black hole."],
   ['Deneb', 'star', 2600, 84.3, 3, 'Cygnus', 'One of the most luminous stars visible to the eye, tens of thousands of times brighter than the Sun. Top corner of the Summer Triangle. It is so far away that its parallax is barely measurable, so its distance comes from modelling its light instead.'],
   ['Betelgeuse', 'star', 550, 199.8, 3, 'Orion', 'The red supergiant at Orion\'s shoulder. It will go supernova sometime in the next 100,000 years or so, and dimmed dramatically in 2019–20.'],
   ['Antares', 'star', 550, 351.9, 3, 'Scorpius', 'The red supergiant heart of Scorpius — roughly 700 times wider than the Sun.'],
@@ -924,11 +924,9 @@ function drawVoids() {
     ctx.strokeStyle = `rgba(150,158,255,${sel ? 0.85 : 0.35})`; ctx.lineWidth = sel ? 2 : 1;
     ctx.setLineDash(v.disputed ? [8, 8] : []); ctx.beginPath(); ctx.arc(X, Y, R, 0, 7); ctx.stroke(); ctx.setLineDash([]);
     if (opts.labels && R > 22) {
-      ctx.font = 'italic 14px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = 'rgba(175,182,255,0.9)';
+      const f = 'italic 14px "IM Fell English", Georgia, serif', t = v.name.toUpperCase().split('').join('\u200A'), w = lblW(f, t);
       const ly = v.disputed ? (Y - R - 10 > 14 ? Y - R - 10 : Y + R + 14) : (R > 60 ? Y : Y - R - 10);
-      ctx.fillText(v.name.toUpperCase().split('').join('\u200A'), X, ly);
-      ctx.textBaseline = 'alphabetic';
+      lbl(sel ? -9 : 2.5, [X - w / 2, ly - 7, w, 14], () => { ctx.font = f; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(175,182,255,0.9)'; ctx.fillText(t, X, ly); });
     }
   }
 }
@@ -1078,6 +1076,7 @@ function render(t) {
   const qbh = qsoDraw();
   psrDraw();
   drawObjects();
+  lblFlush();
   gcTick();
   const nb = drawGCNear(), s2a = drawS2(), bhOn = drawBH(), t1a = drawTrappist(), aca = drawAcen(); GCT.on = nb > 0 || s2a > 0;
   const qOn = !bhOn && qbh ? drawQBH(qbh) : false;
@@ -1215,17 +1214,18 @@ function drawGrid() {
     else { let pen = false; for (let k = 0; k <= 96; k++) { const a = k / 96 * 2 * Math.PI, [X, Y] = proj(SUNW.x + r * Math.cos(a), SUNW.y + r * Math.sin(a), SUNW.z); if (isFinite(X)) { pen ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); pen = true; } else pen = false; } }
     ctx.stroke(); ctx.setLineDash([]);
     if (aC > 0.25) {
-      ctx.fillStyle = 'rgba(200,205,225,0.45)';
       const [lx, ly] = proj(SUNW.x + r * 0.7071, SUNW.y - r * 0.7071, SUNW.z);
-      if (isFinite(lx) && (!lastL || Math.hypot(lx - lastL[0], ly - lastL[1]) > 60)) { ctx.fillText(fmtLy(r), lx + 4, ly - 4); lastL = [lx, ly]; }   // never let labels pile up
+      if (opts.labels && isFinite(lx) && (!lastL || Math.hypot(lx - lastL[0], ly - lastL[1]) > 60)) {   // never let labels pile up
+        const t = fmtLy(r), f = 'italic 14px UAS Num, IM Fell English, Georgia, serif';
+        lbl(6, [lx + 4, ly - 16, lblW(f, t), 14], () => { ctx.font = f; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(200,205,225,0.45)'; ctx.fillText(t, lx + 4, ly - 4); }); lastL = [lx, ly]; }
     }
   }
   if (ra < 1 && sy > 0 && sy < Ht) {   // side-on: the disc plane through the Sun becomes one line
     const a = 1 - Math.max(0, ra);
     ctx.strokeStyle = `rgba(160,200,255,${0.22 * a})`; ctx.setLineDash([4, 6]);
     ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(Wd, sy); ctx.stroke(); ctx.setLineDash([]);
-    if (opts.labels) { ctx.fillStyle = `rgba(160,200,255,${0.6 * a})`; ctx.font = 'italic 13.5px "IM Fell English", Georgia, serif'; ctx.textAlign = 'right';
-      ctx.fillText('PLANE OF THE DISC (THROUGH THE SUN)', Wd - 80, sy - 6); ctx.textAlign = 'left'; }
+    if (opts.labels) { const t = 'PLANE OF THE DISC (THROUGH THE SUN)', f = 'italic 13.5px "IM Fell English", Georgia, serif', w = lblW(f, t);
+      lbl(1.5, [Wd - 80 - w, sy - 18, w, 14], () => { ctx.fillStyle = `rgba(160,200,255,${0.6 * a})`; ctx.font = f; ctx.textAlign = 'right'; ctx.fillText(t, Wd - 80, sy - 6); }); }
   }
   ctx.strokeStyle = `rgba(255,255,255,${0.05 * Math.max(0, ra)})`;
   for (let l = 0; l < 360; l += 30) {
@@ -1261,10 +1261,9 @@ function drawArms() {
     if (a.minor && view.s < fitScale() * 2.2) continue;
     if (view.s < fitScale() * 0.6) continue;
     let ang = Math.atan2(Y2 - Y, X2 - X); if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
-    ctx.save(); ctx.translate(X, Y); ctx.rotate(ang);
-    ctx.fillStyle = a.color; ctx.globalAlpha = 0.85;
-    ctx.fillText(a.name.toUpperCase().split('').join(' '), 0, -10);
-    ctx.restore();
+    const t = a.name.toUpperCase().split('').join(' '), f = 'italic 14px "IM Fell English", Georgia, serif', w = lblW(f, t), c = Math.cos(ang), sn = Math.sin(ang), boxes = [];
+    for (let u = -w / 2 + 8; u < w / 2; u += 16) boxes.push([X + u * c + 15 * sn - 8, Y + u * sn - 15 * c - 8, 16, 16]);   // a run of small boxes along the slanted text
+    lbl(a.minor ? 3 : 1.2, boxes, () => { ctx.font = f; ctx.textAlign = 'center'; ctx.translate(X, Y); ctx.rotate(ang); ctx.fillStyle = a.color; ctx.globalAlpha = 0.85; ctx.fillText(t, 0, -10); });
   }
   ctx.globalAlpha = 1;
 }
@@ -1410,9 +1409,10 @@ function drawOrbit() {
       const p = S.at(t), [X, Y] = proj(p.x, p.y, p.z); if (!isFinite(X) || X < -40 || X > Wd + 40 || Y < -40 || Y > Ht + 40) continue;
       ctx.globalAlpha = big; ctx.fillStyle = '#ffcf6e'; ctx.beginPath(); ctx.arc(X, Y, 3.5, 0, 7); ctx.fill();
       if (!opts.labels) continue;
-      ctx.fillStyle = 'rgba(255,230,180,0.95)'; ctx.fillText(name, X + 8, Y - 3);
-      ctx.fillStyle = 'rgba(232,226,210,0.6)'; ctx.font = 'italic 12px "IM Fell English", Georgia, serif'; ctx.fillText(when, X + 8, Y + 11);
-      ctx.font = 'italic 14px "IM Fell English", Georgia, serif';
+      const f1 = 'italic 14px "IM Fell English", Georgia, serif', f2 = 'italic 12px "IM Fell English", Georgia, serif', al = big;
+      lbl(1.5, [X + 8, Y - 15, Math.max(lblW(f1, name), lblW(f2, when)), 29], () => { ctx.globalAlpha = al; ctx.textAlign = 'left';
+        ctx.font = f1; ctx.fillStyle = 'rgba(255,230,180,0.95)'; ctx.fillText(name, X + 8, Y - 3);
+        ctx.font = f2; ctx.fillStyle = 'rgba(232,226,210,0.6)'; ctx.fillText(when, X + 8, Y + 11); });
     }
   }
   // the Sun on its journey, when the playback is away from today
@@ -1421,10 +1421,10 @@ function drawOrbit() {
       ctx.globalAlpha = 1; const gr = ctx.createRadialGradient(X, Y, 0, X, Y, 16); gr.addColorStop(0, 'rgba(255,230,160,0.9)'); gr.addColorStop(1, 'rgba(255,207,110,0)');
       ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y, 16, 0, 7); ctx.fill();
       ctx.fillStyle = '#fff6dc'; ctx.beginPath(); ctx.arc(X, Y, 4.5, 0, 7); ctx.fill();
-      const ep = S.ages.find(e => Math.abs(-S.t - e[0]) < 4);
-      ctx.font = 'italic 15px "IM Fell English", Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#ffe6b4';
-      ctx.fillText('The Sun, ' + orbWhen(S.t), X + 12, Y - 8);
-      if (ep) { ctx.fillStyle = 'rgba(232,226,210,0.75)'; ctx.font = 'italic 13px "IM Fell English", Georgia, serif'; ctx.fillText(ep[1], X + 12, Y + 8); }
+      const ep = S.ages.find(e => Math.abs(-S.t - e[0]) < 4), t = 'The Sun, ' + orbWhen(S.t), f1 = 'italic 15px "IM Fell English", Georgia, serif', f2 = 'italic 13px "IM Fell English", Georgia, serif';
+      lbl(-8, [X + 12, Y - 21, Math.max(lblW(f1, t), ep ? lblW(f2, ep[1]) : 0), ep ? 33 : 16], () => { ctx.textAlign = 'left';
+        ctx.font = f1; ctx.fillStyle = '#ffe6b4'; ctx.fillText(t, X + 12, Y - 8);
+        if (ep) { ctx.fillStyle = 'rgba(232,226,210,0.75)'; ctx.font = f2; ctx.fillText(ep[1], X + 12, Y + 8); } });
     } }
   ctx.globalAlpha = 1;
 }
@@ -1464,10 +1464,10 @@ function drawGalaxies() {
       ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(X, Y, Rr * 1.03, 0, Math.PI * 2); ctx.arc(X, Y, Rr * 0.97, Math.PI * 2, 0, true); ctx.fill();
     }
     if (opts.labels) {
-      ctx.font = 'italic 14px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = rg.edge ? 'rgba(255,190,150,0.9)' : 'rgba(215,200,255,0.85)';
-      ctx.fillText(rg.name.toUpperCase().split('').join(' '), X, Y - Rr - 10 > 14 ? Y - Rr - 10 : Y + Rr + 14 < Ht ? Y + Rr + 14 : 14);
-      ctx.textBaseline = 'alphabetic';
+      const f = 'italic 14px "IM Fell English", Georgia, serif', t = rg.name.toUpperCase().split('').join('\u200A'), w = lblW(f, t), edge = rg.edge;
+      const ly = Y - Rr - 10 > 14 ? Y - Rr - 10 : Y + Rr + 14 < Ht ? Y + Rr + 14 : 14;
+      lbl(sel ? -9 : 1, [X - w / 2, ly - 7, w, 14], () => { ctx.font = f; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = edge ? 'rgba(255,190,150,0.9)' : 'rgba(215,200,255,0.85)'; ctx.fillText(t, X, ly); });
     }
   }
 }
@@ -1479,8 +1479,8 @@ function drawBubble() {
   ctx.strokeStyle = 'rgba(160,200,255,0.35)'; ctx.setLineDash([2, 4]); ctx.lineWidth = 1;
   ctx.beginPath(); ctx.arc(X, Y, R, 0, 7); ctx.stroke(); ctx.setLineDash([]);
   if (R > 40 && opts.labels) {
-    ctx.fillStyle = 'rgba(160,200,255,0.6)'; ctx.font = 'italic 14px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center';
-    ctx.fillText('LOCAL BUBBLE', X, Y - R - 6);
+    const f = 'italic 14px "IM Fell English", Georgia, serif', w = lblW(f, 'LOCAL BUBBLE');
+    lbl(3, [X - w / 2, Y - R - 18, w, 14], () => { ctx.fillStyle = 'rgba(160,200,255,0.6)'; ctx.font = f; ctx.textAlign = 'center'; ctx.fillText('LOCAL BUBBLE', X, Y - R - 6); });
   }
 }
 
@@ -1495,8 +1495,8 @@ function drawOort() {
   ctx.strokeStyle = `rgba(169,196,230,${0.38 * a})`; ctx.setLineDash([2, 5]); ctx.lineWidth = 1;
   ctx.beginPath(); ctx.arc(X, Y, R, 0, 7); ctx.stroke(); ctx.setLineDash([]);
   if (R > 34 && opts.labels) {
-    ctx.fillStyle = `rgba(190,206,236,${0.72 * a})`; ctx.font = 'italic 13.5px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center';
-    ctx.fillText('OORT CLOUD (PREDICTED)'.split('').join('\u200A'), X, Y - R - 7);
+    const f = 'italic 13.5px "IM Fell English", Georgia, serif', t = 'OORT CLOUD (PREDICTED)'.split('').join('\u200A'), w = lblW(f, t);
+    lbl(2, [X - w / 2, Y - R - 19, w, 14], () => { ctx.fillStyle = `rgba(190,206,236,${0.72 * a})`; ctx.font = f; ctx.textAlign = 'center'; ctx.fillText(t, X, Y - R - 7); });
   }
 }
 let zodPts = null;
@@ -1511,8 +1511,10 @@ function drawZodiac() {
   for (const c of zodPts) for (const line of c.p) line.forEach((v, i) => { const [X, Y] = proj(v.x, v.y, v.z); i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); });
   ctx.stroke();
   if (!opts.labels || span < 30) return;
-  ctx.font = 'italic 14px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(170,195,255,${0.7 * g})`;
-  for (const c of zodPts) { const [X, Y] = proj(c.l.x, c.l.y, c.l.z); if (X > -60 && X < Wd + 60 && Y > -20 && Y < Ht + 20) ctx.fillText(c.n.toUpperCase().split('').join('\u200A'), X, Y); }
+  const f = 'italic 14px "IM Fell English", Georgia, serif';
+  for (const c of zodPts) { const [X, Y] = proj(c.l.x, c.l.y, c.l.z); if (!(X > -60 && X < Wd + 60 && Y > -20 && Y < Ht + 20)) continue;
+    const t = c.n.toUpperCase().split('').join('\u200A'), w = lblW(f, t);
+    lbl(2.2, [X - w / 2, Y - 12, w, 14], () => { ctx.font = f; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(170,195,255,${0.7 * g})`; ctx.fillText(t, X, Y); }); }
 }
 let fieldPts = [];
 const viewSpan = () => Math.min(Wd, Ht) / view.s;
@@ -1597,6 +1599,23 @@ function drawNebulae() {
   }
   ctx.restore();
 }
+// ---------- labels: every layer queues its labels here; once a frame they're placed most important first, ----------
+// and anything that would crowd a label already placed is left out, so the clutter thins out as you zoom out
+const LBL = { q: [], placed: [], PX: 9, PY: 4 };
+const lblW = (font, s) => { ctx.font = font; return ctx.measureText(s).width; };
+// pr: lower = more important (selected −10, hovered −9); boxes: [x, y, w, h] or a list of them, screen px from the top-left; fn draws it
+function lbl(pr, boxes, fn) { if (typeof boxes[0] === 'number') boxes = [boxes]; LBL.q.push({ pr, boxes, fn, i: LBL.q.length }); }
+function lblFlush() {
+  const q = LBL.q.sort((a, b) => a.pr - b.pr || a.i - b.i), P = LBL.placed = [], px = LBL.PX, py = LBL.PY;
+  for (const L of q) {
+    if (L.boxes.every(([x, y, w, h]) => x + w < 0 || x > Wd || y + h < 0 || y > Ht)) continue;
+    if (L.pr > -5 && L.boxes.some(([x, y, w, h]) => P.some(b => x - px < b[0] + b[2] && x + w + px > b[0] && y - py < b[1] + b[3] && y + h + py > b[1]))) continue;
+    for (const b of L.boxes) P.push(b);
+    ctx.save(); L.fn(); ctx.restore();
+  }
+  LBL.q = [];
+}
+
 function drawObjects() {
   screenPts = [];
   const vis = [];
@@ -1648,35 +1667,28 @@ function drawObjects() {
   }
   ctx.globalAlpha = 1;
   if (!opts.labels) return;
-  ctx.globalAlpha = dimO;
-  const boxes = [];
-  const byPr = [...screenPts].sort((a, b) => (a.o === selected ? -1 : b.o === selected ? 1 : a.o.pr - b.o.pr));
-  const put = (name, X, Y, big, color, off) => {
-    ctx.font = (big ? '600 14.5px' : '500 13.5px') + ' "IM Fell English", Georgia, serif';
-    const w = ctx.measureText(name).width, h = big ? 15 : 14;
-    const bx = X + off, by = Y - h / 2;
-    if (boxes.some(b => bx < b[0] + b[2] && bx + w > b[0] && by < b[1] + b[3] && by + h > b[1])) return false;
-    boxes.push([bx - 2, by - 2, w + 4, h + 4]);
-    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(4,5,10,0.65)'; ctx.fillText(name, bx + 1, Y + 1);
-    ctx.fillStyle = color; ctx.fillText(name, bx, Y);
-    return true;
+  const put = (name, X, Y, big, color, off, pr, sub) => {
+    const font = (big ? '600 14.5px' : '500 13.5px') + ' "IM Fell English", Georgia, serif', w = lblW(font, name), h = big ? 15 : 14, bx = X + off;
+    const boxes = [[bx, Y - h / 2, w, h]];
+    if (sub) boxes.push([bx, Y + 7, 72, 14]);
+    lbl(pr, boxes, () => {
+      ctx.globalAlpha = dimO; ctx.font = font; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(4,5,10,0.65)'; ctx.fillText(name, bx + 1, Y + 1);
+      ctx.fillStyle = color; ctx.fillText(name, bx, Y);
+      if (sub) { ctx.textBaseline = 'alphabetic'; ctx.font = 'italic 13.5px "IM Fell English", Georgia, serif'; ctx.fillStyle = 'rgba(255,226,122,0.7)'; ctx.fillText(sub, bx, Y + 14); }
+    });
   };
-  for (const { o, X, Y } of byPr) {
-    const big = o.pr <= 1;
+  for (const { o, X, Y } of screenPts) {
+    const big = o.pr <= 1, pr = o === selected ? -10 : o === hover ? -9 : o.pr;
     const off = o.gal && !o.mw ? Math.max(10, o.diam * view.s * 0.32) : 10;
-    if (!put(o.name, X, Y, big, o.type === 'sun' ? '#ffe27a' : (big ? '#ffffff' : 'rgba(230,234,245,0.85)'), off)) continue;
-    if (o.type === 'sun') {
-      ctx.font = 'italic 13.5px "IM Fell English", Georgia, serif'; ctx.fillStyle = 'rgba(255,226,122,0.7)';
-      ctx.fillText('You are here', X + off, Y + 14); boxes.push([X + off, Y + 7, 70, 14]);
-    }
+    put(o.name, X, Y, big, o.type === 'sun' ? '#ffe27a' : (big ? '#ffffff' : 'rgba(230,234,245,0.85)'), off, pr, o.type === 'sun' ? 'You are here' : null);
   }
   // named background stars once you're close in
   if (viewSpan() < 320) {
     for (let k = 0; k < fieldPts.length; k += 3) {
-      const i = fieldPts[k];
-      if (!fprop[i] && !(selected && selected.fi === i)) continue;
-      put(fname[i], fieldPts[k + 1], fieldPts[k + 2], false, 'rgba(200,208,230,0.7)', 7);
+      const i = fieldPts[k], sel = selected && selected.fi === i;
+      if (!fprop[i] && !sel) continue;
+      put(fname[i], fieldPts[k + 1], fieldPts[k + 2], false, 'rgba(200,208,230,0.7)', 7, sel ? -10 : 7.5);
     }
   }
   ctx.globalAlpha = 1;
@@ -3167,6 +3179,6 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=ece6363e" data-place="info" defer></script>
+<script src="../music/music.js?v=16e1701e" data-place="info" defer></script>
 </body>
 </html>
