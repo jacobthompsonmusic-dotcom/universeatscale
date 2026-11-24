@@ -315,12 +315,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=bd9ba961"></script>
-<script src="../shared/clock.js?v=bd9ba961"></script>
-<script src="../shared/fold.js?v=bd9ba961"></script>
-<script src="baked/manifest.js?v=bd9ba961"></script>
-<script src="../shared/perf.js?v=bd9ba961"></script>
-<script src="../shared/galaxy-volume.js?v=bd9ba961"></script>
+<script src="../shared/frame.js?v=b3751721"></script>
+<script src="../shared/clock.js?v=b3751721"></script>
+<script src="../shared/fold.js?v=b3751721"></script>
+<script src="baked/manifest.js?v=b3751721"></script>
+<script src="../shared/perf.js?v=b3751721"></script>
+<script src="../shared/galaxy-volume.js?v=b3751721"></script>
 <script>
 (() => {
 'use strict';
@@ -2533,23 +2533,23 @@ const skyVS = `#include <common>
   varying vec3 vD; void main() { vD = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   #include <logdepthbuf_vertex>
   }`;
-// the ground: a field running out to a low, hilly horizon with a ragged line of trees along it (procedural — no particular place);
-// the silhouette hides whatever is just above the true horizon, as a real treeline does, and the land takes the sky's light
-// the horizon's profile (hills, and the trees on them) round all 360°, worked out once here so the page can tell what has set
-// behind the trees (labels too), and handed to the ground's shader as a strip of texture: r = treetops, g = hilltops (× 0.06)
+// the ground: smooth, grassy rolling hills under a blue sky with fair-weather clouds (procedural and illustrative — no particular
+// place); the hills hide whatever is just above the true horizon, as real ones do, and the land takes the sky's light
+// the horizon's profile round all 360°, worked out once here so the page can tell what has set behind the hills (labels too),
+// and handed to the ground's shader as a strip of texture: r = skyline, g = the farther ridge (× 0.12)
 const SKYPROF = (() => {
   const N = 4096, top = new Float32Array(N), hill = new Float32Array(N);
   const hash = (x, y) => { const v = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return v - Math.floor(v); };
   const vn = (x, y) => { const ix = Math.floor(x), iy = Math.floor(y); let fx = x - ix, fy = y - iy; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
     const a = hash(ix, iy), b = hash(ix + 1, iy), c = hash(ix, iy + 1), d = hash(ix + 1, iy + 1); return (a + (b - a) * fx) + ((c + (d - c) * fx) - (a + (b - a) * fx)) * fy; };
   const ring = (a, r, s) => vn(Math.cos(a) * r + s, Math.sin(a) * r + s);
-  const trees = (a, n, seed) => { const x = (a / TAU + 0.5) * n, i = Math.floor(x), f = x - i;
-    const ht = 0.35 + 0.65 * hash(i, seed), w = 0.45 + 0.5 * hash(seed, i), off = (hash(i + 3, seed) - 0.5) * (1 - w), t = Math.max(0, 1 - Math.abs(f - 0.5 - off) / (0.5 * w)); return ht * Math.pow(t, 0.75); };
   const data = new Uint8Array(N * 4);
   for (let k = 0; k < N; k++) {
-    const a = (k / N - 0.5) * TAU, hl = 0.003 + 0.014 * ring(a, 2.2, 3) + 0.006 * ring(a, 7, 9), wd = sstep(ring(a, 4, 17), 0.38, 0.62);
-    hill[k] = hl; top[k] = hl + wd * (0.007 * trees(a, 640, 1) + 0.011 * trees(a, 260, 5) + 0.004);
-    data[k * 4] = Math.round(top[k] / 0.06 * 255); data[k * 4 + 1] = Math.round(hl / 0.06 * 255); data[k * 4 + 3] = 255;
+    const a = (k / N - 0.5) * TAU;
+    const far = 0.007 + 0.014 * ring(a, 1.7, 3) + 0.005 * ring(a, 4.5, 9);                     // a soft, distant ridge
+    const near = 0.002 + 0.055 * Math.pow(sstep(ring(a, 1.1, 21), 0.25, 0.85), 1.3);            // a broad, nearer swell rising in front of it in places
+    hill[k] = far; top[k] = Math.max(far, near);
+    data[k * 4] = Math.round(top[k] / 0.12 * 255); data[k * 4 + 1] = Math.round(far / 0.12 * 255); data[k * 4 + 3] = 255;
   }
   const tex = new THREE.DataTexture(data, N, 1, THREE.RGBAFormat); tex.wrapS = THREE.RepeatWrapping; tex.magFilter = tex.minFilter = THREE.LinearFilter; tex.needsUpdate = true;
   // the height of the skyline (as the sine of its altitude) at azimuth a (radians from north through east)
@@ -2565,36 +2565,47 @@ const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE
     float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
       return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
     float ring(float a, float r, float s) { return vn(vec2(cos(a), sin(a)) * r + s); }   // noise round the horizon, with no seam
-    float trees(float a, float n, float seed) {   // a row of conifers: one per cell, random height and width
-      float x = a / 6.2831853 * n, i = floor(x), f = fract(x);
-      float ht = 0.35 + 0.65 * hash(vec2(i, seed)), w = 0.45 + 0.5 * hash(vec2(seed, i)), off = (hash(vec2(i + 3.0, seed)) - 0.5) * (1.0 - w);
-      float t = max(0.0, 1.0 - abs(f - 0.5 - off) / (0.5 * w)); return ht * pow(t, 0.75); }
     void main() {
       #include <logdepthbuf_fragment>
       vec3 d = normalize(vD); float h = dot(d, up), a = atan(dot(d, east), dot(d, north));
-      vec4 pr = texture2D(prof, vec2(a / 6.2831853 + 0.5, 0.5)); float hills = pr.g * 0.06, top = pr.r * 0.06;
+      vec4 pr = texture2D(prof, vec2(a / 6.2831853 + 0.5, 0.5)); float far = pr.g * 0.12, top = pr.r * 0.12;
       if (h > top) discard;
-      vec3 haze = mix(vec3(0.020, 0.024, 0.032), vec3(0.50, 0.62, 0.74), day) + vec3(0.55, 0.30, 0.14) * dusk;   // the light low in the sky
+      vec3 haze = mix(vec3(0.020, 0.024, 0.032), vec3(0.55, 0.68, 0.82), day) + vec3(0.55, 0.30, 0.14) * dusk;   // the light low in the sky
+      float sunUp = max(dot(sun, up), 0.0), facing = 0.5 + 0.5 * dot(normalize(sun - up * dot(sun, up) + 1e-4 * north), cos(a) * north + sin(a) * east);
+      float lit = 0.78 + 0.32 * facing * smoothstep(0.0, 0.3, sunUp);   // slopes toward the Sun a little brighter
       vec3 c;
-      if (h > 0.0 || h > hills - 0.0005) {   // the hills and trees, a dark silhouette softened by the air between
-        c = mix(vec3(0.006, 0.007, 0.008), vec3(0.09, 0.13, 0.08), day) * (0.85 + 0.3 * ring(a, 30.0, 2.0));
-        c = mix(c, haze, 0.28);
-      } else {   // the near field: patches of grass and earth that shrink toward the horizon
+      if (h > far - 0.0004 && top > far + 0.0004) {   // the nearer swell: lush grass, lighter along its crest
+        float crest = clamp((h - (top - 0.012)) / 0.012, 0.0, 1.0);
+        vec3 g = mix(vec3(0.16, 0.42, 0.07), vec3(0.34, 0.62, 0.13), 0.5 * ring(a, 9.0, 4.0) + 0.5 * crest) * lit;
+        c = mix(vec3(0.010, 0.013, 0.010), g, day); c = mix(c, haze, 0.12);
+      } else if (h > far - 0.0004 || h > 0.0) {   // the distant ridge, blued by the air between
+        vec3 g = mix(vec3(0.20, 0.44, 0.12), vec3(0.30, 0.55, 0.18), ring(a, 14.0, 2.0)) * lit;
+        c = mix(vec3(0.006, 0.008, 0.008), g, day); c = mix(c, haze, 0.38);
+      } else {   // the near field: grass rolling away in long, smooth swells, lit and shaded
         float k = 0.03 / max(-h, 0.002); vec2 q = vec2(cos(a), sin(a)) * k;
-        float patchy = 0.6 * vn(q * 1.3) + 0.4 * vn(q * 5.0 + 7.0);
-        vec3 grass = mix(vec3(0.16, 0.22, 0.10), vec3(0.30, 0.31, 0.17), patchy);
-        c = mix(vec3(0.020, 0.024, 0.020) * (0.8 + 0.4 * patchy), grass, day);
-        c = mix(c, haze, 0.55 * exp(h / 0.02));   // fading into the distance
+        float roll = 0.65 * vn(q * 0.45 + 3.0) + 0.35 * vn(q * 1.1 + 11.0), fine = vn(q * 7.0 + 5.0);
+        vec3 grass = mix(vec3(0.12, 0.36, 0.06), vec3(0.36, 0.64, 0.14), smoothstep(0.25, 0.8, roll)) * (0.92 + 0.16 * fine) * lit;
+        c = mix(vec3(0.016, 0.022, 0.016) * (0.8 + 0.4 * roll), grass, day);
+        c = mix(c, haze, 0.5 * exp(h / 0.02));   // fading into the distance
       }
       gl_FragColor = vec4(c, 1.0); }` }));
 const skyDome = new THREE.Mesh(new THREE.SphereGeometry(0.9, 96, 48), new THREE.ShaderMaterial({   // daylight and twilight, added over the stars
   side: THREE.BackSide, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
-  uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, sun: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 } }, vertexShader: skyVS,
+  uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, north: { value: new THREE.Vector3(0, 0, -1) }, east: { value: new THREE.Vector3(1, 0, 0) }, sun: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 } }, vertexShader: skyVS,
   fragmentShader: `#include <logdepthbuf_pars_fragment>
-    uniform vec3 up; uniform vec3 sun; uniform float day; uniform float dusk; varying vec3 vD; void main() {
+    uniform vec3 up; uniform vec3 north; uniform vec3 east; uniform vec3 sun; uniform float day; uniform float dusk; varying vec3 vD;
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
+    float fbm(vec2 p) { return 0.5 * vn(p) + 0.25 * vn(p * 2.03 + 17.0) + 0.125 * vn(p * 4.01 + 31.0) + 0.0625 * vn(p * 8.1 + 7.0); }
+    void main() {
     #include <logdepthbuf_fragment>
     vec3 d = normalize(vD); float h = dot(d, up); if (h < 0.0) discard;
     vec3 c = mix(vec3(0.42, 0.62, 0.86), vec3(0.13, 0.32, 0.66), pow(h, 0.5)) * day;
+    // fair-weather cumulus on a flat layer overhead (illustrative): bright tops, greyer bases, thinning toward the horizon
+    vec2 p = vec2(dot(d, east), dot(d, north)) / (h + 0.06) * 0.9;
+    float n = fbm(p), cl = smoothstep(0.5, 0.72, n) * smoothstep(0.02, 0.18, h), base = smoothstep(0.5, 0.62, fbm(p + vec2(0.0, 0.06)));
+    c = mix(c, vec3(0.97, 0.97, 0.98) * mix(0.78, 1.0, base) * (0.75 + 0.25 * max(dot(d, sun), 0.0)), cl * day * 0.92);
     float toward = max(dot(d, sun), 0.0);
     c += vec3(0.95, 0.45, 0.18) * dusk * pow(1.0 - h, 6.0) * (0.35 + 0.65 * toward * toward);
     c += vec3(1.0, 0.92, 0.75) * 0.25 * day * pow(toward, 24.0);
@@ -2603,7 +2614,7 @@ skyGround.visible = skyDome.visible = false; skyGround.frustumCulled = skyDome.f
 scene.add(skyGround, skyDome);
 const skyPanel = document.getElementById('skypanel'), skyDirs = [...document.querySelectorAll('#skydirs span')];
 function behindSkyline(p) {   // set below the horizon, or behind the hills and trees on it
-  const d = p.clone().sub(camera.position).normalize(), h = d.dot(SKY.up); if (h < 0) return true; if (h > 0.07) return false;
+  const d = p.clone().sub(camera.position).normalize(), h = d.dot(SKY.up); if (h < 0) return true; if (h > 0.13) return false;
   return h < SKYPROF.at(Math.atan2(d.dot(SKY.east), d.dot(SKY.north)));
 }
 // ---- the zodiac wheel: a birth-chart-style wheel of the Sun, Moon and planets along the ecliptic as seen from this spot, now
@@ -2778,7 +2789,7 @@ function skyPaint() {
   camera.fov = SKY.fov; camera.near = 1e-5; camera.updateProjectionMatrix(); camera.updateMatrixWorld();
   bandCam.fov = SKY.fov;
   skyGround.position.copy(camera.position); skyDome.position.copy(camera.position);
-  const gu = skyGround.material.uniforms; gu.up.value.copy(SKY.up); gu.north.value.copy(SKY.north); gu.east.value.copy(SKY.east); skyDome.material.uniforms.up.value.copy(SKY.up);
+  const gu = skyGround.material.uniforms; gu.up.value.copy(SKY.up); gu.north.value.copy(SKY.north); gu.east.value.copy(SKY.east); { const du = skyDome.material.uniforms; du.up.value.copy(SKY.up); du.north.value.copy(SKY.north); du.east.value.copy(SKY.east); }
   const sp = relOf(SUN).sub(camera.position).normalize(), sAlt = Math.asin(THREE.MathUtils.clamp(sp.dot(SKY.up), -1, 1)) / DEG;
   const thin = SKY.launch ? 1 - sstep(SKY.launch.e, 0.0, 0.32) : 1;   // climbing out: the blue thins away to black
   const day = sstep(sAlt, -8, 6) * thin, dusk = sstep(sAlt, -16, -2) * (1 - sstep(sAlt, 2, 10)) * thin;
@@ -3040,7 +3051,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=bd9ba961" data-place="info" defer></script>
+<script src="../music/music.js?v=b3751721" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
