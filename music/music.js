@@ -17,8 +17,11 @@
   // the lowest of the panels stacked in the top right (the object card, the sky view's zodiac wheel), if any is showing
   function lowestCard() {
     var best = null;
-    ['info', 'zodwheel'].forEach(function (id) { var e = document.getElementById(id); if (!e || getComputedStyle(e).display === 'none') return;
-      var r = e.getBoundingClientRect(); if (r.height && (!best || r.bottom > best.bottom)) best = r; });
+    // also the intro/search panel when it stretches across to the right (phones), and only panels hung from the top (on phones the card sits at the bottom)
+    ['info', 'zodwheel', 'top'].forEach(function (id) { var e = document.getElementById(id); if (!e || getComputedStyle(e).display === 'none') return;
+      var r = e.getBoundingClientRect(); if (!r.height || r.top > innerHeight * 0.4) return;
+      if (id === 'top' && r.right < innerWidth - 200) return;
+      if (!best || r.bottom > best.bottom) best = { top: r.top, bottom: r.bottom, left: r.left, right: id === 'top' ? innerWidth - 16 : r.right }; });
     return best;
   }
   if (embedded) {                             // the joined page shows its own note, so the music keeps playing across the hand-over;
