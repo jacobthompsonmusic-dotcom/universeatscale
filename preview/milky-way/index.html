@@ -189,11 +189,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=fbabe197"></script>
-<script src="../shared/clock.js?v=fbabe197"></script>
-<script src="../shared/fold.js?v=fbabe197"></script>
-<script src="../shared/perf.js?v=fbabe197"></script>
-<script src="../shared/galaxy-volume.js?v=fbabe197"></script>
+<script src="../shared/frame.js?v=f031aa08"></script>
+<script src="../shared/clock.js?v=f031aa08"></script>
+<script src="../shared/fold.js?v=f031aa08"></script>
+<script src="../shared/perf.js?v=f031aa08"></script>
+<script src="../shared/galaxy-volume.js?v=f031aa08"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -3449,7 +3449,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=fbabe197" data-place="info" defer></script>
+<script src="../music/music.js?v=f031aa08" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
