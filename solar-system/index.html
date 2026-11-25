@@ -323,12 +323,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=42b8e6e8"></script>
-<script src="../shared/clock.js?v=42b8e6e8"></script>
-<script src="../shared/fold.js?v=42b8e6e8"></script>
-<script src="baked/manifest.js?v=42b8e6e8"></script>
-<script src="../shared/perf.js?v=42b8e6e8"></script>
-<script src="../shared/galaxy-volume.js?v=42b8e6e8"></script>
+<script src="../shared/frame.js?v=33c3b22c"></script>
+<script src="../shared/clock.js?v=33c3b22c"></script>
+<script src="../shared/fold.js?v=33c3b22c"></script>
+<script src="baked/manifest.js?v=33c3b22c"></script>
+<script src="../shared/perf.js?v=33c3b22c"></script>
+<script src="../shared/galaxy-volume.js?v=33c3b22c"></script>
 <script>
 (() => {
 'use strict';
@@ -2572,42 +2572,45 @@ const skyVS = `#include <common>
 // the horizon's profile (hills, and the trees on them) round all 360°, worked out once here so the page can tell what has set
 // behind the trees (labels too), and handed to the ground's shader as a strip of texture: r = treetops, g = hilltops (× 0.06)
 const SKYPROF = (() => {
-  const N = 4096, top = new Float32Array(N), hill = new Float32Array(N);
+  const N = LITE ? 4096 : 8192, top = new Float32Array(N), hill = new Float32Array(N);
   const hash = (x, y) => { const v = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return v - Math.floor(v); };
   const vn = (x, y) => { const ix = Math.floor(x), iy = Math.floor(y); let fx = x - ix, fy = y - iy; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
     const a = hash(ix, iy), b = hash(ix + 1, iy), c = hash(ix, iy + 1), d = hash(ix + 1, iy + 1); return (a + (b - a) * fx) + ((c + (d - c) * fx) - (a + (b - a) * fx)) * fy; };
   const ring = (a, r, s) => vn(Math.cos(a) * r + s, Math.sin(a) * r + s);
   const trees = (a, n, seed) => { const x = (a / TAU + 0.5) * n, i = Math.floor(x), f = x - i;
-    const ht = 0.35 + 0.65 * hash(i, seed), w = 0.45 + 0.5 * hash(seed, i), off = (hash(i + 3, seed) - 0.5) * (1 - w), t = Math.max(0, 1 - Math.abs(f - 0.5 - off) / (0.5 * w)); return ht * Math.pow(t, 0.75); };
+    const ht = 0.35 + 0.65 * hash(i, seed), w = 0.45 + 0.5 * hash(seed, i), off = (hash(i + 3, seed) - 0.5) * (1 - w), t = Math.max(0, 1 - Math.abs(f - 0.5 - off) / (0.5 * w));
+    return ht * Math.pow(t, 0.75) * (0.9 + 0.1 * Math.abs(Math.cos(t * 17 + i))); };   // ragged branch tips along the edges
   // a mixed wood: about half the small trees are broadleaf (round crowns: they change with the seasons), in clumps; the tall ones are conifers
   const decidOf = i => 0.3 * hash(i, 1) + 0.7 * ring(((i + 0.5) / 640 - 0.5) * TAU, 70, 4) > 0.45;
   const crowns = a => { const x = (a / TAU + 0.5) * 640, i = Math.floor(x), f = x - i;
     if (!decidOf(i)) return [trees(a, 640, 1), 0, i];
     const ht = 0.45 + 0.55 * hash(i, 1), w = 0.75 + 0.2 * hash(1, i), u = (f - 0.5) / (0.5 * w);
-    return [ht * Math.sqrt(Math.max(0, 1 - u * u)) * (1 - 0.25 * u * u), 1, i]; };
-  const data = new Uint8Array(N * 4);
+    return [ht * Math.sqrt(Math.max(0, 1 - u * u)) * (1 - 0.25 * u * u) * (0.9 + 0.1 * vn(f * 9 + i * 13.7, 2.5)), 1, i]; };   // a slightly lumpy, leafy dome
+  const data = new Uint8Array(N * 4), fine = new Uint8Array(N * 4);   // fine: the skyline's height to 1/65535 (r high byte, g low byte)
   for (let k = 0; k < N; k++) {
     const a = (k / N - 0.5) * TAU, hl = 0.003 + 0.014 * ring(a, 2.2, 3) + 0.006 * ring(a, 7, 9), wd = sstep(ring(a, 4, 17), 0.38, 0.62);
     const [cr, dc, i] = crowns(a);
     hill[k] = hl; top[k] = hl + wd * (0.007 * cr * (dc ? 1.15 : 1) + 0.011 * trees(a, 260, 5) * (dc ? 0.35 : 1) + 0.004);
     data[k * 4] = Math.round(top[k] / 0.06 * 255); data[k * 4 + 1] = Math.round(hl / 0.06 * 255);
     data[k * 4 + 2] = dc && wd > 0.05 ? 255 : 0; data[k * 4 + 3] = Math.round(hash(i, 5) * 255);
+    const q = Math.round(Math.min(1, top[k] / 0.06) * 65535); fine[k * 4] = q >> 8; fine[k * 4 + 1] = q & 255; fine[k * 4 + 3] = 255;
   }
+  const ftex = new THREE.DataTexture(fine, N, 1, THREE.RGBAFormat); ftex.wrapS = THREE.RepeatWrapping; ftex.magFilter = ftex.minFilter = THREE.NearestFilter; ftex.needsUpdate = true;
   const tex = new THREE.DataTexture(data, N, 1, THREE.RGBAFormat); tex.wrapS = THREE.RepeatWrapping; tex.magFilter = tex.minFilter = THREE.LinearFilter; tex.needsUpdate = true;
   // the height of the skyline (as the sine of its altitude) at azimuth a (radians from north through east)
   const at = a => { const x = ((a / TAU + 0.5) % 1 + 1) % 1 * N, i = Math.floor(x) % N, f = x - Math.floor(x); return top[i] + (top[(i + 1) % N] - top[i]) * f; };
-  return { tex, at };
+  return { tex, ftex, N, at };
 })();
 // the ground, drawn as seen from eye height (1.7 m): the treeline and hills on the skyline, a meadow running out to them, and close in,
 // blades of grass you can pick out, swaying and bending as gusts roll across the field (all procedural and illustrative)
 const SKY_WIND = new THREE.Vector2(0.82, 0.57);   // the breeze, as (east, north): from the south-west
 const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE.ShaderMaterial({
   side: THREE.BackSide, vertexShader: skyVS, transparent: true,   // bare winter crowns let the sky through
-  uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, north: { value: new THREE.Vector3(0, 0, -1) }, east: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 }, sun: { value: new THREE.Vector3(1, 0, 0) }, prof: { value: SKYPROF.tex },
+  uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, north: { value: new THREE.Vector3(0, 0, -1) }, east: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 }, sun: { value: new THREE.Vector3(1, 0, 0) }, prof: { value: SKYPROF.tex }, profF: { value: SKYPROF.ftex }, profN: { value: SKYPROF.N },
     tm: { value: 0 }, pix: { value: 0.001 }, wind: { value: SKY_WIND }, snow: { value: 0 }, fall: { value: 0 }, bare: { value: 0 }, bud: { value: 0 }, dry: { value: 0 }, hz: { value: 0 } },
   fragmentShader: `#include <logdepthbuf_pars_fragment>
     #define NL ${LITE ? 9 : 18}
-    uniform vec3 up; uniform vec3 north; uniform vec3 east; uniform vec3 sun; uniform float day; uniform float dusk; uniform sampler2D prof;
+    uniform vec3 up; uniform vec3 north; uniform vec3 east; uniform vec3 sun; uniform float day; uniform float dusk; uniform sampler2D prof; uniform sampler2D profF; uniform float profN;
     uniform float tm; uniform float pix; uniform vec2 wind; uniform float snow; uniform float fall; uniform float bare; uniform float bud; uniform float dry; uniform float hz; varying vec3 vD;
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -2617,8 +2620,13 @@ const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE
     void main() {
       #include <logdepthbuf_fragment>
       vec3 d = normalize(vD); float h = dot(d, up), a = atan(dot(d, east), dot(d, north));
-      vec4 pr = texture2D(prof, vec2(a / 6.2831853 + 0.5, 0.5)); float hills = pr.g * 0.06, top = pr.r * 0.06;
-      if (h > top) discard;
+      vec4 pr = texture2D(prof, vec2(a / 6.2831853 + 0.5, 0.5)); float hills = pr.g * 0.06;
+      // the skyline's height, read precisely (two bytes) and interpolated here, so the treetops stay smooth when you zoom in
+      float tx = (a / 6.2831853 + 0.5) * profN - 0.5, t0 = floor(tx);
+      vec4 q0 = texture2D(profF, vec2((t0 + 0.5) / profN, 0.5)), q1 = texture2D(profF, vec2((t0 + 1.5) / profN, 0.5));
+      float top = mix(q0.r * 255.0 * 256.0 + q0.g * 255.0, q1.r * 255.0 * 256.0 + q1.g * 255.0, tx - t0) / 65535.0 * 0.06;
+      float edge = clamp((top - h) / pix + 0.5, 0.0, 1.0);   // a soft, antialiased edge against the sky
+      if (edge <= 0.0) discard;
       float sunH = dot(sun, up); vec3 sf = sun - up * sunH; float sfl = length(sf);
       float toSun = sfl > 1e-4 ? 0.5 + 0.5 * dot(sf / sfl, normalize(d - up * h + 1e-6 * north)) : 0.5;   // 1 looking toward the Sun's side
       float lightK = smoothstep(-0.04, 0.3, sunH) * day;                                                  // direct sunlight
@@ -2634,7 +2642,9 @@ const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE
         alb = mix(alb, vec3(0.062, 0.062, 0.056), bare);                                // leaves down
         alb = mix(alb, vec3(0.062, 0.100, 0.040), bud);                                 // spring green
         alb = mix(alb, vec3(0.40, 0.43, 0.48), snow * 0.22);                            // snow on the branches
-        float crown = smoothstep(top - 0.0035, top, h) * tree;   // sunlit crowns, and a bright rim when the Sun is behind them
+        float crown = smoothstep(top - 0.0035, top, h) * tree;
+        float yy = clamp((h - hills) / max(top - hills, 1e-4), 0.0, 1.0);
+        alb *= mix(0.8, 1.06, smoothstep(0.0, 1.0, yy) * tree + (1.0 - tree) * 0.3);   // shadier low in the wood, lighter in the crowns   // sunlit crowns, and a bright rim when the Sun is behind them
         c = 1.8 * alb * (amb + sunCol * lightK * (0.35 + 0.45 * (1.0 - toSun)) * (0.7 + 0.6 * crown));
         c += sunCol * lightK * crown * pow(toSun, 4.0) * 0.07;
         c = mix(c, air, 0.14 + 0.16 * hz);
@@ -2696,7 +2706,7 @@ const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE
         }
         c = mix(c, air * 0.8, 0.22 * exp(h / 0.008));   // fading into the distance (a touch: the treeline stays crisp above it)
       }
-      gl_FragColor = vec4(c, 1.0); }` }));
+      gl_FragColor = vec4(c, edge); }` }));
 const skyDome = new THREE.Mesh(new THREE.SphereGeometry(0.9, 96, 48), new THREE.ShaderMaterial({   // daylight and twilight, added over the stars
   side: THREE.BackSide, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
   uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, north: { value: new THREE.Vector3(0, 0, -1) }, east: { value: new THREE.Vector3(1, 0, 0) }, sun: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 },
@@ -3202,7 +3212,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=42b8e6e8" data-place="info" defer></script>
+<script src="../music/music.js?v=33c3b22c" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
