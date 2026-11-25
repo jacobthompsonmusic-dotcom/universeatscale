@@ -324,12 +324,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=20baa363"></script>
-<script src="../shared/clock.js?v=20baa363"></script>
-<script src="../shared/fold.js?v=20baa363"></script>
-<script src="baked/manifest.js?v=20baa363"></script>
-<script src="../shared/perf.js?v=20baa363"></script>
-<script src="../shared/galaxy-volume.js?v=20baa363"></script>
+<script src="../shared/frame.js?v=5367015d"></script>
+<script src="../shared/clock.js?v=5367015d"></script>
+<script src="../shared/fold.js?v=5367015d"></script>
+<script src="baked/manifest.js?v=5367015d"></script>
+<script src="../shared/perf.js?v=5367015d"></script>
+<script src="../shared/galaxy-volume.js?v=5367015d"></script>
 <script>
 (() => {
 'use strict';
@@ -2606,7 +2606,7 @@ const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE
   uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, north: { value: new THREE.Vector3(0, 0, -1) }, east: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 }, sun: { value: new THREE.Vector3(1, 0, 0) }, prof: { value: SKYPROF.tex },
     tm: { value: 0 }, pix: { value: 0.001 }, wind: { value: SKY_WIND }, snow: { value: 0 }, fall: { value: 0 }, bare: { value: 0 }, bud: { value: 0 }, dry: { value: 0 }, hz: { value: 0 } },
   fragmentShader: `#include <logdepthbuf_pars_fragment>
-    #define NL ${LITE ? 6 : 11}
+    #define NL ${LITE ? 9 : 18}
     uniform vec3 up; uniform vec3 north; uniform vec3 east; uniform vec3 sun; uniform float day; uniform float dusk; uniform sampler2D prof;
     uniform float tm; uniform float pix; uniform vec2 wind; uniform float snow; uniform float fall; uniform float bare; uniform float bud; uniform float dry; uniform float hz; varying vec3 vD;
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -2641,42 +2641,56 @@ const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE
       } else {
         float D = 1.7 / max(-h, 0.0012); vec2 dir = vec2(sin(a), cos(a)), P = dir * D;   // metres out over the ground (east, north)
         float fade = clamp(1.6 / (D * pix * 60.0), 0.0, 1.0);                             // fine detail fades where it would only flicker
-        float n1 = vn(P * 0.045), n2 = vn(P * 0.31 + 7.0), n3 = vn(P * 2.7 + 3.0);
-        vec3 alb = mix(vec3(0.062, 0.095, 0.032), vec3(0.110, 0.140, 0.050), n1);
-        alb = mix(alb, vec3(0.150, 0.140, 0.070), smoothstep(0.6, 0.9, n2) * 0.5);       // patches of drier grass
-        alb *= 1.0 + (n3 - 0.5) * 0.45 * fade;
-        alb = mix(alb, vec3(0.150, 0.130, 0.068), dry * (0.55 + 0.3 * n2));      // autumn and early spring: straw-coloured
-        alb = mix(alb, vec3(0.080, 0.130, 0.030), bud * 0.6);                    // spring: the new grass
+        float n1 = vn(P * 0.045), n2 = vn(P * 0.31 + 7.0), n3 = vn(P * 2.7 + 3.0), clump = vn(P * 1.3 + 11.0);
+        // a meadow: lush green, yellow-green and straw-coloured patches, with clumps
+        vec3 alb = mix(vec3(0.060, 0.105, 0.030), vec3(0.125, 0.145, 0.045), smoothstep(0.3, 0.75, n1));
+        alb = mix(alb, vec3(0.160, 0.140, 0.068), smoothstep(0.6, 0.92, n2) * 0.55);       // patches of drier grass
+        alb = mix(alb, vec3(0.150, 0.130, 0.068), dry * (0.55 + 0.3 * n2));                // autumn and early spring: straw-coloured
+        alb = mix(alb, vec3(0.080, 0.130, 0.030), bud * 0.6);                             // spring: the new grass
+        // seen from above the sward is a mass of upright strands with deep shade between them (two samples so the seam never shows)
+        float sA = vn(vec2((a + 3.14159265) * D * 55.0, D * 1.8)), sB = vn(vec2((atan(-dot(d, east), -dot(d, north)) + 3.14159265) * D * 55.0 + 17.0, D * 1.8));
+        float strand = mix(sB, sA, smoothstep(-0.4, 0.4, dir.y)), sfade = clamp(1.0 / (55.0 * D * pix * 2.5), 0.0, 1.0);
+        float mass = mix(0.62, 1.0, mix(0.6, strand, sfade * smoothstep(2.5, 7.0, D))) * (0.82 + 0.36 * clump) * mix(0.62, 1.0, smoothstep(2.0, 30.0, D));   // close in you look down into it
+        alb *= 1.0 + (n3 - 0.5) * 0.35 * fade;
         float g = gust(P), sheen = smoothstep(0.42, 0.85, g);                              // bent grass shows its paler side
         vec3 lit = (amb * 0.9 + sunCol * lightK * (0.35 + 0.65 * max(sunH, 0.0))) * (0.62 + 0.38 * smoothstep(0.0, 0.25, sunH));   // a low Sun leaves the field in shade
-        c = 2.4 * alb * lit * (1.0 + 0.32 * sheen * (1.0 - snow)) + sunCol * lightK * sheen * pow(toSun, 3.0) * 0.08 * (1.0 - snow);
-        if (snow > 0.0) {   // winter: snow over the field, drifted, bluish in the shade, glinting toward the Sun
+        c = 2.5 * alb * lit * mass * (1.0 + 0.3 * sheen * (1.0 - snow)) + sunCol * lightK * sheen * pow(toSun, 3.0) * 0.08 * (1.0 - snow);
+        if (snow > 0.0) {   // winter: snow over the field, drifted, bluish in the shade
           float drift = 0.85 + 0.15 * n1 + 0.06 * (n3 - 0.5) * fade;
           vec3 sc = vec3(0.80, 0.84, 0.90) * drift * (amb * 1.1 + sunCol * lightK * (0.25 + 0.6 * max(sunH, 0.0)));
           c = mix(c, sc, snow * smoothstep(0.0, 0.25, snow + n2 * 0.2 - 0.1));
         }
         // the blades nearest you, row on row, from the back forwards so the nearer ones cover the farther
+        float side = dot(wind, vec2(dir.y, -dir.x));                                       // how much of the wind blows across your line of sight
+        float lowSun = smoothstep(-0.03, 0.04, sunH) * (day + dusk) * (1.0 - smoothstep(0.05, 0.5, sunH)), back = pow(toSun, 3.0);
+        float shadeK = 0.62 + 0.38 * smoothstep(0.0, 0.25, sunH);
         for (int i = NL - 1; i >= 0; i--) {
-          float Dl = 1.25 * pow(1.3, float(i)), sp = 0.016 + 0.0016 * float(i), n = floor(6.2831853 * Dl / sp);
-          float x = (a / 6.2831853 + 0.5) * n, c0 = floor(x);
+          float Dl = 1.05 * pow(1.19, float(i));
+          if (h < -1.7 / (Dl * 0.86) || h > -0.75 / (Dl * 1.14) || snow > 0.8) continue;   // this row can't reach this pixel
+          float sp = 0.0105 + 0.0011 * float(i), n = floor(6.2831853 * Dl / sp);
+          float x = (a / 6.2831853 + 0.5) * n, c0 = floor(x), gRow = gust(dir * Dl);
+          float rowFade = clamp(1.0 - (Dl - 13.0) / 9.0, 0.0, 1.0);
           for (int j = -1; j <= 1; j++) {
             float ci = mod(c0 + float(j), n), r1 = hash(vec2(ci, float(i) * 7.1)), r2 = hash(vec2(float(i) * 3.3, ci)), r3 = hash(vec2(ci + 9.0, float(i)));
-            float Db = Dl * (0.86 + 0.28 * r2), bh = (0.18 + 0.34 * r1) * (0.75 + 0.5 * n1) * (1.0 - 0.8 * snow);   // snow buries most of the grass
+            if (r3 < snow * 1.25) continue;                                                // snow buries the grass
+            float seed = step(0.955, r1);                                                   // now and then a taller stalk with a seed head
+            float Db = Dl * (0.86 + 0.28 * r2), bh = (0.2 + 0.4 * r1) * (0.7 + 0.6 * n1) * (1.0 + 0.55 * seed) * (1.0 - 0.8 * snow);
             float hb = -1.7 / Db, ht = -(1.7 - bh) / Db;
-            if (h < hb || h > ht || r3 < snow * 1.25) continue;   // snow buries the grass: none left standing in deep winter
+            if (h < hb || h > ht) continue;
             float f = (h - hb) / (ht - hb);
-            vec2 Pb = dir * Db;
-            float sway = (0.25 * sin(tm * (1.6 + r3) + r3 * 6.28 + dot(Pb, wind) * 0.8) + 1.1 * gust(Pb) - 0.3) * 0.11 * bh / 0.33;
-            float side = dot(wind, vec2(dir.y, -dir.x));                                   // how much of the wind blows across your line of sight
-            float ac = ((ci + 0.5 + (r3 - 0.5) * 0.7) / n - 0.5) * 6.2831853 + (sway * side + (r2 - 0.5) * 0.06 * bh) * f * f / Db;
+            float sway = (0.25 * sin(tm * (1.6 + r3) + r3 * 6.28 + Db * 0.8) + 1.1 * gRow - 0.3) * 0.12 * bh / 0.33;
+            float lean = (r2 - 0.5) * 0.16 * bh + (clump - 0.5) * 0.08 * bh;                // each clump leans its own way
+            float ac = ((ci + 0.5 + (r3 - 0.5) * 0.8) / n - 0.5) * 6.2831853 + (sway * side + lean) * f * f / Db;
             float da = mod(a - ac + 3.14159265, 6.2831853) - 3.14159265;
-            float w = 0.0075 * (1.0 - 0.85 * f) / Db;
-            float cov = clamp((w - abs(da)) / pix + 0.5, 0.0, 1.0) * clamp(1.0 - (Db - 12.0) / 10.0, 0.0, 1.0);
+            float w = (0.0062 * (1.0 - 0.82 * f) + seed * 0.0075 * smoothstep(0.8, 0.9, f) * (1.0 - smoothstep(0.97, 1.0, f))) / Db;
+            float cov = clamp((w - abs(da)) / pix + 0.5, 0.0, 1.0) * rowFade;
             if (cov <= 0.0) continue;
-            vec3 balb = mix(vec3(0.045, 0.075, 0.025), mix(vec3(0.150, 0.215, 0.065), vec3(0.200, 0.205, 0.085), r2 * 0.5), sqrt(f)) * (0.8 + 0.4 * r1);
-            balb = mix(balb, vec3(0.170, 0.140, 0.075) * (0.7 + 0.5 * f), max(dry, snow) * (0.5 + 0.4 * r2));   // dry stalks
-            vec3 bc = 2.2 * balb * (amb * 0.8 + sunCol * lightK * (0.4 + 0.4 * (1.0 - toSun)) * (0.6 + 0.4 * f)) * (0.62 + 0.38 * smoothstep(0.0, 0.25, sunH));
-            bc += sunCol * (lightK * 0.10 + smoothstep(-0.03, 0.04, sunH) * (day + dusk) * 0.45 * (1.0 - smoothstep(0.05, 0.5, sunH))) * pow(toSun, 3.0) * f * f * vec3(1.0, 0.92, 0.45);   // light through the blades, low Sun ahead
+            vec3 tipC = mix(vec3(0.150, 0.225, 0.060), vec3(0.215, 0.215, 0.085), r2 * 0.6 + smoothstep(0.55, 0.9, n1) * 0.4);
+            tipC = mix(tipC, vec3(0.240, 0.200, 0.110), seed * smoothstep(0.75, 0.9, f));    // the seed head: straw gold
+            vec3 balb = mix(vec3(0.022, 0.040, 0.014), tipC, smoothstep(0.0, 0.55, f)) * (0.78 + 0.44 * r1);   // dark low down, in the shade of the rest
+            balb = mix(balb, vec3(0.170, 0.140, 0.075) * (0.6 + 0.6 * f), max(dry, snow) * (0.5 + 0.4 * r2));   // dry stalks
+            vec3 bc = 2.3 * balb * (amb * 0.8 + sunCol * lightK * (0.45 + 0.45 * (1.0 - toSun)) * (0.55 + 0.45 * f)) * shadeK;
+            bc += sunCol * (lightK * 0.10 + lowSun * 0.45) * back * f * f * vec3(1.0, 0.92, 0.45);   // light through the blades, Sun ahead
             c = mix(c, bc, cov);
           }
         }
@@ -3189,7 +3203,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=20baa363" data-place="info" defer></script>
+<script src="../music/music.js?v=5367015d" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
