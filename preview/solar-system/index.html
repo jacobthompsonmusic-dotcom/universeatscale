@@ -132,6 +132,9 @@
   #datepick select { background:rgba(255,255,255,0.06); border:1px solid var(--line); border-radius:7px; color:var(--text); font:italic 14px "IM Fell English", Georgia, serif; padding:5px 7px; color-scheme:dark; }
   #skypanel { top:16px; left:50%; transform:translateX(-50%); padding:8px 12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center; z-index:3; max-width:92vw; }
   #skypanel[hidden] { display:none; }
+  @media (min-width:761px) and (max-width:1500px) {   /* narrower windows: keep the sky bar clear of the zodiac wheel (right) and the folded tabs (left), wrapping if need be */
+    #skypanel { left:calc((100% - 424px) / 2 + 70px); max-width:calc(100vw - 584px); }
+  }
   #helixpanel { top:16px; left:50%; transform:translateX(-50%); padding:10px 14px 9px; z-index:3; width:min(560px, 92vw); text-align:center; }
   #helixpanel[hidden] { display:none; }
   #helixpanel p { margin:0 0 6px; font-size:14px; line-height:1.4; }
@@ -316,12 +319,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=961b7af9"></script>
-<script src="../shared/clock.js?v=961b7af9"></script>
-<script src="../shared/fold.js?v=961b7af9"></script>
-<script src="baked/manifest.js?v=961b7af9"></script>
-<script src="../shared/perf.js?v=961b7af9"></script>
-<script src="../shared/galaxy-volume.js?v=961b7af9"></script>
+<script src="../shared/frame.js?v=c0b425cd"></script>
+<script src="../shared/clock.js?v=c0b425cd"></script>
+<script src="../shared/fold.js?v=c0b425cd"></script>
+<script src="baked/manifest.js?v=c0b425cd"></script>
+<script src="../shared/perf.js?v=c0b425cd"></script>
+<script src="../shared/galaxy-volume.js?v=c0b425cd"></script>
 <script>
 (() => {
 'use strict';
@@ -2719,6 +2722,7 @@ function skyWhere() {
   skyPanel.querySelectorAll('[data-h]').forEach(b => b.classList.toggle('on', b.dataset.h === SKY.hemi));
 }
 function skyOn(hemi) {
+  if (topFold && !SKY.on && !topFold.folded()) { SKY.topOpen = true; topFold.set(true); }   // the planets/search panel starts put away in the sky
   fly = null; SKY.hemi = hemi; SKY.az = hemi === 's' ? 0 : 180; SKY.alt = 22; SKY.fov = 75;   // face the side of the sky the Sun, Moon and planets cross
   if (!SKY.on) {
     SKY.saved = { constel: opts.constel, orbits: opts.orbits };
@@ -2730,7 +2734,7 @@ function skyOn(hemi) {
   skyGround.visible = skyDome.visible = true; document.body.classList.add('sky'); skyPanel.hidden = false; skyWhere(); select(null);
 }
 function skyOff(keep) {
-  if (!SKY.on) return; SKY.on = false; SKY.launch = null; SKY.lifted = false; camera.up.set(0, 1, 0);
+  if (!SKY.on) return; if (SKY.topOpen && topFold) { SKY.topOpen = false; topFold.set(false); } SKY.on = false; SKY.launch = null; SKY.lifted = false; camera.up.set(0, 1, 0);
   controls.enabled = true; EARTH.mesh.visible = true; EARTH.clouds.visible = !EARTH.see; if (EARTH.atm) EARTH.atm.visible = true;
   skyGround.visible = skyDome.visible = false; document.body.classList.remove('sky'); skyPanel.hidden = true; document.getElementById('info').style.top = '';
   skyRoot.visible = bandRoot.visible = true; bandCam.fov = 40; SUN.glare.visible = SUN.corona.visible = true;
@@ -2821,7 +2825,7 @@ const collapse = c => { topPanel.classList.toggle('collapsed', c); aboutBtn.text
 aboutBtn.onclick = () => collapse(!topPanel.classList.contains('collapsed'));
 collapse(UAS_FOLD.phone.matches);   // on a phone the intro starts folded: just the search box and its i
 UAS_FOLD.foldable(document.getElementById('legend'), { title: 'Layers' });
-UAS_FOLD.foldable(topPanel, { title: 'Planets', arrow: '▾' });   // starts put away on a phone
+var topFold = UAS_FOLD.foldable(topPanel, { title: 'Planets', arrow: '▾' });   // starts put away on a phone
 UAS_FOLD.foldable(document.getElementById('time'), { title: 'Clock', arrow: '▴', closeBtn: document.getElementById('timex'), startFolded: false, keep: true });   // phones: × puts the clock away (a tap on the map leaves it be)
 const kindLabel = o => o.isSun ? 'Star' : o.kind === 'probe' ? 'Spacecraft' : o.kind === 'giant' ? 'Giant planet' : o.kind === 'planet' ? 'Planet' : o.kind === 'dwarf' ? 'Dwarf planet' : `Moon of ${o.parent.name}`;
 const sIn = document.getElementById('search'), sRes = document.getElementById('results'); let hits = [], active = 0;
@@ -3041,7 +3045,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=961b7af9" data-place="info" defer></script>
+<script src="../music/music.js?v=c0b425cd" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
