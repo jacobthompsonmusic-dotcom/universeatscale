@@ -152,7 +152,7 @@
   body.sky #skydirs { display:block; }
   #skydirs span { position:absolute; left:0; top:0; color:#f1dfae; font:italic 17px "IM Fell English", Georgia, serif; letter-spacing:0.08em; text-shadow:0 0 6px #000; transform:translate(-50%, -100%); }
   #skydirs span:nth-child(even) { font-size:13px; opacity:0.6; }
-  body.sky #scale { display:none; }
+  body.sky #scale, body.sky #legend { display:none; }   /* standing on Earth: no scale bar or layers card (constellations are switched on for you) */
   #zodwheel { display:none; top:16px; right:98px; width:316px; padding:12px 12px 10px; z-index:3; }
   body.embed #zodwheel { right:140px; }
   body.sky #zodwheel { display:block; }
@@ -315,12 +315,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=bd9ba961"></script>
-<script src="../shared/clock.js?v=bd9ba961"></script>
-<script src="../shared/fold.js?v=bd9ba961"></script>
-<script src="baked/manifest.js?v=bd9ba961"></script>
-<script src="../shared/perf.js?v=bd9ba961"></script>
-<script src="../shared/galaxy-volume.js?v=bd9ba961"></script>
+<script src="../shared/frame.js?v=efe04a90"></script>
+<script src="../shared/clock.js?v=efe04a90"></script>
+<script src="../shared/fold.js?v=efe04a90"></script>
+<script src="baked/manifest.js?v=efe04a90"></script>
+<script src="../shared/perf.js?v=efe04a90"></script>
+<script src="../shared/galaxy-volume.js?v=efe04a90"></script>
 <script>
 (() => {
 'use strict';
@@ -3040,7 +3040,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=bd9ba961" data-place="info" defer></script>
+<script src="../music/music.js?v=efe04a90" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
