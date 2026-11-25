@@ -118,6 +118,11 @@
   #datepick { position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:12px;
     background:rgba(14,15,22,0.96); border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,0.5); font:italic 15px "IM Fell English", Georgia, serif; color:var(--muted); }
   #datepick[hidden] { display:none; }
+  #dp-ecl { flex-basis:100%; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; font-size:13px; }
+  #dp-ecl .h { flex-basis:100%; text-align:center; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); opacity:0.8; margin-top:2px; }
+  #dp-ecl button { height:auto !important; padding:4px 9px !important; font-size:13px !important; line-height:1.25; }
+  #dp-ecl button small { display:block; font-size:11px; opacity:0.7; }
+  #dp-ecl button.seen { border-color:rgba(255,207,110,0.45) !important; color:#f1dfae !important; }
   #skybtn[hidden] { display:none; }
   #skymenu { position:absolute; bottom:calc(100% + 8px); right:0; display:flex; flex-direction:column; gap:6px; padding:10px 12px; border-radius:12px; z-index:3;
     background:rgba(14,15,22,0.96); border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,0.5); font:italic 14px "IM Fell English", Georgia, serif; color:var(--muted); }
@@ -314,7 +319,7 @@
   <input id="speed" type="range" min="0" max="1000" step="1" value="418" aria-label="Speed">
   <span class="spd" id="spd"></span>
   <span class="date" id="date" role="button" tabindex="0" title="Pick any date from 1800 to 2050 — your birthday, say">​</span>
-  <div id="datepick" hidden><label>Date <input id="dp-d" type="date" min="1800-01-01" max="2050-12-31"></label><label>Time <input id="dp-t" type="time" value="12:00"></label></div>
+  <div id="datepick" hidden><label>Date <input id="dp-d" type="date" min="1800-01-01" max="2050-12-31"></label><label>Time <input id="dp-t" type="time" value="12:00"></label><div id="dp-ecl"></div></div>
   <button id="now">Now</button>
   <button id="skybtn" title="Stand on Earth and see the sky at this moment" aria-haspopup="true">See the sky</button>
   <div id="skymenu" hidden><button data-sh="n">Northern hemisphere</button><button data-sh="s">Southern hemisphere</button></div>
@@ -323,12 +328,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=33c3b22c"></script>
-<script src="../shared/clock.js?v=33c3b22c"></script>
-<script src="../shared/fold.js?v=33c3b22c"></script>
-<script src="baked/manifest.js?v=33c3b22c"></script>
-<script src="../shared/perf.js?v=33c3b22c"></script>
-<script src="../shared/galaxy-volume.js?v=33c3b22c"></script>
+<script src="../shared/frame.js?v=35cca137"></script>
+<script src="../shared/clock.js?v=35cca137"></script>
+<script src="../shared/fold.js?v=35cca137"></script>
+<script src="baked/manifest.js?v=35cca137"></script>
+<script src="../shared/perf.js?v=35cca137"></script>
+<script src="../shared/galaxy-volume.js?v=35cca137"></script>
 <script>
 (() => {
 'use strict';
@@ -1126,7 +1131,7 @@ function updateMWV() {
   const lit = SKY.on && SKY.day >= 0.55;   // standing on Earth in daylight: no Milky Way
   const photo = SKY.on && !SKY.lifted && SKYPHOTO.ready && opts.milky;   // on the ground: the photograph instead of the model
   SKYPHOTO.mesh.visible = photo && !lit;
-  if (SKYPHOTO.mesh.visible) { const u = SKYPHOTO.mesh.material.uniforms; u.a.value = 1 - sstep(SKY.day, 0.08, 0.55); u.up.value.copy(SKY.up).applyQuaternion(_q3.copy(bandRoot.quaternion).invert()); }
+  if (SKYPHOTO.mesh.visible) { const u = SKYPHOTO.mesh.material.uniforms; u.a.value = (1 - sstep(SKY.day, 0.08, 0.55)) * (1 - sstep(ECL.obsc, 0.2, 0.6));   /* no Milky Way in an eclipse's daytime dark */ u.up.value.copy(SKY.up).applyQuaternion(_q3.copy(bandRoot.quaternion).invert()); }
   MWV.mesh.visible = MWV.ready && opts.milky && !lit && !photo; milky.visible = opts.milky && !MWV.ready && !photo;
   if (!MWV.mesh.visible) return;
   const u = MWV.mat.uniforms; _q3.copy(skyRoot.quaternion).invert();
@@ -1222,7 +1227,15 @@ function sunTexture() {
 const SUN = { key: 'sun', name: 'Sun', kind: 'sun', isSun: true, color: '#ffe27a', pr: 0, R: 695.7, abs: new THREE.Vector3(),
   blurb: 'Our star, holding 99.86% of all the mass in the solar system. Everything here is drawn at its true size and distance from it, which is why most of this map is empty: Neptune is thirty times farther out than Earth.' };
 SUN.root = new THREE.Group(); space.add(SUN.root);
-SUN.root.add(new THREE.Mesh(new THREE.SphereGeometry(SUN.R, 128, 64), new THREE.MeshBasicMaterial({ map: sunTexture() })));
+SUN.mat = new THREE.MeshBasicMaterial({ map: sunTexture() });
+SUN.mat.onBeforeCompile = sh => {   // from the ground, the Moon in front of the Sun takes a clean black bite out of it
+  const u = SUN.mat.userData.ecl = { uOn: { value: 0 }, uDir: { value: new THREE.Vector3(1, 0, 0) }, uCos: { value: 1 } };
+  Object.assign(sh.uniforms, u);
+  sh.vertexShader = 'varying vec3 vEclW;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n  vEclW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+  sh.fragmentShader = 'uniform float uOn; uniform vec3 uDir; uniform float uCos; varying vec3 vEclW;\n' + sh.fragmentShader.replace('#include <dithering_fragment>',
+    '#include <dithering_fragment>\n  if (uOn > 0.5 && dot(normalize(vEclW - cameraPosition), uDir) > uCos) gl_FragColor.rgb = vec3(0.0);');
+};
+SUN.root.add(new THREE.Mesh(new THREE.SphereGeometry(SUN.R, 128, 64), SUN.mat));
 SUN.corona = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialSprite([[0, 'rgba(255,240,200,0.9)'], [0.18, 'rgba(255,220,160,0.55)'], [0.45, 'rgba(255,200,130,0.12)'], [1, 'rgba(255,190,120,0)']]), depthWrite: false, transparent: true, blending: THREE.AdditiveBlending }));
 SUN.corona.scale.set(SUN.R * 6, SUN.R * 6, 1); SUN.root.add(SUN.corona);
 SUN.glare = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialSprite([[0, 'rgba(255,255,250,1)'], [0.08, 'rgba(255,250,235,1)'], [0.25, 'rgba(255,230,190,0.25)'], [1, 'rgba(255,220,180,0)']]), depthWrite: false, transparent: true, sizeAttenuation: false }));
@@ -1595,6 +1608,20 @@ function moonGeo(ms) {
 {
   const M = rockyMoon(EARTH, 'Moon', 384400, 27.321661, 1737.4, '#cfcac2', 'Known since prehistory', 'Earth\'s only natural satellite, about a quarter of Earth\'s width: enormous for a moon of such a small planet. It probably formed from debris thrown out when a Mars-sized body slammed into the young Earth. It always shows us the same face, and it is drifting away by about 3.8 cm a year.', { fact: ['Position', 'Real, worked out for this moment'] });
   EARTH.root.add(M.mesh);
+  M.mesh.material.onBeforeCompile = sh => {   // the Earth's shadow: a red-brown umbra (sunlight bent through our atmosphere) inside a soft penumbra
+    const u = M.mesh.material.userData.ecl = { uEarth: { value: new THREE.Vector3() }, uAxis: { value: new THREE.Vector3(1, 0, 0) } };
+    Object.assign(sh.uniforms, u);
+    sh.vertexShader = 'varying vec3 vEclW;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n  vEclW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = 'uniform vec3 uEarth; uniform vec3 uAxis; varying vec3 vEclW;\n' + sh.fragmentShader.replace('#include <dithering_fragment>', `#include <dithering_fragment>
+      vec3 rel = vEclW - uEarth; float t = dot(rel, uAxis);
+      if (t > 0.0) {
+        float r = length(rel - uAxis * t), um = ${(6378.14 * 1.02 * U).toFixed(6)} - t * ${((696000 - 6378.14) / 149597870.7).toFixed(8)}, pen = ${(6378.14 * 1.02 * U).toFixed(6)} + t * ${((696000 + 6378.14) / 149597870.7).toFixed(8)};
+        float inU = 1.0 - smoothstep(um * 0.985, um * 1.015, r), inP = 1.0 - smoothstep(um, pen, r);
+        float lum = dot(gl_FragColor.rgb, vec3(0.3, 0.55, 0.15));
+        vec3 copper = vec3(0.75, 0.26, 0.10) * (0.16 + 0.22 * smoothstep(0.0, um, r)) * (0.4 + lum);
+        gl_FragColor.rgb = mix(gl_FragColor.rgb * (1.0 - 0.6 * inP), copper, inU);
+      }`);
+  };
   M.line = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: '#cfcac2', transparent: true, opacity: 0.35, depthWrite: false })); EARTH.root.add(M.line);
   M.lineAt = -1e15;
   EARTH.place = () => {
@@ -2549,7 +2576,30 @@ speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
   const go = () => { if (!di.value) return; const ms = new Date(`${di.value}T${ti.value || '12:00'}`).getTime(); if (!isFinite(ms)) return;
     CK.set(Math.min(TMAX, Math.max(TMIN, ms))); simMs = CK.now(); playing = false; CK.setPlaying(false); playBtn.textContent = '▶\ufe0e';
     if (!SKY.on) document.getElementById('skybtn').classList.add('glow'); };   // a date of your own: invite a look at that sky
-  di.onchange = go; ti.onchange = go;   // a new date or time takes effect at once; no Go button
+  // the year's eclipses, under the date: tap one to stand where it can be seen (if it can) and watch it happen
+  const eclBox = document.getElementById('dp-ecl'); let eclY = null;
+  const eclList = () => {
+    const Y = +(di.value || '').slice(0, 4) || new Date(simMs).getFullYear(); if (Y === eclY) return; eclY = Y;
+    if (Y < 1800 || Y > 2050) { eclBox.innerHTML = ''; return; }
+    const L = ECL.year(Y), fmt = t => new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    eclBox.innerHTML = `<div class="h">Eclipses in ${Y}</div>` + (L.length ? '' : '<span>none</span>');
+    for (const e of L) {
+      const hs = SKY.on ? [SKY.hemi] : ['n', 's'], h = hs.find(k => e.here[k].obsc > 0.0005);
+      const b = document.createElement('button'); if (h) b.className = 'seen';
+      const what = `${e.kind === 'solar' ? '☉' : '☽'} ${fmt(e.t)} · ${e.type} ${e.kind}`;
+      const note = h ? (e.kind === 'solar' ? `seen from the ${h === 'n' ? 'north' : 'south'}: ${e.here[h].obsc > 0.999 ? 'total' : Math.round(e.here[h].obsc * 100) + '% covered'}` : `seen from the ${h === 'n' ? 'north' : 'south'}`) : 'not seen from either spot';
+      b.innerHTML = `${what}<small>${note}</small>`;
+      b.onclick = () => {   // start a little before the deepest moment and let it play out
+        const t = h ? e.here[h].t : e.t, lead = e.kind === 'solar' ? 25 * 60000 : 90 * 60000;
+        CK.set(Math.min(TMAX, Math.max(TMIN, t - lead))); simMs = CK.now();
+        if (h) { skyOn(h); const sm = ECL.look(t, e.kind, h); if (sm) { SKY.az = sm.az; SKY.alt = Math.max(e.kind === 'solar' ? 12 : 4, Math.min(70, sm.alt)); SKY.fov = e.kind === 'solar' ? 75 : 18;   /* the whole sky darkening / a close look at the Moon */ } }
+        logTarget = Math.log10(e.kind === 'solar' ? 120 : 600); speedIn.value = Math.round(logTarget / MAXLOG * 1000);
+        playing = true; playTouched = true; CK.setPlaying(true); playBtn.textContent = '❚❚'; box.hidden = true; };
+      eclBox.appendChild(b);
+    }
+  };
+  di.addEventListener('input', eclList); const open0 = open; dEl.onclick = () => { if (box.hidden) { open0(); eclY = null; eclList(); } else box.hidden = true; };
+  di.onchange = () => { go(); eclList(); }; ti.onchange = go;   // a new date or time takes effect at once; no Go button
   box.onkeydown = e => { if (e.key === 'Enter') { go(); box.hidden = true; } if (e.key === 'Escape') box.hidden = true; };
   addEventListener('pointerdown', e => { if (!box.hidden && !box.contains(e.target) && e.target !== dEl) box.hidden = true; });
 }
@@ -2710,10 +2760,10 @@ const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE
 const skyDome = new THREE.Mesh(new THREE.SphereGeometry(0.9, 96, 48), new THREE.ShaderMaterial({   // daylight and twilight, added over the stars
   side: THREE.BackSide, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
   uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, north: { value: new THREE.Vector3(0, 0, -1) }, east: { value: new THREE.Vector3(1, 0, 0) }, sun: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 },
-    tm: { value: 0 }, wind: { value: SKY_WIND }, hz: { value: 0 } }, vertexShader: skyVS,
+    tm: { value: 0 }, wind: { value: SKY_WIND }, hz: { value: 0 }, tot: { value: 0 } }, vertexShader: skyVS,
   fragmentShader: `#include <logdepthbuf_pars_fragment>
     #define OCT ${LITE ? 3 : 5}
-    uniform vec3 up; uniform vec3 north; uniform vec3 east; uniform vec3 sun; uniform float day; uniform float dusk; uniform float tm; uniform vec2 wind; uniform float hz; varying vec3 vD;
+    uniform vec3 up; uniform vec3 north; uniform vec3 east; uniform vec3 sun; uniform float day; uniform float dusk; uniform float tm; uniform vec2 wind; uniform float hz; uniform float tot; varying vec3 vD;
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
       return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
@@ -2732,6 +2782,8 @@ const skyDome = new THREE.Mesh(new THREE.SphereGeometry(0.9, 96, 48), new THREE.
     c += vec3(1.0, 0.72, 0.42) * dusk * pow(mp, 10.0) * 0.45;
     c += vec3(0.46, 0.28, 0.38) * dusk * smoothstep(0.01, 0.07, hh) * exp(-hh / 0.14) * pow(1.0 - side, 2.0) * 0.6;
     c += vec3(0.10, 0.15, 0.32) * dusk * (1.0 - hz) * 0.35;
+    // totality: a deep blue-violet dark overhead, and a sunset glow all the way round the horizon (sunlight from beyond the shadow)
+    c += (vec3(1.0, 0.56, 0.26) * exp(-hh * 9.0) * 0.38 + vec3(0.035, 0.045, 0.11) * (1.0 - exp(-hh * 9.0))) * tot;
     // scattered clouds on a high layer, drifting with the breeze: lit on the Sun's side, gold and rose when it is low
     float lit = day + dusk;
     if (lit > 0.01 && h > 0.0) {
@@ -2881,7 +2933,8 @@ function skyOn(hemi) {
   skyGround.visible = skyDome.visible = true; document.body.classList.add('sky'); skyPanel.hidden = false; skyWhere(); select(null);
 }
 function skyOff(keep) {
-  if (!SKY.on) return; if (SKY.topOpen && topFold) { SKY.topOpen = false; topFold.set(false); } SKY.on = false; SKY.launch = null; SKY.lifted = false; camera.up.set(0, 1, 0);
+  if (!SKY.on) return;
+  { const mm = ECL.moon().mesh.material; mm.blending = THREE.NormalBlending; mm.transparent = false; mm.depthWrite = true; mm.needsUpdate = true; } if (SKY.topOpen && topFold) { SKY.topOpen = false; topFold.set(false); } SKY.on = false; SKY.launch = null; SKY.lifted = false; camera.up.set(0, 1, 0);
   controls.enabled = true; EARTH.mesh.visible = true; EARTH.clouds.visible = !EARTH.see; if (EARTH.atm) EARTH.atm.visible = true;
   skyGround.visible = skyDome.visible = false; document.body.classList.remove('sky'); skyPanel.hidden = true; document.getElementById('info').style.top = '';
   skyRoot.visible = bandRoot.visible = true; bandCam.fov = 40; SUN.glare.visible = SUN.corona.visible = true;
@@ -2925,6 +2978,97 @@ function skyCamera() {
   camera.up.copy(SKY.up); camera.lookAt(camera.position.clone().add(look));
   controls.target.copy(c);
 }
+// ===================================================================
+//  eclipses: found from the same Sun and Moon the page draws (Meeus' lunar theory, JPL orbits), listed in the calendar, and seen
+//  as they happen: the Moon's shadow across the Sun (the daylight fading with it, the corona at totality) and the Earth's shadow
+//  across the Moon (a coppery red in the umbra)
+// ===================================================================
+const ECL = { years: {}, obsc: 0, R_SUN: 696000, R_MOON: 1737.4, R_EARTH: 6378.14 };
+ECL.moon = () => ECL.M || (ECL.M = EARTH.moons.find(m => m.name === 'Moon'));
+ECL.geoSun = (ms, out) => helio('earth', T_of(ms), out).negate();
+ECL.ang = (a, b) => Math.acos(THREE.MathUtils.clamp(a.dot(b) / (a.length() * b.length()), -1, 1));
+ECL.lon = v => Math.atan2(-v.z, v.x);
+ECL.wrap = x => { x = (x + Math.PI) % TAU; return (x < 0 ? x + TAU : x) - Math.PI; };
+// the fraction of a disc of radius r1 covered by a disc of radius r2, centres d apart (all angles)
+ECL.cover = (d, r1, r2) => {
+  if (d >= r1 + r2) return 0;
+  if (d <= Math.abs(r2 - r1)) return r2 >= r1 ? 1 : (r2 * r2) / (r1 * r1);
+  const a1 = Math.acos((d * d + r1 * r1 - r2 * r2) / (2 * d * r1)), a2 = Math.acos((d * d + r2 * r2 - r1 * r1) / (2 * d * r2));
+  return (r1 * r1 * (a1 - Math.sin(2 * a1) / 2) + r2 * r2 * (a2 - Math.sin(2 * a2) / 2)) / (Math.PI * r1 * r1);
+};
+// where the observer stands (the sky view's spot in either hemisphere), geocentric, scene axes
+ECL.obs = (ms, hemi, out) => {
+  const y = new Date(ms).getFullYear(), lon = -Math.max(new Date(y, 0, 1).getTimezoneOffset(), new Date(y, 6, 1).getTimezoneOffset()) / 4;
+  const la = SKY_LAT[hemi] * DEG, th = gmst(ms) + lon * DEG;
+  return out.copy(eqToScene({ x: Math.cos(la) * Math.cos(th), y: Math.cos(la) * Math.sin(th), z: Math.sin(la) })).multiplyScalar(ECL.R_EARTH * U);
+};
+ECL.year = Y => {
+  if (ECL.years[Y]) return ECL.years[Y];
+  const S = new THREE.Vector3(), M = new THREE.Vector3(), O = new THREE.Vector3(), out = [];
+  const elong = (ms, off) => { ECL.geoSun(ms, S); M.copy(moonGeo(ms)); return ECL.wrap(ECL.lon(M) - ECL.lon(S) - off); };
+  const t0 = Date.UTC(Y, 0, 1) - 20 * 864e5, t1 = Date.UTC(Y + 1, 0, 1) + 2 * 864e5;
+  for (const [off, kind] of [[0, 'solar'], [Math.PI, 'lunar']]) {
+    let ta = t0, fa = elong(ta, off);
+    for (let t = t0 + 864e5; t <= t1; t += 864e5) {
+      const f = elong(t, off);
+      if (fa < 0 && f >= 0 && f - fa < 1) {   // the Moon passed the Sun (or the point opposite it): narrow it down
+        let lo = ta, hi = t; for (let k = 0; k < 24; k++) { const mid = (lo + hi) / 2; if (elong(mid, off) < 0) lo = mid; else hi = mid; }
+        // greatest eclipse: the Moon closest to the Sun (or to the Earth's shadow), seen from the Earth's centre
+        const sepAt = ms => { ECL.geoSun(ms, S); M.copy(moonGeo(ms)); return ECL.ang(M, kind === 'solar' ? S : S.clone().negate()); };
+        let a = lo - 6 * 36e5, b = lo + 6 * 36e5; for (let k = 0; k < 30; k++) { const m1 = a + (b - a) * 0.382, m2 = a + (b - a) * 0.618; if (sepAt(m1) < sepAt(m2)) b = m2; else a = m1; }
+        const tg = (a + b) / 2, sep = sepAt(tg), dm = M.length() / U, ds = S.length() / U;
+        const Rs = Math.asin(ECL.R_SUN / ds), Rm = Math.asin(ECL.R_MOON / dm), pm = Math.asin(ECL.R_EARTH / dm), ps = Math.asin(ECL.R_EARTH / ds);
+        let type = null;
+        if (kind === 'solar') { if (sep < pm + Rs + Rm - 0.0005) type = sep < pm * 0.997 ? (Rm * 1.008 > Rs ? 'total' : 'annular') : 'partial'; }
+        else { const um = 1.02 * (pm + ps - Rs), pen = 1.02 * (pm + ps + Rs);
+          type = sep + Rm <= um ? 'total' : sep - Rm < um ? 'partial' : sep - Rm < pen ? 'penumbral' : null; }
+        if (type && tg >= Date.UTC(Y, 0, 1) && tg < Date.UTC(Y + 1, 0, 1)) {
+          const e = { t: tg, kind, type, here: {} };
+          for (const h of ['n', 's']) {   // how it looks from each of the sky view's two spots
+            let best = { obsc: 0, t: tg, alt: -1 };
+            for (let ms = tg - 4 * 36e5; ms <= tg + 4 * 36e5; ms += 120000) {
+              ECL.geoSun(ms, S); M.copy(moonGeo(ms)); ECL.obs(ms, h, O);
+              const st = S.clone().sub(O), mt = M.clone().sub(O), up = O.clone().normalize();
+              if (kind === 'solar') {
+                const alt = Math.asin(st.clone().normalize().dot(up)); if (alt < 0) continue;
+                const c = ECL.cover(ECL.ang(st, mt), Math.asin(ECL.R_SUN * U / st.length()), Math.asin(ECL.R_MOON * U / mt.length()));
+                if (c > best.obsc) best = { obsc: c, t: ms, alt };
+              } else if (Math.abs(ms - tg) < 36e5) { const alt = Math.asin(mt.clone().normalize().dot(up)); if (alt > best.alt) best = { obsc: alt > 0 ? 1 : 0, t: alt > 0 ? ms : tg, alt }; }
+            }
+            e.here[h] = best;
+          }
+          out.push(e);
+        }
+      }
+      ta = t; fa = f;
+    }
+  }
+  out.sort((a, b) => a.t - b.t);
+  return (ECL.years[Y] = out);
+};
+// which way to face to see it: azimuth and altitude (degrees) of the Sun (solar) or Moon (lunar) from a spot at time ms
+ECL.look = (ms, kind, h) => {
+  const O = ECL.obs(ms, h, new THREE.Vector3()), up = O.clone().normalize(), S = ECL.geoSun(ms, new THREE.Vector3());
+  const d = (kind === 'solar' ? S : moonGeo(ms)).clone().sub(O).normalize(), pole = eqToScene({ x: 0, y: 0, z: 1 });
+  const east = pole.clone().cross(up).normalize(), north = up.clone().cross(east);
+  return { az: Math.atan2(d.dot(east), d.dot(north)) / DEG, alt: Math.asin(THREE.MathUtils.clamp(d.dot(up), -1, 1)) / DEG };
+};
+// the eclipse as it looks right now from where the camera stands
+ECL.update = () => {
+  const M = ECL.moon(); if (!M) return;
+  const sw = SUN.root.getWorldPosition(ECL._s || (ECL._s = new THREE.Vector3())), mw = M.mesh.getWorldPosition(ECL._m || (ECL._m = new THREE.Vector3()));
+  const ew = EARTH.root.getWorldPosition(ECL._e || (ECL._e = new THREE.Vector3()));
+  // the Earth's shadow on the Moon (always, from anywhere)
+  const mu = M.mesh.material.userData.ecl; if (mu) { mu.uEarth.value.copy(ew); mu.uAxis.value.copy(ew).sub(sw).normalize(); }
+  // the Moon in front of the Sun, from the ground
+  const su = SUN.mat.userData.ecl;
+  if (SKY.on && !SKY.lifted) {
+    const st = sw.clone().sub(camera.position), mt = mw.clone().sub(camera.position);
+    const Rs = Math.asin(Math.min(1, SUN.R / st.length())), Rm = Math.asin(Math.min(1, ECL.R_MOON * U / mt.length()));
+    ECL.obsc = ECL.cover(ECL.ang(st, mt), Rs, Rm);
+    if (su) { su.uOn.value = 1; su.uDir.value.copy(mt).normalize(); su.uCos.value = Math.cos(Rm); }
+  } else { ECL.obsc = 0; if (su) su.uOn.value = 0; }
+};
 // after the frame's own camera settings: the lens, the ground and sky, day and night
 // the season where you stand, from the date: the north spot (45° N) has an Ontario-like year, snow from December to March;
 // the south spot (34° S) has the same year six months on, but its winters are mild (no snow lies at that latitude near the sea)
@@ -2951,7 +3095,12 @@ function skyPaint() {
   { const S = skySeason(); for (const k of ['snow', 'fall', 'bare', 'bud', 'dry', 'hz']) gu[k].value = S[k]; du.hz.value = S.hz; }
   const sp = relOf(SUN).sub(camera.position).normalize(), sAlt = Math.asin(THREE.MathUtils.clamp(sp.dot(SKY.up), -1, 1)) / DEG;
   const thin = SKY.launch ? 1 - sstep(SKY.launch.e, 0.0, 0.32) : 1;   // climbing out: the blue thins away to black
-  const day = sstep(sAlt, -8, 6) * thin, dusk = sstep(sAlt, -16, -2) * (1 - sstep(sAlt, 2, 10)) * thin;
+  ECL.update(); const ob = ECL.obsc, tot = sstep(ob, 0.975, 1.0);
+  { const mm = ECL.moon().mesh.material, gnd = !SKY.lifted;   // from the ground the Moon's dark side shows the sky through it, as it really does
+    if (mm.depthWrite === gnd) { mm.blending = gnd ? THREE.AdditiveBlending : THREE.NormalBlending; mm.transparent = gnd; mm.depthWrite = !gnd; mm.needsUpdate = true; } }
+  const eDim = 1 - 0.97 * Math.pow(ob, 6);   // an eclipse: the light hardly changes until the Sun is almost covered, then falls away fast
+  const day = sstep(sAlt, -8, 6) * thin * eDim, dusk = sstep(sAlt, -16, -2) * (1 - sstep(sAlt, 2, 10)) * thin;
+  skyDome.material.uniforms.tot.value = tot * sstep(sAlt, -2, 4);
   skyDome.material.uniforms.sun.value.copy(sp); gu.sun.value.copy(sp); skyDome.material.uniforms.day.value = day; skyDome.material.uniforms.dusk.value = dusk;
   gu.day.value = day; gu.dusk.value = dusk; SKY.day = day;
   skyRoot.visible = bandRoot.visible = day < 0.55;   // the stars and the Milky Way vanish in daylight
@@ -3082,7 +3231,8 @@ function frame(t) {
   // the Sun's glare shrinks with distance
   relOf(SUN, p); const dAU = p.distanceTo(camera.position) / AUS;
   const sz = (Math.min(0.6, 2.4 / dAU) + 0.04) * fk; SUN.glare.scale.set(sz, sz, 1);
-  SUN.glare.material.opacity = THREE.MathUtils.clamp((dAU - 0.01) / 0.05, 0, 1);
+  SUN.glare.material.opacity = THREE.MathUtils.clamp((dAU - 0.01) / 0.05, 0, 1) * (SKY.on ? Math.pow(1 - ECL.obsc, 1.5) : 1);
+  SUN.corona.material.opacity = SKY.on ? 0.35 + 0.65 * sstep(ECL.obsc, 0.97, 1) : 1;   // the corona shows round the black Moon at totality
 
   for (const b of PLANETS) {
     relOf(b, p); const dist = p.distanceTo(camera.position), px = b.R / dist * pxs;
@@ -3202,7 +3352,7 @@ function init() {
   canvas.addEventListener('webglcontextrestored', () => setTimeout(() => { precompile(); MWV.key = ''; IDLE.dirty++; }, 0));
   requestAnimationFrame(frame);
   setTimeout(earthHiRes, 400);
-  if (/[?&]debug=1/.test(location.search)) window.__ss = { IDLE, SKY, SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
+  if (/[?&]debug=1/.test(location.search)) window.__ss = { IDLE, SKY, ECL, SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
   if (EMBED) { parent.postMessage({ src: 'uas-ss', ready: true }, '*'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); document.body.classList.add('embed'); }
   // lift the black loading screen once the opening view has actually been drawn, Milky Way included (or after 2.5 s at most)
   const t0 = performance.now(), lift = () => { if (!LITE && !MWV.ready && performance.now() - t0 < 2500) return setTimeout(lift, 100);
@@ -3212,7 +3362,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=33c3b22c" data-place="info" defer></script>
+<script src="../music/music.js?v=35cca137" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
