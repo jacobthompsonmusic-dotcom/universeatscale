@@ -152,6 +152,7 @@
   #top.collapsed h1, #top.collapsed p { display:none; }
   @media (min-width: 761px) { body.embed #info { right: 140px; } }
   @media (max-width: 760px) {
+    #gohome { font-size: 10.5px !important; letter-spacing: 0 !important; }
     #top { width: calc(100% - 32px); }
     #info { top: auto; bottom: 16px; left: 16px; right: 84px; width: auto; max-height: 50vh; overflow-y: auto; z-index: 5; }
     #readout, #note { display: none; }
@@ -189,11 +190,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=5a1b3620"></script>
-<script src="../shared/clock.js?v=5a1b3620"></script>
-<script src="../shared/fold.js?v=5a1b3620"></script>
-<script src="../shared/perf.js?v=5a1b3620"></script>
-<script src="../shared/galaxy-volume.js?v=5a1b3620"></script>
+<script src="../shared/frame.js?v=0493abae"></script>
+<script src="../shared/clock.js?v=0493abae"></script>
+<script src="../shared/fold.js?v=0493abae"></script>
+<script src="../shared/perf.js?v=0493abae"></script>
+<script src="../shared/galaxy-volume.js?v=0493abae"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1860,6 +1861,10 @@ const lblW = (font, s) => { ctx.font = font; return ctx.measureText(s).width; };
 function lbl(pr, boxes, fn) { if (typeof boxes[0] === 'number') boxes = [boxes]; LBL.q.push({ pr, boxes, fn, i: LBL.q.length }); }
 function lblFlush() {
   const q = LBL.q.sort((a, b) => a.pr - b.pr || a.i - b.i), P = LBL.placed = [], px = LBL.PX, py = LBL.PY;
+  const pan = [];   // the panels: labels (other than the picked or hovered one) keep out from under them
+  for (const id of ['top', 'legend', 'controls', 'info', 'acpanel', 't1panel', 'qpanel', 'orbpanel']) { const e = document.getElementById(id); if (!e || e.hidden) continue; const r = e.getBoundingClientRect(); if (r.width) pan.push([r.left, r.top, r.width, r.height]); }
+  if (document.body.classList.contains('embed') && innerWidth > 760) pan.push([Wd - 140, 0, 140, 300]);   // the joined page's scale list
+  P.push(...pan);
   for (const L of q) {
     if (L.boxes.every(([x, y, w, h]) => x + w < 0 || x > Wd || y + h < 0 || y > Ht)) continue;
     if (L.pr > -5 && L.boxes.some(([x, y, w, h]) => P.some(b => x - px < b[0] + b[2] && x + w + px > b[0] && y - py < b[1] + b[3] && y + h + py > b[1]))) continue;
@@ -1930,6 +1935,7 @@ function drawObjects() {
     });
   };
   for (const { o, X, Y } of screenPts) {
+    if (o.type === 'magnetar' && o !== selected && o !== hover && viewSpan() > 20000) continue;   // magnetars are named once you zoom into the disc
     const big = o.pr <= 1, pr = o === selected ? -10 : o === hover ? -9 : o.pr;
     const off = o.gal && !o.mw ? Math.max(10, o.diam * view.s * 0.32) : 10;
     put(o.name, X, Y, big, o.type === 'sun' ? '#ffe27a' : (big ? '#ffffff' : 'rgba(230,234,245,0.85)'), off, pr, o.type === 'sun' ? 'You are here' : null);
@@ -3439,7 +3445,7 @@ aboutBtn.onclick = () => setCollapsed(!topPanel.classList.contains('collapsed'))
 cv.addEventListener('pointerdown', () => { setCollapsed(true); sRes.style.display = 'none'; sIn.blur(); UAS_FOLD.foldAll(); });   // a tap on the map puts the menus away
 setCollapsed(UAS_FOLD.phone.matches);   // on a phone the intro starts folded: just the search box and its i
 // on a phone, each menu gets a × and folds to a small tab
-UAS_FOLD.foldable(document.getElementById('legend'), { title: 'Key & layers' });
+UAS_FOLD.foldable(document.getElementById('legend'), { title: 'Layers' });
 UAS_FOLD.foldable(document.getElementById('top'), { title: 'Search', arrow: '▾' });   // on a phone the search panel starts put away too
 for (const id of ['t1panel', 'acpanel', 'qpanel', 'ppanel', 'orbpanel']) { const el = document.getElementById(id); el._fold = UAS_FOLD.foldable(el, { title: () => (el.querySelector('h3') || {}).textContent || 'Details' }); }
 
@@ -3449,7 +3455,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=5a1b3620" data-place="info" defer></script>
+<script src="../music/music.js?v=0493abae" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
