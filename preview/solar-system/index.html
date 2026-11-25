@@ -319,12 +319,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=8b467166"></script>
-<script src="../shared/clock.js?v=8b467166"></script>
-<script src="../shared/fold.js?v=8b467166"></script>
-<script src="baked/manifest.js?v=8b467166"></script>
-<script src="../shared/perf.js?v=8b467166"></script>
-<script src="../shared/galaxy-volume.js?v=8b467166"></script>
+<script src="../shared/frame.js?v=3eee6d65"></script>
+<script src="../shared/clock.js?v=3eee6d65"></script>
+<script src="../shared/fold.js?v=3eee6d65"></script>
+<script src="baked/manifest.js?v=3eee6d65"></script>
+<script src="../shared/perf.js?v=3eee6d65"></script>
+<script src="../shared/galaxy-volume.js?v=3eee6d65"></script>
 <script>
 (() => {
 'use strict';
@@ -2897,6 +2897,9 @@ function frame(t) {
     controls.update(); keepOutside(); }
   const camD = camera.position.distanceTo(controls.target), pxs = innerHeight / 2 / Math.tan(camera.fov * DEG / 2), p = new THREE.Vector3();
   updateHelix(camD);
+  if (!(frame.n = (frame.n || 0) + 1) || frame.n % 10 === 0) {   // the Faint rings chip only shows near a giant planet, where there are faint rings to see
+    const near = GIANTS.some(g => g.planet.getWorldPosition(p).distanceTo(camera.position) < 400 * g.cf.R);
+    if (near !== frame.faintNear) { frame.faintNear = near; const b = document.querySelector('#legend .tg[data-k="faint"]'); if (b) b.style.display = near ? '' : 'none'; } }
   // past the Oort cloud the lens narrows while the camera backs away, so the picture slides from a view of the sky into the galaxy map's straight-down projection
   const spanLy = 2 * camD * TAN20 * Math.min(1, camera.aspect) / LY, ls = Math.log(Math.max(spanLy, 1e-30));
   deep.p = 0; deep.q = EMBED ? sstep(ls, Math.log(3.2), Math.log(5.8)) : 0;
@@ -3045,7 +3048,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=8b467166" data-place="info" defer></script>
+<script src="../music/music.js?v=3eee6d65" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
