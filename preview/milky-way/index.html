@@ -190,11 +190,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=0493abae"></script>
-<script src="../shared/clock.js?v=0493abae"></script>
-<script src="../shared/fold.js?v=0493abae"></script>
-<script src="../shared/perf.js?v=0493abae"></script>
-<script src="../shared/galaxy-volume.js?v=0493abae"></script>
+<script src="../shared/frame.js?v=cb6d53fc"></script>
+<script src="../shared/clock.js?v=cb6d53fc"></script>
+<script src="../shared/fold.js?v=cb6d53fc"></script>
+<script src="../shared/perf.js?v=cb6d53fc"></script>
+<script src="../shared/galaxy-volume.js?v=cb6d53fc"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -777,10 +777,12 @@ else (function renderGalaxy() {
   const k = S / (2 * W);
   const px = x => (x + W) * k;
   let grad = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, 52000 * k);
-  grad.addColorStop(0, 'rgba(255,220,170,0.30)');
-  grad.addColorStop(0.18, 'rgba(210,190,200,0.12)');
-  grad.addColorStop(0.55, 'rgba(120,140,210,0.05)');
-  grad.addColorStop(1, 'rgba(60,80,160,0)');
+  // colours as a real barred spiral's light: an old, golden-cream bulge and disc (K giants), blue-white young stars along the arms,
+  // pink-red H II regions, and brown-black dust lanes (cf. Hubble/ESO photos of NGC 1300, NGC 6744 and M83)
+  grad.addColorStop(0, 'rgba(255,214,160,0.32)');
+  grad.addColorStop(0.18, 'rgba(240,214,178,0.13)');
+  grad.addColorStop(0.55, 'rgba(205,205,220,0.05)');
+  grad.addColorStop(1, 'rgba(160,170,200,0)');
   g.fillStyle = grad; g.fillRect(0, 0, S, S);
   g.globalCompositeOperation = 'lighter';
   const dot = (x, y, s, c) => { g.fillStyle = c; g.fillRect(px(x), px(y), s, s); };
@@ -788,7 +790,7 @@ else (function renderGalaxy() {
     const R = -8500 * Math.log(rnd() * rnd() + 1e-9), t = rnd() * 2 * Math.PI;
     if (R > 58000) continue;
     const a = 0.05 + rnd() * 0.12;
-    dot(R * Math.cos(t), R * Math.sin(t), rnd() < 0.1 ? 2 : 1, `rgba(${200 + rnd() * 55 | 0},${190 + rnd() * 50 | 0},${200 + rnd() * 55 | 0},${a})`);
+    dot(R * Math.cos(t), R * Math.sin(t), rnd() < 0.1 ? 2 : 1, `rgba(${240 + rnd() * 15 | 0},${222 + rnd() * 22 | 0},${192 + rnd() * 30 | 0},${a})`);   // old disc stars: warm cream
   }
   for (let i = 0; i < 26000; i++) {
     const r = Math.abs(gauss()) * 4000, t = rnd() * 2 * Math.PI;
@@ -815,7 +817,7 @@ else (function renderGalaxy() {
         const along = rnd() * seg, off = gauss() * sig;
         const x = p.x + tx * along + nx * off, y = p.y + ty * along + ny * off;
         const blue = rnd();
-        const c = blue < 0.55 ? `rgba(${170 + rnd() * 60 | 0},${195 + rnd() * 50 | 0},255,` : `rgba(255,${235 + rnd() * 20 | 0},${215 + rnd() * 30 | 0},`;
+        const c = blue < 0.72 ? `rgba(${120 + rnd() * 45 | 0},${170 + rnd() * 40 | 0},255,` : `rgba(255,${238 + rnd() * 17 | 0},${222 + rnd() * 26 | 0},`;   // young blue-white stars and white ones
         dot(x, y, rnd() < 0.08 ? 2 : 1, c + (0.18 + rnd() * 0.35) * fade + ')');
         if (rnd() < 0.0035 * fade) hii.push([x, y]);
       }
@@ -824,7 +826,7 @@ else (function renderGalaxy() {
   for (const [x, y] of hii) {
     const r = 2 + rnd() * 5, X = px(x), Y = px(y);
     const gr = g.createRadialGradient(X, Y, 0, X, Y, r);
-    gr.addColorStop(0, 'rgba(255,120,170,0.55)'); gr.addColorStop(1, 'rgba(255,90,150,0)');
+    gr.addColorStop(0, 'rgba(255,110,130,0.5)'); gr.addColorStop(1, 'rgba(255,80,110,0)');   // H-alpha pink-red
     g.fillStyle = gr; g.beginPath(); g.arc(X, Y, r, 0, 7); g.fill();
   }
   g.globalCompositeOperation = 'destination-out';
@@ -3455,7 +3457,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=0493abae" data-place="info" defer></script>
+<script src="../music/music.js?v=cb6d53fc" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
