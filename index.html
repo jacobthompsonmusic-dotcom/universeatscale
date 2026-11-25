@@ -91,7 +91,10 @@
 
   .support { text-align: center; }
   .support p { max-width: 50ch; margin: 0 auto; color: var(--dim); font-size: 15px; }
-  .give { display: inline-block; margin-top: 20px; font: 500 14px/1 var(--body); color: var(--amber); border: 1px solid rgba(240, 181, 106, 0.5); border-radius: 999px; padding: 11px 22px; }
+  .give { display: inline-block; margin-top: 20px; font: 500 14px/1 var(--body); color: var(--amber); background: none; border: 1px solid rgba(240, 181, 106, 0.5); border-radius: 999px; padding: 11px 22px; cursor: pointer; }
+  .give[aria-expanded="true"] { display: none; }
+  #kofi { max-width: 420px; margin: 26px auto 0; border-radius: 14px; overflow: hidden; background: #f9f9f9; }
+  #kofi iframe { display: block; width: 100%; height: 712px; border: 0; }
   .give:hover, .give:focus-visible { background: rgba(240, 181, 106, 0.1); border-color: var(--amber); }
 
   footer { border-top: 1px solid var(--rule); padding: 20px 0 32px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; font-size: 13.5px; color: var(--dim); }
@@ -106,7 +109,7 @@
 </head>
 <body>
 <!-- the universe, loading from the moment the page opens -->
-<iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=b0214b1c" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
+<iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=7baf6356" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
 
 <div id="welcome">
   <canvas id="sky" aria-hidden="true"></canvas>
@@ -139,7 +142,8 @@
     <section class="support" id="support" hidden aria-labelledby="support-h">
       <h2 id="support-h">Support the site</h2>
       <p>Universe at Scale is free and has no ads. If it gave you a new sense of where we are, you can chip in to help keep it growing.</p>
-      <a class="give" id="give" href="#" target="_blank" rel="noopener">Leave a tip ♥</a>
+      <button class="give" id="give" type="button" aria-expanded="false" aria-controls="kofi">Leave a tip ♥</button>
+      <div id="kofi" hidden></div>
     </section>
 
     <footer>
@@ -153,7 +157,15 @@
 (() => {
   // where the tip button goes; the Support section stays hidden until this is set
   const DONATE_URL = 'https://ko-fi.com/universeatscale';
-  if (DONATE_URL) { document.getElementById('give').href = DONATE_URL; document.getElementById('support').hidden = false; }
+  if (DONATE_URL) {
+    document.getElementById('support').hidden = false;
+    const give = document.getElementById('give'), box = document.getElementById('kofi');
+    give.onclick = () => {   // Ko-fi's own tip panel, right here on the page; only loaded when asked for, so it never slows the map
+      if (!box.firstChild) { const f = document.createElement('iframe'); f.title = 'Leave a tip on Ko-fi'; f.src = DONATE_URL + '/?hidefeed=true&widget=true&embed=true&preview=true'; box.appendChild(f); }
+      box.hidden = false; give.setAttribute('aria-expanded', 'true');
+      setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+    };
+  }
 
   const DPR = Math.min(devicePixelRatio || 1, 2);
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -189,7 +201,8 @@
     if (inside) return; inside = true;
     uni.inert = false;
     try { window.gtag && gtag('event', 'enter_universe', { ready }); } catch (e) {}
-    const done = () => { wel.hidden = true; wel.classList.remove('leaving'); try { uni.focus(); } catch (e) {} };
+    const done = () => { wel.hidden = true; wel.classList.remove('leaving'); try { uni.focus(); } catch (e) {}
+      try { const w = uni.contentWindow; w.UAS_MUSIC_ARRIVE ? w.UAS_MUSIC_ARRIVE() : w.addEventListener('load', () => w.UAS_MUSIC_ARRIVE && w.UAS_MUSIC_ARRIVE()); } catch (e) {} };   // the soundtrack note pulses as the map comes into view
     if (animate) { wel.classList.add('leaving'); setTimeout(done, 800); } else done();
     if (location.hash !== '#universe') history.pushState(null, '', '#universe');   // Back brings the sign back; a reload goes straight in
   }

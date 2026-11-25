@@ -45,7 +45,12 @@
     '.uas-mu-btn.invite{color:#e9dfc6;border-color:rgba(255,207,110,.38);animation:uasglow 3.6s ease-in-out infinite}',
     '.uas-mu-btn.invite .n{text-shadow:0 0 6px rgba(255,207,110,.45)}',
     '@keyframes uasglow{0%,100%{box-shadow:0 0 5px rgba(255,207,110,.1)}50%{box-shadow:0 0 12px rgba(255,207,110,.28)}}',
-    '@media (prefers-reduced-motion:reduce){.uas-mu-btn.invite{animation:none;box-shadow:0 0 8px rgba(255,207,110,.15)}}',
+    /* arrival: a few bright pulses first, so people notice it, then the soft breathing */
+    '.uas-mu-btn.invite.arrive{animation:uasarrive 2.2s ease-in-out 4,uasglow 3.6s ease-in-out 8.8s infinite}',
+    '.uas-mu-btn.invite.arrive .n{animation:uasarriven 2.2s ease-in-out 4}',
+    '@keyframes uasarrive{0%,100%{box-shadow:0 0 6px rgba(255,207,110,.15)}50%{box-shadow:0 0 26px 5px rgba(255,207,110,.7);border-color:rgba(255,207,110,.9)}}',
+    '@keyframes uasarriven{50%{text-shadow:0 0 12px rgba(255,207,110,1)}}',
+    '@media (prefers-reduced-motion:reduce){.uas-mu-btn.invite,.uas-mu-btn.invite.arrive{animation:none;box-shadow:0 0 8px rgba(255,207,110,.15)}}',
     '.uas-mu-btn.playing .n{animation:uasmu 1.6s ease-in-out infinite}',
     '@keyframes uasmu{50%{opacity:.35}}',
     '.uas-mu-fixed{position:fixed;z-index:30}',
@@ -121,7 +126,11 @@
       document.body.appendChild(btn);
     }
     document.body.appendChild(pop);
-    btn.classList.add('invite');   // breathes softly every visit until it's opened
+    btn.classList.add('invite', 'arrive');   // pulses brightly on arrival, then breathes softly every visit until it's opened
+    window.UAS_MUSIC_ARRIVE = function () {   // the home page calls this when the welcome sign lifts, so the pulses happen in view
+      if (!btn.classList.contains('invite')) return;
+      btn.classList.remove('arrive'); void btn.offsetWidth; btn.classList.add('arrive');
+    };
   }
 
   function position() {
