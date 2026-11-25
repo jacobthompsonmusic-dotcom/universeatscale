@@ -33,7 +33,7 @@
 <!-- seo:end -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Abril+Fatface&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   /* The welcome sign sits over the universe itself: the joined map starts loading underneath the moment the page opens, so pressing
      Enter only lifts the sign. Single dark theme by choice. */
@@ -62,8 +62,10 @@
 
   .hero { position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 64px 0 96px; }
   .kicker { font: 500 12px/1 var(--mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--amber); margin: 0 0 22px; }
-  h1 { font: 400 clamp(60px, 10vw, 136px)/0.92 var(--display); margin: 0; letter-spacing: -0.015em; }
-  h1 em { color: var(--amber); }
+  /* the title: tall, heavy, cut-in serif capitals with an offset shadow, after the 1980 'Cosmos' cover */
+  h1 { font: 400 clamp(58px, 10.5vw, 150px)/0.9 "Abril Fatface", var(--display); margin: 0; letter-spacing: 0.005em; text-transform: uppercase;
+    transform: scaleX(0.86); transform-origin: center; color: #ece6da; text-shadow: 3px 3px 0 #9b3a22, 4px 4px 14px rgba(0,0,0,0.55); }
+  h1 em { font-style: normal; display: block; color: var(--amber); }
   .lede { max-width: 46ch; color: var(--dim); margin: 26px auto 0; font-size: clamp(16px, 2.1vw, 19px); text-wrap: balance; }
   .lede b { color: var(--ink); font-weight: 500; }
   #enter { position: relative; margin-top: 44px; font: 400 clamp(26px, 3.6vw, 34px)/1 var(--display); color: #16110a; background: var(--amber);
@@ -115,7 +117,6 @@
   <canvas id="sky" aria-hidden="true"></canvas>
   <div class="wrap">
     <div class="hero">
-      <p class="kicker">An interactive map by Jacob Thompson</p>
       <h1>Universe <em>at&nbsp;Scale</em></h1>
       <button id="enter" type="button">Enter the universe</button>
       <p id="status" aria-live="polite">Loading the Solar System…</p>
