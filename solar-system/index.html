@@ -319,12 +319,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=a0e21d78"></script>
-<script src="../shared/clock.js?v=a0e21d78"></script>
-<script src="../shared/fold.js?v=a0e21d78"></script>
-<script src="baked/manifest.js?v=a0e21d78"></script>
-<script src="../shared/perf.js?v=a0e21d78"></script>
-<script src="../shared/galaxy-volume.js?v=a0e21d78"></script>
+<script src="../shared/frame.js?v=74afa5a9"></script>
+<script src="../shared/clock.js?v=74afa5a9"></script>
+<script src="../shared/fold.js?v=74afa5a9"></script>
+<script src="baked/manifest.js?v=74afa5a9"></script>
+<script src="../shared/perf.js?v=74afa5a9"></script>
+<script src="../shared/galaxy-volume.js?v=74afa5a9"></script>
 <script>
 (() => {
 'use strict';
@@ -2527,7 +2527,7 @@ speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
 //  the sky from Earth: stand on the ground on the chosen date and look up
 // ===================================================================
 // One spot in each hemisphere — 45° N or 34° S — at your own time zone's longitude, so the clock reads local time there. The stars,
-// Sun, Moon and planets are where they really were; the daytime sky colour and the ground are drawn simply.
+// Sun, Moon and planets are where they really were; the daylight sky, clouds and ground are illustrative.
 const SKY = { on: false, hemi: 'n', az: 180, alt: 22, fov: 75, up: new THREE.Vector3(), north: new THREE.Vector3(), east: new THREE.Vector3(), saved: null, day: 0 };
 const SKY_LAT = { n: 45, s: -34 };
 // the observer stands on the meridian of the visitor's standard time zone (summer time ignored, or the sky would jump an hour)
@@ -2560,48 +2560,119 @@ const SKYPROF = (() => {
   const at = a => { const x = ((a / TAU + 0.5) % 1 + 1) % 1 * N, i = Math.floor(x) % N, f = x - Math.floor(x); return top[i] + (top[(i + 1) % N] - top[i]) * f; };
   return { tex, at };
 })();
+// the ground, drawn as seen from eye height (1.7 m): the treeline and hills on the skyline, a meadow running out to them, and close in,
+// blades of grass you can pick out, swaying and bending as gusts roll across the field (all procedural and illustrative)
+const SKY_WIND = new THREE.Vector2(0.82, 0.57);   // the breeze, as (east, north): from the south-west
 const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE.ShaderMaterial({
   side: THREE.BackSide, vertexShader: skyVS,
-  uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, north: { value: new THREE.Vector3(0, 0, -1) }, east: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 }, sun: { value: new THREE.Vector3(1, 0, 0) }, prof: { value: SKYPROF.tex } },
+  uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, north: { value: new THREE.Vector3(0, 0, -1) }, east: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 }, sun: { value: new THREE.Vector3(1, 0, 0) }, prof: { value: SKYPROF.tex },
+    tm: { value: 0 }, pix: { value: 0.001 }, wind: { value: SKY_WIND } },
   fragmentShader: `#include <logdepthbuf_pars_fragment>
-    uniform vec3 up; uniform vec3 north; uniform vec3 east; uniform vec3 sun; uniform float day; uniform float dusk; uniform sampler2D prof; varying vec3 vD;
+    #define NL ${LITE ? 5 : 8}
+    uniform vec3 up; uniform vec3 north; uniform vec3 east; uniform vec3 sun; uniform float day; uniform float dusk; uniform sampler2D prof;
+    uniform float tm; uniform float pix; uniform vec2 wind; varying vec3 vD;
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
       return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
     float ring(float a, float r, float s) { return vn(vec2(cos(a), sin(a)) * r + s); }   // noise round the horizon, with no seam
-    float trees(float a, float n, float seed) {   // a row of conifers: one per cell, random height and width
-      float x = a / 6.2831853 * n, i = floor(x), f = fract(x);
-      float ht = 0.35 + 0.65 * hash(vec2(i, seed)), w = 0.45 + 0.5 * hash(vec2(seed, i)), off = (hash(vec2(i + 3.0, seed)) - 0.5) * (1.0 - w);
-      float t = max(0.0, 1.0 - abs(f - 0.5 - off) / (0.5 * w)); return ht * pow(t, 0.75); }
+    float gust(vec2 P) { vec2 q = P * 0.07 - wind * tm * 0.55; return 0.65 * vn(q) + 0.35 * vn(q * 2.3 + 5.0); }   // gusts rolling downwind
     void main() {
       #include <logdepthbuf_fragment>
       vec3 d = normalize(vD); float h = dot(d, up), a = atan(dot(d, east), dot(d, north));
       vec4 pr = texture2D(prof, vec2(a / 6.2831853 + 0.5, 0.5)); float hills = pr.g * 0.06, top = pr.r * 0.06;
       if (h > top) discard;
-      vec3 haze = mix(vec3(0.020, 0.024, 0.032), vec3(0.50, 0.62, 0.74), day) + vec3(0.55, 0.30, 0.14) * dusk;   // the light low in the sky
+      float sunH = dot(sun, up); vec3 sf = sun - up * sunH; float sfl = length(sf);
+      float toSun = sfl > 1e-4 ? 0.5 + 0.5 * dot(sf / sfl, normalize(d - up * h + 1e-6 * north)) : 0.5;   // 1 looking toward the Sun's side
+      float lightK = smoothstep(-0.04, 0.3, sunH) * day;                                                  // direct sunlight
+      vec3 sunCol = mix(vec3(1.0, 0.58, 0.30), vec3(1.0, 0.96, 0.88), smoothstep(0.04, 0.4, sunH));
+      vec3 amb = mix(vec3(0.010, 0.013, 0.019), vec3(0.34, 0.42, 0.52), day) + vec3(0.30, 0.16, 0.08) * dusk;   // light from the whole sky
+      vec3 air = mix(vec3(0.020, 0.024, 0.032), vec3(0.62, 0.74, 0.86), day) + vec3(0.80, 0.42, 0.18) * dusk * (0.3 + 0.7 * toSun * toSun);   // the air low down
       vec3 c;
-      if (h > 0.0 || h > hills - 0.0005) {   // the hills and trees, a dark silhouette softened by the air between
-        c = mix(vec3(0.006, 0.007, 0.008), vec3(0.09, 0.13, 0.08), day) * (0.85 + 0.3 * ring(a, 30.0, 2.0));
-        c = mix(c, haze, 0.28);
-      } else {   // the near field: patches of grass and earth that shrink toward the horizon
-        float k = 0.03 / max(-h, 0.002); vec2 q = vec2(cos(a), sin(a)) * k;
-        float patchy = 0.6 * vn(q * 1.3) + 0.4 * vn(q * 5.0 + 7.0);
-        vec3 grass = mix(vec3(0.16, 0.22, 0.10), vec3(0.30, 0.31, 0.17), patchy);
-        c = mix(vec3(0.020, 0.024, 0.020) * (0.8 + 0.4 * patchy), grass, day);
-        c = mix(c, haze, 0.55 * exp(h / 0.02));   // fading into the distance
+      if (h > 0.0 || h > hills - 0.0005) {   // the hills and the trees on them, softened by the air between
+        float tree = step(hills + 0.0006, h), tv = ring(a, 30.0, 2.0), tv2 = ring(a, 140.0, 8.0);
+        vec3 alb = tree > 0.5 ? mix(vec3(0.030, 0.060, 0.032), vec3(0.060, 0.098, 0.045), tv * 0.7 + tv2 * 0.3) : vec3(0.075, 0.115, 0.050);
+        float crown = smoothstep(top - 0.0035, top, h) * tree;   // sunlit crowns, and a bright rim when the Sun is behind them
+        c = 1.8 * alb * (amb + sunCol * lightK * (0.35 + 0.45 * (1.0 - toSun)) * (0.7 + 0.6 * crown));
+        c += sunCol * lightK * crown * pow(toSun, 4.0) * 0.07;
+        c = mix(c, air, 0.14 + 0.12 * (1.0 - tree) * smoothstep(-0.002, 0.004, h));
+      } else {
+        float D = 1.7 / max(-h, 0.0012); vec2 dir = vec2(sin(a), cos(a)), P = dir * D;   // metres out over the ground (east, north)
+        float fade = clamp(1.6 / (D * pix * 60.0), 0.0, 1.0);                             // fine detail fades where it would only flicker
+        float n1 = vn(P * 0.045), n2 = vn(P * 0.31 + 7.0), n3 = vn(P * 2.7 + 3.0);
+        vec3 alb = mix(vec3(0.062, 0.095, 0.032), vec3(0.110, 0.140, 0.050), n1);
+        alb = mix(alb, vec3(0.150, 0.140, 0.070), smoothstep(0.6, 0.9, n2) * 0.5);       // patches of drier grass
+        alb *= 1.0 + (n3 - 0.5) * 0.45 * fade;
+        float g = gust(P), sheen = smoothstep(0.42, 0.85, g);                              // bent grass shows its paler side
+        vec3 lit = (amb * 0.9 + sunCol * lightK * (0.35 + 0.65 * max(sunH, 0.0))) * (0.62 + 0.38 * smoothstep(0.0, 0.25, sunH));   // a low Sun leaves the field in shade
+        c = 2.4 * alb * lit * (1.0 + 0.32 * sheen) + sunCol * lightK * sheen * pow(toSun, 3.0) * 0.08;
+        // the blades nearest you, row on row, from the back forwards so the nearer ones cover the farther
+        for (int i = NL - 1; i >= 0; i--) {
+          float Dl = 2.0 * pow(1.36, float(i)), sp = 0.034, n = floor(6.2831853 * Dl / sp);
+          float x = (a / 6.2831853 + 0.5) * n, c0 = floor(x);
+          for (int j = -1; j <= 1; j++) {
+            float ci = mod(c0 + float(j), n), r1 = hash(vec2(ci, float(i) * 7.1)), r2 = hash(vec2(float(i) * 3.3, ci)), r3 = hash(vec2(ci + 9.0, float(i)));
+            float Db = Dl * (0.85 + 0.3 * r2), bh = (0.16 + 0.34 * r1) * (0.75 + 0.5 * n1);
+            float hb = -1.7 / Db, ht = -(1.7 - bh) / Db;
+            if (h < hb || h > ht) continue;
+            float f = (h - hb) / (ht - hb);
+            vec2 Pb = dir * Db;
+            float sway = (0.25 * sin(tm * (1.6 + r3) + r3 * 6.28 + dot(Pb, wind) * 0.8) + 1.1 * gust(Pb) - 0.3) * 0.11 * bh / 0.33;
+            float side = dot(wind, vec2(dir.y, -dir.x));                                   // how much of the wind blows across your line of sight
+            float ac = ((ci + 0.5 + (r3 - 0.5) * 0.7) / n - 0.5) * 6.2831853 + (sway * side + (r2 - 0.5) * 0.06 * bh) * f * f / Db;
+            float da = mod(a - ac + 3.14159265, 6.2831853) - 3.14159265;
+            float w = 0.0065 * (1.0 - 0.85 * f) / Db;
+            float cov = clamp((w - abs(da)) / pix + 0.5, 0.0, 1.0) * clamp(1.0 - (Db - 12.0) / 10.0, 0.0, 1.0);
+            if (cov <= 0.0) continue;
+            vec3 balb = mix(vec3(0.045, 0.075, 0.025), mix(vec3(0.150, 0.215, 0.065), vec3(0.200, 0.205, 0.085), r2 * 0.5), sqrt(f)) * (0.8 + 0.4 * r1);
+            vec3 bc = 2.2 * balb * (amb * 0.8 + sunCol * lightK * (0.4 + 0.4 * (1.0 - toSun)) * (0.6 + 0.4 * f)) * (0.62 + 0.38 * smoothstep(0.0, 0.25, sunH));
+            bc += sunCol * (lightK * 0.10 + smoothstep(-0.03, 0.04, sunH) * (day + dusk) * 0.45 * (1.0 - smoothstep(0.05, 0.5, sunH))) * pow(toSun, 3.0) * f * f * vec3(1.0, 0.92, 0.45);   // light through the blades, low Sun ahead
+            c = mix(c, bc, cov);
+          }
+        }
+        c = mix(c, air, 0.45 * exp(h / 0.012));   // fading into the distance
       }
       gl_FragColor = vec4(c, 1.0); }` }));
 const skyDome = new THREE.Mesh(new THREE.SphereGeometry(0.9, 96, 48), new THREE.ShaderMaterial({   // daylight and twilight, added over the stars
   side: THREE.BackSide, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
-  uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, sun: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 } }, vertexShader: skyVS,
+  uniforms: { up: { value: new THREE.Vector3(0, 1, 0) }, north: { value: new THREE.Vector3(0, 0, -1) }, east: { value: new THREE.Vector3(1, 0, 0) }, sun: { value: new THREE.Vector3(1, 0, 0) }, day: { value: 0 }, dusk: { value: 0 },
+    tm: { value: 0 }, wind: { value: SKY_WIND } }, vertexShader: skyVS,
   fragmentShader: `#include <logdepthbuf_pars_fragment>
-    uniform vec3 up; uniform vec3 sun; uniform float day; uniform float dusk; varying vec3 vD; void main() {
+    #define OCT ${LITE ? 3 : 5}
+    uniform vec3 up; uniform vec3 north; uniform vec3 east; uniform vec3 sun; uniform float day; uniform float dusk; uniform float tm; uniform vec2 wind; varying vec3 vD;
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
+    float fbm(vec2 p) { float s = 0.0, w = 0.5; for (int i = 0; i < OCT; i++) { s += w * vn(p); p = p * 2.03 + vec2(17.1, 9.3); w *= 0.5; } return s; }
+    void main() {
     #include <logdepthbuf_fragment>
-    vec3 d = normalize(vD); float h = dot(d, up); if (h < 0.0) discard;
-    vec3 c = mix(vec3(0.42, 0.62, 0.86), vec3(0.13, 0.32, 0.66), pow(h, 0.5)) * day;
-    float toward = max(dot(d, sun), 0.0);
-    c += vec3(0.95, 0.45, 0.18) * dusk * pow(1.0 - h, 6.0) * (0.35 + 0.65 * toward * toward);
-    c += vec3(1.0, 0.92, 0.75) * 0.25 * day * pow(toward, 24.0);
+    vec3 d = normalize(vD); float h = dot(d, up); if (h < -0.02) discard;
+    float hh = max(h, 0.0), mu = dot(d, sun), mp = max(mu, 0.0), sunH = dot(sun, up);
+    // daylight: deep blue overhead, paling through the thicker air to a milky horizon, brighter all round the Sun
+    vec3 c = mix(vec3(0.075, 0.22, 0.56), vec3(0.58, 0.72, 0.87), exp(-hh * 3.4));
+    c += vec3(1.0, 0.95, 0.86) * (0.09 * pow(mp, 5.0) + 0.30 * pow(mp, 60.0) + 0.55 * pow(mp, 700.0));
+    c *= day;
+    // twilight: gold and orange along the horizon under the Sun, the pink Belt of Venus over the Earth's shadow opposite, blue above
+    float hz = exp(-hh * 7.0), side = 0.5 + 0.5 * mu;
+    c += vec3(1.0, 0.48, 0.18) * dusk * hz * (0.12 + 0.88 * pow(side, 4.0));
+    c += vec3(1.0, 0.72, 0.42) * dusk * pow(mp, 10.0) * 0.45;
+    c += vec3(0.46, 0.28, 0.38) * dusk * smoothstep(0.01, 0.07, hh) * exp(-hh / 0.14) * pow(1.0 - side, 2.0) * 0.6;
+    c += vec3(0.10, 0.15, 0.32) * dusk * (1.0 - hz) * 0.35;
+    // scattered clouds on a high layer, drifting with the breeze: lit on the Sun's side, gold and rose when it is low
+    float lit = day + dusk;
+    if (lit > 0.01 && h > 0.0) {
+      vec2 p = vec2(dot(d, east), dot(d, north)) / (hh + 0.035) * 0.55 + wind * tm * 0.006;
+      vec2 q = p + 0.35 * vec2(fbm(p * 0.7 + 3.0), fbm(p * 0.7 + 11.0));                     // a little swirl, so the shapes aren't blobs
+      float n = fbm(q), cl = smoothstep(0.56, 0.78, n) * smoothstep(0.0, 0.12, hh);
+      if (cl > 0.0) {
+        vec2 sd = vec2(dot(sun, east), dot(sun, north)); sd = length(sd) > 1e-4 ? normalize(sd) : vec2(0.0);
+        float lightSide = clamp((n - fbm(q + sd * 0.06)) * 6.0 + 0.5, 0.0, 1.0);             // thinner toward the Sun: brighter edge
+        vec3 base = mix(vec3(0.52, 0.56, 0.64), vec3(1.0, 0.99, 0.97), lightSide) * (0.8 + 0.2 * smoothstep(0.0, 0.4, sunH));
+        vec3 warm = mix(vec3(0.42, 0.26, 0.32), vec3(1.0, 0.62, 0.36), lightSide);
+        vec3 cc = base * day + warm * dusk * (0.5 + 0.5 * side);
+        cc += vec3(1.0, 0.95, 0.85) * pow(mp, 14.0) * (1.0 - cl) * 0.8 * day;                    // silver lining near the Sun
+        c = mix(c, cc, cl * 0.9);
+      }
+    }
     gl_FragColor = vec4(c, 1.0); }` }));
 skyGround.visible = skyDome.visible = false; skyGround.frustumCulled = skyDome.frustumCulled = false; skyDome.renderOrder = -10;
 scene.add(skyGround, skyDome);
@@ -2783,11 +2854,14 @@ function skyPaint() {
   camera.fov = SKY.fov; camera.near = 1e-5; camera.updateProjectionMatrix(); camera.updateMatrixWorld();
   bandCam.fov = SKY.fov;
   skyGround.position.copy(camera.position); skyDome.position.copy(camera.position);
-  const gu = skyGround.material.uniforms; gu.up.value.copy(SKY.up); gu.north.value.copy(SKY.north); gu.east.value.copy(SKY.east); skyDome.material.uniforms.up.value.copy(SKY.up);
+  const gu = skyGround.material.uniforms, du = skyDome.material.uniforms, tm = (performance.now() / 1000) % 3600;
+  gu.up.value.copy(SKY.up); gu.north.value.copy(SKY.north); gu.east.value.copy(SKY.east); du.up.value.copy(SKY.up); du.north.value.copy(SKY.north); du.east.value.copy(SKY.east);
+  gu.tm.value = du.tm.value = tm; gu.pix.value = camera.fov * DEG / (innerHeight * renderer.getPixelRatio());
+  if (!SKY.lifted) IDLE.dirty++;   // the grass and clouds move: keep drawing
   const sp = relOf(SUN).sub(camera.position).normalize(), sAlt = Math.asin(THREE.MathUtils.clamp(sp.dot(SKY.up), -1, 1)) / DEG;
   const thin = SKY.launch ? 1 - sstep(SKY.launch.e, 0.0, 0.32) : 1;   // climbing out: the blue thins away to black
   const day = sstep(sAlt, -8, 6) * thin, dusk = sstep(sAlt, -16, -2) * (1 - sstep(sAlt, 2, 10)) * thin;
-  skyDome.material.uniforms.sun.value.copy(sp); skyDome.material.uniforms.day.value = day; skyDome.material.uniforms.dusk.value = dusk;
+  skyDome.material.uniforms.sun.value.copy(sp); gu.sun.value.copy(sp); skyDome.material.uniforms.day.value = day; skyDome.material.uniforms.dusk.value = dusk;
   gu.day.value = day; gu.dusk.value = dusk; SKY.day = day;
   skyRoot.visible = bandRoot.visible = day < 0.55;   // the stars and the Milky Way vanish in daylight
   SUN.glare.visible = SUN.corona.visible = SKY.lifted || !behindSkyline(relOf(SUN));   // the glare is drawn over everything: hide it once the Sun has set
@@ -3038,7 +3112,7 @@ function init() {
   canvas.addEventListener('webglcontextrestored', () => setTimeout(() => { precompile(); MWV.key = ''; IDLE.dirty++; }, 0));
   requestAnimationFrame(frame);
   setTimeout(earthHiRes, 400);
-  if (/[?&]debug=1/.test(location.search)) window.__ss = { IDLE, SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
+  if (/[?&]debug=1/.test(location.search)) window.__ss = { IDLE, SKY, SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
   if (EMBED) { parent.postMessage({ src: 'uas-ss', ready: true }, '*'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); document.body.classList.add('embed'); }
   // lift the black loading screen once the opening view has actually been drawn, Milky Way included (or after 2.5 s at most)
   const t0 = performance.now(), lift = () => { if (!LITE && !MWV.ready && performance.now() - t0 < 2500) return setTimeout(lift, 100);
@@ -3048,7 +3122,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=a0e21d78" data-place="info" defer></script>
+<script src="../music/music.js?v=74afa5a9" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
