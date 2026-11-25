@@ -152,7 +152,7 @@
   body.sky #skydirs { display:block; }
   #skydirs span { position:absolute; left:0; top:0; color:#f1dfae; font:italic 17px "IM Fell English", Georgia, serif; letter-spacing:0.08em; text-shadow:0 0 6px #000; transform:translate(-50%, -100%); }
   #skydirs span:nth-child(even) { font-size:13px; opacity:0.6; }
-  body.sky #scale, body.sky #legend { display:none; }   /* standing on Earth: no scale bar or layers card (constellations are switched on for you) */
+  body.sky #scale, body.sky #legend, body.sky #controls #p-all, body.sky #controls #p-top, body.sky #controls #p-edge, body.sky #controls #p-far, body.sky #controls #p-back { display:none; }   /* standing on Earth: no scale bar or layers card (constellations are switched on for you) */
   #zodwheel { display:none; top:16px; right:98px; width:316px; padding:12px 12px 10px; z-index:3; }
   body.embed #zodwheel { right:140px; }
   body.sky #zodwheel { display:block; }
@@ -273,7 +273,7 @@
 <div id="controls" class="panel">
   <button id="zin" aria-label="Zoom in">+</button>
   <button id="zout" aria-label="Zoom out">−</button>
-  <button class="txt" id="p-home" title="Fly home to Earth" aria-label="Fly home to Earth">HOME</button>
+  <button class="txt" id="p-home" title="Fly home to Earth (in the sky: back to the opening look)" aria-label="Home">HOME</button>
   <button class="txt" id="p-all" title="The whole solar system">ALL</button>
   <button class="txt" id="p-top" title="Look straight down on the planets' orbits">TOP</button>
   <button class="txt" id="p-edge" title="Look along the plane of Earth's orbit">EDGE</button>
@@ -315,12 +315,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=efe04a90"></script>
-<script src="../shared/clock.js?v=efe04a90"></script>
-<script src="../shared/fold.js?v=efe04a90"></script>
-<script src="baked/manifest.js?v=efe04a90"></script>
-<script src="../shared/perf.js?v=efe04a90"></script>
-<script src="../shared/galaxy-volume.js?v=efe04a90"></script>
+<script src="../shared/frame.js?v=d9f1c3b2"></script>
+<script src="../shared/clock.js?v=d9f1c3b2"></script>
+<script src="../shared/fold.js?v=d9f1c3b2"></script>
+<script src="baked/manifest.js?v=d9f1c3b2"></script>
+<script src="../shared/perf.js?v=d9f1c3b2"></script>
+<script src="../shared/galaxy-volume.js?v=d9f1c3b2"></script>
 <script>
 (() => {
 'use strict';
@@ -2219,7 +2219,7 @@ const aimAt = () => selected && !selected.in && selected !== focus && !(fly && f
 document.getElementById('zin').onclick = () => { if (SKY.on) { SKY.fov = Math.max(10, SKY.fov * 0.7); return; } const a = aimAt(); if (a) approach(a); else dolly(0.6); };
 document.getElementById('zout').onclick = () => { if (SKY.on) { SKY.fov = Math.min(110, SKY.fov / 0.7); return; } dolly(1.7); };
 document.getElementById('p-all').onclick = () => flyTo(SUN, 1.35e7, new THREE.Vector3(0.45, 0.62, 0.64));
-document.getElementById('p-home').onclick = () => { if (SKY.on) return; const e = byKey('earth'); flyTo(e); select(e); };   // HOME: back to Earth from anywhere in the Solar System
+document.getElementById('p-home').onclick = () => { if (SKY.on) { SKY.az = SKY.hemi === 's' ? 0 : 180; SKY.alt = 22; SKY.fov = 75; return; }   /* in the sky: back to the opening look */ const e = byKey('earth'); flyTo(e); select(e); };   // HOME: back to Earth from anywhere in the Solar System
 document.getElementById('p-back').onclick = () => { // a giant gets a closer framing so its crescent fills the view
   const o = focus.isSun ? (selected && !selected.in && !selected.isSun ? selected : null) : focus; if (!o) return;
   const D = o.kind === 'giant' ? o.R * (o.key === 'saturn' ? 7.5 : 6) : Math.min(camera.position.distanceTo(controls.target), defaultDist(o));
@@ -3040,7 +3040,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=efe04a90" data-place="info" defer></script>
+<script src="../music/music.js?v=d9f1c3b2" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
