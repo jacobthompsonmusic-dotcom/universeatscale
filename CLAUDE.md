@@ -13,7 +13,7 @@ Live at https://universeatscale.com (GitHub Pages from `main`, custom domain via
 - Keep replies to Jacob to 3–4 sentences.
 
 ## Layout
-- `index.html` — home page (plates). `universe/` — the joined Earth-to-edge page: two iframes (solar-system/?embed=1 and milky-way/?embed=1) handing over at ~6 ly via postMessage.
+- `index.html` — home page: a welcome sign (title, Enter button, short credits, tip section hidden until DONATE_URL is set) over the joined map, which loads in a full-screen iframe (`universe/index.html?v=…`, stamped by stamp.py) the moment the page opens; Enter just lifts the sign (#universe hash; `top.UAS_WELCOME()` brings it back). The universe page posts `{src:'uas-uni', ready}` to its parent. Standalone maps and `moons/`, `giant-planets-3d/` are kept but unlinked and out of the sitemap (Nov 2026); the old plates home is in git history. `universe/` — the joined Earth-to-edge page: two iframes (solar-system/?embed=1 and milky-way/?embed=1) handing over at ~6 ly via postMessage.
 - `solar-system/` — three.js r128 Solar System (planets, moons, dwarfs, probes, Oort cloud, star sky). Earth textures in `solar-system/earth/`.
 - `milky-way/` — 2D-canvas + WebGL galaxy/universe map: stars, objects (OBJ, GALAXIES, REGIONS, VOIDS), Sgr A* layers and black-hole ray tracer (`#bh`), perspective lens below ~25,000 ly (PT/PD in setupView/proj).
 - `shared/galaxy-volume.js` — the Milky Way volume shader used by BOTH views (each prepends `#define MAX_STEPS n`). Change it once; the hand-over stays matched. Tone curve: uExpo, uGam (1.8 inside the disc → 1.2 for the whole-galaxy view).

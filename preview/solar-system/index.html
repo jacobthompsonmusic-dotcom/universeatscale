@@ -226,7 +226,7 @@
 <div id="loading">Placing the planets…</div>
 
 <div id="top" class="panel">
-  <a class="homelink" href="../index.html">← All maps · Universe at Scale</a> <a class="homelink" href="../credits/">· Credits</a>
+  <a class="homelink" href="../index.html">← Universe at Scale</a> <a class="homelink" href="../credits/">· Credits</a>
   <div class="switch" role="tablist">
     <button data-go="sun" class="on">All</button>
     <button data-go="mercury">Mercury</button>
@@ -328,12 +328,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=35cca137"></script>
-<script src="../shared/clock.js?v=35cca137"></script>
-<script src="../shared/fold.js?v=35cca137"></script>
-<script src="baked/manifest.js?v=35cca137"></script>
-<script src="../shared/perf.js?v=35cca137"></script>
-<script src="../shared/galaxy-volume.js?v=35cca137"></script>
+<script src="../shared/frame.js?v=b0214b1c"></script>
+<script src="../shared/clock.js?v=b0214b1c"></script>
+<script src="../shared/fold.js?v=b0214b1c"></script>
+<script src="baked/manifest.js?v=b0214b1c"></script>
+<script src="../shared/perf.js?v=b0214b1c"></script>
+<script src="../shared/galaxy-volume.js?v=b0214b1c"></script>
 <script>
 (() => {
 'use strict';
@@ -3353,7 +3353,7 @@ function init() {
   requestAnimationFrame(frame);
   setTimeout(earthHiRes, 400);
   if (/[?&]debug=1/.test(location.search)) window.__ss = { IDLE, SKY, ECL, SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
-  if (EMBED) { parent.postMessage({ src: 'uas-ss', ready: true }, '*'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); document.body.classList.add('embed'); }
+  if (EMBED) { parent.postMessage({ src: 'uas-ss', ready: true }, '*'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); document.querySelector('a.homelink').addEventListener('click', e => { try { if (top.UAS_WELCOME) { e.preventDefault(); top.UAS_WELCOME(); } } catch (_) {} });   /* on the home page: just bring the welcome sign back */ document.body.classList.add('embed'); }
   // lift the black loading screen once the opening view has actually been drawn, Milky Way included (or after 2.5 s at most)
   const t0 = performance.now(), lift = () => { if (!LITE && !MWV.ready && performance.now() - t0 < 2500) return setTimeout(lift, 100);
     requestAnimationFrame(() => requestAnimationFrame(() => { const l = document.getElementById('loading'); l.style.opacity = 0; setTimeout(() => l.remove(), 900); })); };
@@ -3362,7 +3362,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=35cca137" data-place="info" defer></script>
+<script src="../music/music.js?v=b0214b1c" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

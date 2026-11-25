@@ -14,8 +14,8 @@ def thing(name, wiki):
 PAGES = {
     'index.html': dict(
         path='/', og='home',
-        title='Universe at Scale: 3D Solar System, Milky Way & Universe Maps',
-        desc='Free interactive 3D maps of space at true scale. See where every planet is right now, explore 9,407 real Milky Way stars, and zoom from Earth to the edge of the universe.'),
+        title='Universe at Scale: Zoom from Earth to the Edge of the Universe in 3D',
+        desc='A free, true-scale 3D map of space. See where every planet is right now, fly through 9,407 real Milky Way stars, and zoom from Earth to the edge of the observable universe.'),
     'universe/index.html': dict(
         path='/universe/', og='universe', crumb='From Earth to the Edge of the Universe',
         title='Zoom from Earth to the Edge of the Universe in 3D | Universe at Scale',
@@ -69,9 +69,7 @@ FAQ = [
      'Planet and dwarf-planet orbits come from NASA JPL; star positions from the AT-HYG catalogue (Gaia DR3, with Hipparcos for the brightest stars); the distance to the galactic centre and the orbit of the star S2 from the GRAVITY collaboration; Earth imagery from Solar System Scope (CC BY 4.0), based on NASA Blue Marble and Black Marble.'),
 ]
 
-MAPS = [('universe/', 'From Earth to the Edge of the Universe'), ('solar-system/', 'The Solar System'),
-        ('milky-way/', 'The Milky Way in 3D'), ('moons/', "The Giant Planets' Moon Systems"),
-        ('giant-planets-3d/', 'Giant Planets in 3D')]
+MAPS = [('universe/', 'From Earth to the Edge of the Universe')]   # Nov 2026: the home page leads only into the joined map; the standalone maps are kept but not listed
 
 # Google Analytics 4 (property 'Universe at Scale', stream 16342512575). Only on universeatscale.com and
 # only in the top window, so the joined page's embedded maps don't double-count.
