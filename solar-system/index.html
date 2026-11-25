@@ -2627,33 +2627,17 @@ const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE
       vec3 air = mix(vec3(0.020, 0.024, 0.032), vec3(0.62, 0.74, 0.86), day) + vec3(0.80, 0.42, 0.18) * dusk * (0.3 + 0.7 * toSun * toSun);   // the air low down
       vec3 c;
       if (h > 0.0 || h > hills - 0.0005) {   // the hills and the trees on them, softened by the air between
-        float tree = step(hills + 0.0006, h), tv = ring(a, 30.0, 2.0), tv2 = ring(a, 140.0, 8.0);
-        vec3 alb = mix(vec3(0.030, 0.060, 0.032), vec3(0.060, 0.098, 0.045), tv * 0.7 + tv2 * 0.3);   // the hills under the trees are wooded too: one dark skyline
-        // the seasons: a mixed wood, about half of it broadleaf trees that turn, drop their leaves and bud again; the conifers stay green
-        float th2 = 0.75 * ring(a, 160.0, 5.0) + 0.25 * pr.a;   // colours run in clumps
-        float decid = step(0.5, pr.b) * tree, y = clamp((h - hills) / max(top - hills, 1e-4), 0.0, 1.0), alpha = 1.0;
-        if (decid > 0.5) {
-          vec3 autumn = th2 < 0.38 ? vec3(0.30, 0.055, 0.035) : (th2 < 0.62 ? vec3(0.36, 0.15, 0.03) : vec3(0.34, 0.25, 0.04));   // red, orange, gold
-          vec3 leaf = mix(alb * 1.15, autumn * (0.7 + 0.5 * tv2), fall * smoothstep(0.15, 0.6, th2 + tv * 0.5 - 0.1 + fall * 0.4));
-          leaf = mix(leaf, vec3(0.085, 0.13, 0.035), bud);                                  // new leaves: a pale, fresh green
-          alb = mix(leaf, vec3(0.075, 0.066, 0.060), bare);
-          if (bare > 0.01) {   // bare crowns: a see-through lace of twigs, thicker low down, round a trunk
-            vec2 q = vec2(a * 1.6 + h * 0.6, h) * (0.35 / pix);   // twigs slant upward and out
-            float lace = smoothstep(0.38, 0.72, 0.55 * vn(q) + 0.3 * vn(q * 2.1 + 7.0) + 0.15 * vn(q * 4.3 + 3.0)) * (0.3 + 0.45 * (1.0 - y));
-            float cx = abs(fract((a / 6.2831853 + 0.5) * 640.0) - 0.5), cw = pix * 640.0 / 6.2831853;
-            float trunk = clamp((0.035 + 0.03 * (1.0 - y) - cx) / cw + 0.5, 0.0, 1.0) * (1.0 - smoothstep(0.5, 0.85, y));
-            alpha = mix(1.0, max(lace, trunk), bare * smoothstep(0.0, 0.08, y));
-            alb = mix(alb, vec3(0.55, 0.57, 0.62), snow * 0.12);
-          }
-        } else if (tree > 0.5) {   // snow lying along the conifers' branches, in tiers
-          float tier = fract(y * 5.5 + 0.6 * vn(vec2(a * 700.0, 3.0)) + 0.25 * vn(vec2(a * 2600.0, h * 900.0))), sn = snow * smoothstep(0.5, 0.95, tier) * (0.4 + 0.6 * vn(vec2(a * 1800.0, h * 700.0)));
-          alb = mix(alb, vec3(0.66, 0.70, 0.78), sn * 0.7);
-        } else alb = mix(alb, vec3(0.30, 0.32, 0.36) * (0.75 + 0.5 * vn(vec2(a * 2400.0, h * 60.0))), max(snow * 0.4, bare * 0.15));   // the wooded hillside: grey trunks and snow when the leaves are down
+        float tree = step(hills + 0.0006, h);
+        // one colour for the whole wood, changing with the seasons (a mixed wood: the conifers keep it from going fully bare)
+        vec3 alb = vec3(0.045, 0.078, 0.040);                                          // summer
+        alb = mix(alb, vec3(0.120, 0.080, 0.038), fall * (1.0 - bare));                // autumn: a muted rust
+        alb = mix(alb, vec3(0.062, 0.062, 0.056), bare);                                // leaves down
+        alb = mix(alb, vec3(0.062, 0.100, 0.040), bud);                                 // spring green
+        alb = mix(alb, vec3(0.40, 0.43, 0.48), snow * 0.22);                            // snow on the branches
         float crown = smoothstep(top - 0.0035, top, h) * tree;   // sunlit crowns, and a bright rim when the Sun is behind them
         c = 1.8 * alb * (amb + sunCol * lightK * (0.35 + 0.45 * (1.0 - toSun)) * (0.7 + 0.6 * crown));
         c += sunCol * lightK * crown * pow(toSun, 4.0) * 0.07;
         c = mix(c, air, 0.14 + 0.16 * hz);
-        if (alpha < 0.999) { gl_FragColor = vec4(c, alpha); return; }
       } else {
         float D = 1.7 / max(-h, 0.0012); vec2 dir = vec2(sin(a), cos(a)), P = dir * D;   // metres out over the ground (east, north)
         float fade = clamp(1.6 / (D * pix * 60.0), 0.0, 1.0);                             // fine detail fades where it would only flicker
