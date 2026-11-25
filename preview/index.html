@@ -98,7 +98,7 @@
   .give[aria-expanded="true"] { display: none; }
   #kofi { max-width: 420px; margin: 26px auto 0; border-radius: 14px; overflow: hidden; background: #0d0d0f; border: 1px solid rgba(240, 181, 106, 0.18); }
   /* Ko-fi's panel only comes in white; turned dark here (inverted, with the hues turned back so colours and photos look right) */
-  #kofi iframe { filter: invert(0.93) hue-rotate(180deg) saturate(0.9); }
+  #kofi iframe { filter: invert(0.93) hue-rotate(180deg) saturate(0.9); margin-top: -60px; height: 600px; }   /* the banner and photo (which the colour flip would spoil) sit above the panel's top edge */
   #kofi iframe { display: block; width: 100%; height: 540px; border: 0; }   /* fits the tip form; the card-payment step scrolls inside it */
   .give:hover, .give:focus-visible { background: rgba(240, 181, 106, 0.1); border-color: var(--amber); }
 
@@ -224,4 +224,4 @@
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
-<!-- preview built 2026-11-25T22:15:27Z from f227b29 -->
+<!-- preview built 2026-11-25T22:18:32Z from 8c16295 -->
