@@ -102,6 +102,8 @@
   #controls { bottom:16px; right:16px; padding:8px; display:flex; flex-direction:column; gap:6px; z-index:2; }
   #controls button { width:54px; height:40px; border-radius:10px; border:1px solid var(--line); background:rgba(255,255,255,0.04); color:var(--text); font:italic 19.5px "IM Fell English", Georgia, serif; cursor:pointer; }
   #controls button.txt { font-size:12.5px; font-weight:600; letter-spacing:0.04em; }
+  #controls button.two { font-size:10.5px; line-height:1.05; letter-spacing:0.06em; }
+  body.embed #controls #p-all { display:none; }   /* the joined page's own list already has 'Solar System' */
   #legend { bottom:16px; left:16px; padding:12px 14px; font-size:12.5px; z-index:2; }
   .toggles { display:flex; gap:6px; flex-wrap:wrap; max-width:270px; }
   .tg { padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:none; color:var(--muted); font:italic 15px "IM Fell English", Georgia, serif; cursor:pointer; }
@@ -197,7 +199,8 @@
     #time { left:16px; right:84px; transform:none; flex-wrap:wrap; justify-content:center; }
     #time input[type=range] { flex:1 1 90px; width:auto; height:28px; }
     #time .date { flex:1 1 auto; min-width:0; font-size:14px; }
-    #scale { bottom:130px; }
+    #scale { bottom:168px; }   /* above the clock bar, which wraps to three rows on a phone */
+    body.sky #skypanel #sky-where, body.sky #skypanel .seg:nth-of-type(3) { display:none; }   /* phones: the sky bar keeps just North/South and Leave */
     #info.uas-folded { left:auto; right:98px; bottom:150px; }   /* a folded card's tab sits beside the Layers tab, not on it */
     #time.uas-folded { right:auto; }
     #time #timex { display:block; }
@@ -264,6 +267,7 @@
   <p class="blurb" id="info-blurb"></p>
   <button class="go" id="info-go">Fly here</button>
   <button class="go" id="info-see" style="display:none"></button>
+  <button class="go" id="info-sky" style="display:none">See the sky from here</button>
   <p id="info-seenote" class="more" style="display:none"></p>
 </div>
 
@@ -287,8 +291,8 @@
   <button id="zout" aria-label="Zoom out">−</button>
   <button class="txt" id="p-home" title="Fly home to Earth (in the sky: back to the opening look)" aria-label="Home">HOME</button>
   <button class="txt" id="p-all" title="The whole solar system">ALL</button>
-  <button class="txt" id="p-top" title="Look straight down on the planets' orbits">TOP</button>
-  <button class="txt" id="p-edge" title="Look along the plane of Earth's orbit">EDGE</button>
+  <button class="txt two" id="p-top" title="Look straight down on the planets' orbits">TOP<br>VIEW</button>
+  <button class="txt two" id="p-edge" title="Look along the plane of Earth's orbit">SIDE<br>VIEW</button>
   <button class="txt solo" id="p-far" title="Pull all the way back, past the Oort cloud, to where the nearest stars begin">STARS</button>
   <button class="txt solo" id="p-back" title="Backlit view: swing round to the night side, with the Sun just past the edge" style="font-size:11.5px;letter-spacing:0.02em">BACKLIT</button>
 </div>
@@ -328,12 +332,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=7baf6356"></script>
-<script src="../shared/clock.js?v=7baf6356"></script>
-<script src="../shared/fold.js?v=7baf6356"></script>
-<script src="baked/manifest.js?v=7baf6356"></script>
-<script src="../shared/perf.js?v=7baf6356"></script>
-<script src="../shared/galaxy-volume.js?v=7baf6356"></script>
+<script src="../shared/frame.js?v=af54b2cc"></script>
+<script src="../shared/clock.js?v=af54b2cc"></script>
+<script src="../shared/fold.js?v=af54b2cc"></script>
+<script src="baked/manifest.js?v=af54b2cc"></script>
+<script src="../shared/perf.js?v=af54b2cc"></script>
+<script src="../shared/galaxy-volume.js?v=af54b2cc"></script>
 <script>
 (() => {
 'use strict';
@@ -2387,6 +2391,7 @@ function setSee(o, on) {
   showSee(o);
 }
 function showSee(o) {
+  document.getElementById('info-sky').style.display = o === EARTH && !SKY.on ? 'inline-block' : 'none';
   const k = seeKey(o), b = document.getElementById('info-see'), n = document.getElementById('info-seenote');
   b.style.display = k ? 'inline-block' : 'none'; n.style.display = k && o.see ? 'block' : 'none';
   if (!k) return;
@@ -2394,6 +2399,7 @@ function showSee(o) {
   n.textContent = SURF[k].note;
 }
 document.getElementById('info-see').onclick = () => { if (selected) setSee(selected, !selected.see); };
+document.getElementById('info-sky').onclick = e => { e.stopPropagation(); const m = document.getElementById('skymenu'); m.hidden = false; if (window.timeFold) timeFold.set(false); };   // the hemisphere choice opens by the clock
 
 // ===================================================================
 //  labels
@@ -2492,7 +2498,7 @@ function updateLabels() {
       o.el.innerHTML = `<span class="arr" style="transform:rotate(${ang.toFixed(0)}deg)"><svg class="arrsvg" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 3.9h7.4V1.2L13.2 5 8.4 8.8V6.1H1z" fill="currentColor"/></svg></span>Sun`;
       o.el.classList.add('edge'); o.el.style.display = 'block';
       let lx = Math.min(W - 90, Math.max(8, ex - 30)), ly = ey;
-      for (const id of ['top', 'info', 'legend', 'controls', 'time']) {
+      for (const id of ['top', 'info', 'legend', 'controls', 'time', 'zodwheel', 'skypanel']) {
         const pn = document.getElementById(id); if (!pn) continue; const r = pn.getBoundingClientRect(); if (!r.width) continue;
         if (lx + 80 > r.left && lx < r.right && ly + 14 > r.top && ly - 14 < r.bottom) { if (Math.abs(dy) > Math.abs(dx) * 0.95) lx = (lx + 40 < W / 2) ? r.right + 10 : r.left - 90; else ly = (ly < H / 2) ? r.bottom + 18 : r.top - 18; }
       }
@@ -2913,7 +2919,7 @@ function drawChinese() {
   el.innerHTML = `Chinese zodiac: Year of the ${e} ${CN_ANIMALS[k]} <span lang="zh">${CN_GLYPH[k]}</span>` + (ny && nx ? `<small>${f(ny)} – ${f(nx - 86400000)}</small>` : '');
 }
 document.querySelectorAll('#zodwheel [data-zw]').forEach(b => b.onclick = () => { ZW.mode = b.dataset.zw; document.querySelectorAll('#zodwheel [data-zw]').forEach(x => x.classList.toggle('on', x === b)); drawZodiac(); });
-UAS_FOLD.foldable(document.getElementById('zodwheel'), { title: 'Zodiac', arrow: '▾' });
+{ const zf = UAS_FOLD.foldable(document.getElementById('zodwheel'), { title: 'Zodiac', arrow: '▾' }); if (innerWidth > 760 && innerWidth < 1500) zf.set(true); }   // narrower windows: the wheel waits as a tab so it doesn't cover the sky
 function skyWhere() {
   const lat = SKY_LAT[SKY.hemi], lon = skyLon();
   document.getElementById('sky-where').textContent = `From ${Math.abs(lat)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(Math.round(lon))}° ${lon >= 0 ? 'E' : 'W'} (your time zone)`;
@@ -3122,6 +3128,13 @@ const skyMenu = document.getElementById('skymenu');
 skyBtn.onclick = e => { e.stopPropagation(); skyMenu.hidden = !skyMenu.hidden; };   // first choose a hemisphere
 skyMenu.querySelectorAll('[data-sh]').forEach(b => b.onclick = () => { skyMenu.hidden = true; skyBtn.classList.remove('glow'); skyOn(b.dataset.sh); });
 addEventListener('pointerdown', e => { if (!skyMenu.hidden && !skyMenu.contains(e.target) && e.target !== skyBtn) skyMenu.hidden = true; });
+// the intro panel's heading follows you: 'Earth' when you're at Earth, 'The Solar System' otherwise
+const introH = document.querySelector('#top h1'), introP = introH && introH.nextElementSibling, INTRO0 = introH && [introH.textContent, introP.innerHTML];
+function introFollow(camD) {
+  const atE = focus === EARTH && camD < EARTH.R * 400 && !SKY.on; if (!introH || atE === introFollow.e) return; introFollow.e = atE;
+  introH.textContent = atE ? 'Earth' : INTRO0[0];
+  introP.innerHTML = atE ? 'Our planet as it is at this moment: day and night, the clouds, the lights of the cities. <b>See the sky</b> stands you on the ground to look up at this moment\'s sky, from either hemisphere; pick a date to see any night (or eclipse) between 1800 and 2050. Scroll <b>out</b> to leave for the planets and the stars.' : INTRO0[1];
+}
 function skyBtnShow() { skyBtn.hidden = SKY.on; if (SKY.on) skyMenu.hidden = true; }   // always there beside Now, except while you're standing in the sky
 skyPanel.querySelectorAll('[data-az]').forEach(b => b.onclick = () => { SKY.az = +b.dataset.az; SKY.alt = 22; });
 document.getElementById('sky-exit').onclick = () => skyOff(false);
@@ -3139,7 +3152,7 @@ aboutBtn.onclick = () => collapse(!topPanel.classList.contains('collapsed'));
 collapse(UAS_FOLD.phone.matches);   // on a phone the intro starts folded: just the search box and its i
 UAS_FOLD.foldable(document.getElementById('legend'), { title: 'Layers' });
 var topFold = UAS_FOLD.foldable(topPanel, { title: 'Planets', arrow: '▾' });   // starts put away on a phone
-UAS_FOLD.foldable(document.getElementById('time'), { title: 'Clock', arrow: '▴', closeBtn: document.getElementById('timex'), startFolded: false, keep: true });   // phones: × puts the clock away (a tap on the map leaves it be)
+var timeFold = UAS_FOLD.foldable(document.getElementById('time'), { title: 'Clock', arrow: '▴', closeBtn: document.getElementById('timex'), startFolded: false, keep: true });   // phones: × puts the clock away (a tap on the map leaves it be)
 const kindLabel = o => o.isSun ? 'Star' : o.kind === 'probe' ? 'Spacecraft' : o.kind === 'giant' ? 'Giant planet' : o.kind === 'planet' ? 'Planet' : o.kind === 'dwarf' ? 'Dwarf planet' : `Moon of ${o.parent.name}`;
 const sIn = document.getElementById('search'), sRes = document.getElementById('results'); let hits = [], active = 0;
 // On the joined page the search box also finds things in the Milky Way map (asked through the page that holds both maps)
@@ -3290,7 +3303,7 @@ function frame(t) {
     frame.lt = t;
     document.getElementById('date').textContent = new Date(simMs).toLocaleString('en-CA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     document.getElementById('spd').textContent = speedLabel(Math.pow(10, logTarget));
-    updateScale(camD); skyBtnShow(camD); playBtn.classList.toggle('invite', !playing || !playTouched);
+    updateScale(camD); skyBtnShow(camD); introFollow(camD); playBtn.classList.toggle('invite', !playing || !playTouched);
     if (selected && !selected.in && document.getElementById('info').style.display === 'block' && !(infoFold && infoFold.folded()) && (selected.isSun || selected.kind !== 'moon')) select(selected); // keep live distances fresh
   }
   if (EMBED) { // tell the page that joins the maps where we are: pixels per light-year, and the direction of view in the galaxy map's terms
@@ -3362,7 +3375,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=7baf6356" data-place="info" defer></script>
+<script src="../music/music.js?v=af54b2cc" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
