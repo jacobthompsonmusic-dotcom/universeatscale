@@ -324,12 +324,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=5367015d"></script>
-<script src="../shared/clock.js?v=5367015d"></script>
-<script src="../shared/fold.js?v=5367015d"></script>
-<script src="baked/manifest.js?v=5367015d"></script>
-<script src="../shared/perf.js?v=5367015d"></script>
-<script src="../shared/galaxy-volume.js?v=5367015d"></script>
+<script src="../shared/frame.js?v=f935b4ba"></script>
+<script src="../shared/clock.js?v=f935b4ba"></script>
+<script src="../shared/fold.js?v=f935b4ba"></script>
+<script src="baked/manifest.js?v=f935b4ba"></script>
+<script src="../shared/perf.js?v=f935b4ba"></script>
+<script src="../shared/galaxy-volume.js?v=f935b4ba"></script>
 <script>
 (() => {
 'use strict';
@@ -2673,7 +2673,7 @@ const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE
           for (int j = -1; j <= 1; j++) {
             float ci = mod(c0 + float(j), n), r1 = hash(vec2(ci, float(i) * 7.1)), r2 = hash(vec2(float(i) * 3.3, ci)), r3 = hash(vec2(ci + 9.0, float(i)));
             if (r3 < snow * 1.25) continue;                                                // snow buries the grass
-            float seed = step(0.955, r1);                                                   // now and then a taller stalk with a seed head
+            float seed = 0.0;
             float Db = Dl * (0.86 + 0.28 * r2), bh = (0.2 + 0.4 * r1) * (0.7 + 0.6 * n1) * (1.0 + 0.55 * seed) * (1.0 - 0.8 * snow);
             float hb = -1.7 / Db, ht = -(1.7 - bh) / Db;
             if (h < hb || h > ht) continue;
@@ -2683,11 +2683,11 @@ const skyGround = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE
             float ac = ((ci + 0.5 + (r3 - 0.5) * 0.8) / n - 0.5) * 6.2831853 + (sway * side + lean) * f * f / Db;
             float da = mod(a - ac + 3.14159265, 6.2831853) - 3.14159265;
             float w = (0.0062 * (1.0 - 0.82 * f) + seed * 0.0075 * smoothstep(0.8, 0.9, f) * (1.0 - smoothstep(0.97, 1.0, f))) / Db;
-            float cov = clamp((w - abs(da)) / pix + 0.5, 0.0, 1.0) * rowFade;
+            float cov = clamp((w - abs(da)) / pix + 0.5, 0.0, 1.0) * rowFade * smoothstep(0.0, 0.35, f);   // the foot of each blade melts into the sward
             if (cov <= 0.0) continue;
             vec3 tipC = mix(vec3(0.150, 0.225, 0.060), vec3(0.215, 0.215, 0.085), r2 * 0.6 + smoothstep(0.55, 0.9, n1) * 0.4);
             tipC = mix(tipC, vec3(0.240, 0.200, 0.110), seed * smoothstep(0.75, 0.9, f));    // the seed head: straw gold
-            vec3 balb = mix(vec3(0.022, 0.040, 0.014), tipC, smoothstep(0.0, 0.55, f)) * (0.78 + 0.44 * r1);   // dark low down, in the shade of the rest
+            vec3 balb = mix(alb * mass * 0.9, tipC, smoothstep(0.1, 0.6, f)) * (0.85 + 0.3 * r1);   // low down it takes the colour of the grass around it
             balb = mix(balb, vec3(0.170, 0.140, 0.075) * (0.6 + 0.6 * f), max(dry, snow) * (0.5 + 0.4 * r2));   // dry stalks
             vec3 bc = 2.3 * balb * (amb * 0.8 + sunCol * lightK * (0.45 + 0.45 * (1.0 - toSun)) * (0.55 + 0.45 * f)) * shadeK;
             bc += sunCol * (lightK * 0.10 + lowSun * 0.45) * back * f * f * vec3(1.0, 0.92, 0.45);   // light through the blades, Sun ahead
@@ -3203,7 +3203,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=5367015d" data-place="info" defer></script>
+<script src="../music/music.js?v=f935b4ba" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
