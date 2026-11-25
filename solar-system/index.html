@@ -119,6 +119,10 @@
     background:rgba(14,15,22,0.96); border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,0.5); font:italic 15px "IM Fell English", Georgia, serif; color:var(--muted); }
   #datepick[hidden] { display:none; }
   #skybtn[hidden] { display:none; }
+  #skymenu { position:absolute; bottom:calc(100% + 8px); right:0; display:flex; flex-direction:column; gap:6px; padding:10px 12px; border-radius:12px; z-index:3;
+    background:rgba(14,15,22,0.96); border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,0.5); font:italic 14px "IM Fell English", Georgia, serif; color:var(--muted); }
+  #skymenu[hidden] { display:none; }
+  #skymenu button { text-align:left; }
   /* while time stands still, the play button breathes softly (like the soundtrack note) to say it sets things moving */
   #time #play.invite { color:#ece2c8; border-color:rgba(255,207,110,0.3); animation:playglow 3.6s ease-in-out infinite; }
   @keyframes playglow { 0%,100% { box-shadow:0 0 4px rgba(255,207,110,0.06); } 50% { box-shadow:0 0 10px rgba(255,207,110,0.2); } }   /* a touch softer than the music note */
@@ -313,18 +317,19 @@
   <span class="date" id="date" role="button" tabindex="0" title="Pick any date from 1800 to 2050 — your birthday, say">​</span>
   <div id="datepick" hidden><label>Date <input id="dp-d" type="date" min="1800-01-01" max="2050-12-31"></label><label>Time <input id="dp-t" type="time" value="12:00"></label><button id="dp-go">Go</button><span class="dp-or">or see the sky from Earth:</span><select id="dp-hemi" aria-label="Hemisphere"><option value="n">Northern hemisphere</option><option value="s">Southern hemisphere</option></select><button id="dp-sky">See the sky</button></div>
   <button id="now">Now</button>
-  <button id="skybtn" hidden title="Stand on Earth and see the sky at this moment">See the sky</button>
+  <button id="skybtn" title="Stand on Earth and see the sky at this moment" aria-haspopup="true">See the sky</button>
+  <div id="skymenu" hidden><span>See the sky from</span><button data-sh="n">the Northern hemisphere</button><button data-sh="s">the Southern hemisphere</button></div>
   <button id="timex" aria-label="Put the clock away" title="Put the clock away">×</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=2e7f20bb"></script>
-<script src="../shared/clock.js?v=2e7f20bb"></script>
-<script src="../shared/fold.js?v=2e7f20bb"></script>
-<script src="baked/manifest.js?v=2e7f20bb"></script>
-<script src="../shared/perf.js?v=2e7f20bb"></script>
-<script src="../shared/galaxy-volume.js?v=2e7f20bb"></script>
+<script src="../shared/frame.js?v=39ccfaf0"></script>
+<script src="../shared/clock.js?v=39ccfaf0"></script>
+<script src="../shared/fold.js?v=39ccfaf0"></script>
+<script src="baked/manifest.js?v=39ccfaf0"></script>
+<script src="../shared/perf.js?v=39ccfaf0"></script>
+<script src="../shared/galaxy-volume.js?v=39ccfaf0"></script>
 <script>
 (() => {
 'use strict';
@@ -1096,9 +1101,34 @@ const LITE = window.UAS_PERF.tier > 0;
 const R0_LY = FR.R0_LY, cTHm = Math.cos(MW_TH), sTHm = Math.sin(MW_TH), _g3 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _q3 = new THREE.Quaternion();
 const sceneToGal = (v, out) => out.set(v.dot(GXs), v.dot(GYs), v.dot(GZs));
 const galToMap = (gv, out, point) => { const x0 = gv.x - (point ? R0_LY : 0), xg = x0 * cTHm + gv.z * sTHm, zg = -x0 * sTHm + gv.z * cTHm; return out.set(-gv.y, -xg, zg); };
+// standing on Earth at night: the real Milky Way, from ESO's all-sky photograph (S. Brunier, GigaGalaxy Zoom, CC BY 4.0) —
+// an equirectangular map in galactic coordinates, longitude 0 (the galactic centre) in the middle, increasing to the left
+const SKYPHOTO = { ready: false, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/ESO_-_Milky_Way.jpg/' + (LITE ? '1920' : '3840') + 'px-ESO_-_Milky_Way.jpg' };
+SKYPHOTO.mesh = new THREE.Mesh(new THREE.SphereGeometry(1e5, 96, 48), new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending, transparent: true,
+  uniforms: { map: { value: null }, GX: { value: GXs }, GY: { value: GYs }, GZ: { value: GZs }, up: { value: new THREE.Vector3(0, 1, 0) }, a: { value: 1 } },
+  vertexShader: 'varying vec3 vD; void main() { vD = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `uniform sampler2D map; uniform vec3 GX; uniform vec3 GY; uniform vec3 GZ; uniform vec3 up; uniform float a; varying vec3 vD;
+    void main() {
+      vec3 n = normalize(vD); float l = atan(dot(n, GY), dot(n, GX)), b = asin(clamp(dot(n, GZ), -1.0, 1.0));
+      vec3 c = texture2D(map, vec2(fract(0.5 - l / 6.2831853), 0.5 + b / 3.14159265)).rgb;
+      c = pow(max(c - 0.035, 0.0) / 0.965, vec3(1.15)) * 1.05;          // a truly dark sky between the stars
+      float h = dot(n, up);
+      c *= mix(0.25, 1.0, smoothstep(-0.02, 0.35, h));                   // dimmer through the thick air near the horizon
+      gl_FragColor = vec4(c * a, 1.0); }` }));
+SKYPHOTO.mesh.visible = false; SKYPHOTO.mesh.frustumCulled = false; SKYPHOTO.mesh.renderOrder = -5; bandRoot.add(SKYPHOTO.mesh);
+function skyPhotoLoad() {
+  if (SKYPHOTO.loading) return; SKYPHOTO.loading = true;
+  new THREE.TextureLoader().setCrossOrigin('anonymous').load(SKYPHOTO.url, t => {
+    t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; t.wrapS = THREE.RepeatWrapping;   // no mipmaps: no seam where the map wraps round
+    SKYPHOTO.mesh.material.uniforms.map.value = t; SKYPHOTO.ready = true; IDLE.dirty++; }, undefined, () => { SKYPHOTO.loading = false; });
+}
 function updateMWV() {
   const lit = SKY.on && SKY.day >= 0.55;   // standing on Earth in daylight: no Milky Way
-  MWV.mesh.visible = MWV.ready && opts.milky && !lit; milky.visible = opts.milky && !MWV.ready;
+  const photo = SKY.on && !SKY.lifted && SKYPHOTO.ready && opts.milky;   // on the ground: the photograph instead of the model
+  SKYPHOTO.mesh.visible = photo && !lit;
+  if (SKYPHOTO.mesh.visible) { const u = SKYPHOTO.mesh.material.uniforms; u.a.value = 1 - sstep(SKY.day, 0.08, 0.55); u.up.value.copy(SKY.up).applyQuaternion(_q3.copy(bandRoot.quaternion).invert()); }
+  MWV.mesh.visible = MWV.ready && opts.milky && !lit && !photo; milky.visible = opts.milky && !MWV.ready && !photo;
   if (!MWV.mesh.visible) return;
   const u = MWV.mat.uniforms; _q3.copy(skyRoot.quaternion).invert();
   galToMap(sceneToGal(_v3.copy(skyCam.position).applyQuaternion(_q3), _g3), u.uCam.value, true);
@@ -2794,6 +2824,7 @@ function skyWhere() {
 }
 function skyOn(hemi) {
   if (topFold && !SKY.on && !topFold.folded()) { SKY.topOpen = true; topFold.set(true); }   // the planets/search panel starts put away in the sky
+  skyPhotoLoad();
   fly = null; SKY.hemi = hemi; SKY.az = hemi === 's' ? 0 : 180; SKY.alt = 22; SKY.fov = 75;   // face the side of the sky the Sun, Moon and planets cross
   if (!SKY.on) {
     SKY.saved = { constel: opts.constel, orbits: opts.orbits };
@@ -2876,13 +2907,13 @@ function skyPaint() {
     if (on) el.style.transform = `translate(${(v.x + 1) / 2 * W}px, ${(1 - v.y) / 2 * H}px) translate(-50%, -100%)`; });
 }
 skyPanel.querySelectorAll('[data-h]').forEach(b => b.onclick = () => skyOn(b.dataset.h));
-// "See the sky" beside Now: there once you're near Earth (or Earth is picked), glowing after you choose a date
+// "See the sky" beside Now, always: it asks which hemisphere, then takes you there; glowing after you choose a date
 const skyBtn = document.getElementById('skybtn');
-skyBtn.onclick = () => { skyBtn.classList.remove('glow'); skyOn(document.getElementById('dp-hemi').value || 'n'); };
-function skyBtnShow(camD) {
-  const nearEarth = (focus === EARTH && camD < EARTH.R * 400) || selected === EARTH;
-  skyBtn.hidden = SKY.on || !(nearEarth || skyBtn.classList.contains('glow'));
-}
+const skyMenu = document.getElementById('skymenu');
+skyBtn.onclick = e => { e.stopPropagation(); skyMenu.hidden = !skyMenu.hidden; };   // first choose a hemisphere
+skyMenu.querySelectorAll('[data-sh]').forEach(b => b.onclick = () => { skyMenu.hidden = true; skyBtn.classList.remove('glow'); document.getElementById('dp-hemi').value = b.dataset.sh; skyOn(b.dataset.sh); });
+addEventListener('pointerdown', e => { if (!skyMenu.hidden && !skyMenu.contains(e.target) && e.target !== skyBtn) skyMenu.hidden = true; });
+function skyBtnShow() { skyBtn.hidden = SKY.on; if (SKY.on) skyMenu.hidden = true; }   // always there beside Now, except while you're standing in the sky
 skyPanel.querySelectorAll('[data-az]').forEach(b => b.onclick = () => { SKY.az = +b.dataset.az; SKY.alt = 22; });
 document.getElementById('sky-exit').onclick = () => skyOff(false);
 document.getElementById('dp-sky').onclick = () => { document.getElementById('dp-go').click(); skyOn(document.getElementById('dp-hemi').value); document.getElementById('datepick').hidden = true; };
@@ -3032,7 +3063,7 @@ function frame(t) {
   bandRoot.quaternion.copy(skyRoot.quaternion); bandCam.quaternion.copy(camera.quaternion); bandCam.aspect = camera.aspect; bandCam.updateProjectionMatrix();
   starMat.uniforms.uMix.value = sstep(ls, Math.log(1.2), Math.log(5)); milky.userData.glow.material.opacity = 0.38 * (1 - 0.55 * deep.p); milky.userData.pts.material.opacity = 0.9 * (1 - 0.55 * deep.p);
   updateMWV();
-  { const a = opts.milky && !MWV.ready ? 0.09 * Math.max(deep.p, 0.6 * deep.t) : 0; haze.visible = a > 0.002;
+  { const a = opts.milky && !MWV.ready && !SKYPHOTO.mesh.visible ? 0.09 * Math.max(deep.p, 0.6 * deep.t) : 0; haze.visible = a > 0.002;
     if (haze.visible) {   // brighter toward the galactic centre: its direction on screen (device pixels, y up)
       skyCam.updateMatrixWorld(); const g = GC_DIR.clone().multiplyScalar(GC_LY).applyQuaternion(skyRoot.quaternion).project(skyCam);
       let dx = g.x * innerWidth, dy = g.y * innerHeight; if (g.z > 1) { dx = -dx; dy = -dy; } const L = Math.hypot(dx, dy) || 1;
@@ -3122,7 +3153,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=2e7f20bb" data-place="info" defer></script>
+<script src="../music/music.js?v=39ccfaf0" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
