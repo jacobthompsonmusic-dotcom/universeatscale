@@ -79,8 +79,10 @@
   #labels { position:fixed; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
   .lab { position:absolute; left:0; top:0; transform:translate(10px,-50%); white-space:nowrap; font:italic 15px "IM Fell English", Georgia, serif; color:rgba(235,230,222,0.85); text-shadow:0 1px 2px #000, 0 0 6px #000; pointer-events:auto; cursor:pointer; padding:2px 4px; border-radius:5px; }
   .lab.big { font-weight:600; font-size:13px; color:#fff6e6; }
+  .lab.dwarf { font-size:12.5px; color:rgba(225,220,210,0.7); }   /* dwarf planets: smaller and quieter than the planets */
   .lab.mark { color:rgba(190,206,236,0.72); font-size:12.5px; letter-spacing:0.09em; text-transform:uppercase; pointer-events:none; cursor:default; }
   .lab.mark::before { display:none; }
+  .lab.mark.oort { color:rgba(236,228,206,0.92) !important; text-shadow:0 0 6px #000, 0 0 12px #000; }
   .lab.probe { color:var(--c); font-size:13px; letter-spacing:0.04em; }
   .lab.nearstar { color:rgba(232,236,248,0.85); font-size:13.5px; pointer-events:none; cursor:default; }
   .lab.nearstar small { margin-left:6px; color:rgba(190,198,220,0.6); font-size:12px; }
@@ -102,6 +104,7 @@
   #controls { bottom:16px; right:16px; padding:8px; display:flex; flex-direction:column; gap:6px; z-index:2; }
   #controls button { width:54px; height:40px; border-radius:10px; border:1px solid var(--line); background:rgba(255,255,255,0.04); color:var(--text); font:italic 19.5px "IM Fell English", Georgia, serif; cursor:pointer; }
   #controls button.txt { font-size:12.5px; font-weight:600; letter-spacing:0.04em; }
+  #p-more { display:none !important; }
   #controls button.two { font-size:10.5px; line-height:1.05; letter-spacing:0.06em; }
   body.embed #controls #p-all { display:none; }   /* the joined page's own list already has 'Solar System' */
   #legend { bottom:16px; left:16px; padding:12px 14px; font-size:12.5px; z-index:2; }
@@ -193,7 +196,11 @@
   @media (min-width: 761px) { body.embed #info { right:140px; } body.embed #controls { z-index:2; } }
   @media (max-width: 760px) {
     #top { width:calc(100% - 32px); }
-    #info { top:auto; bottom:136px; left:16px; right:98px; width:auto; max-height:45vh; z-index:5; }
+    #controls:not(.more) #p-all, #controls:not(.more) #p-top, #controls:not(.more) #p-edge, #controls:not(.more) #p-far, #controls:not(.more) #p-back { display:none; }
+    #p-back { font-size:10px !important; letter-spacing:0 !important; }
+    #p-more { display:block !important; font-size:20px !important; letter-spacing:0 !important; }
+    body.sky #p-more { display:none !important; }
+    #info { top:auto; bottom:162px; left:16px; right:98px; width:auto; max-height:45vh; z-index:5; }
     #top.collapsed .switch { display:none; }
     #legend { bottom:150px; max-height:50vh; overflow-y:auto; }   /* above the time bar */
     #time { left:16px; right:84px; transform:none; flex-wrap:wrap; justify-content:center; }
@@ -229,7 +236,7 @@
 <div id="loading">Placing the planets…</div>
 
 <div id="top" class="panel">
-  <a class="homelink" href="../index.html">← Universe at Scale</a> <a class="homelink" href="../credits/">· Credits</a>
+  <a class="homelink" href="../index.html">← Universe at Scale</a> <a class="homelink" href="../credits/" target="_blank" rel="noopener">· Credits</a>
   <div class="switch" role="tablist">
     <button data-go="sun" class="on">All</button>
     <button data-go="mercury">Mercury</button>
@@ -283,13 +290,14 @@
     <button class="tg" data-k="mag">Magnetic fields</button>
     <button class="tg" data-k="helix" title="See the Sun carry the planets around the Milky Way">Galactic motion</button>
   </div>
-  <div class="hint">Planets, moons, the Sun and every distance are to true scale. Double-click a name to fly there; click empty space to close a card. The stars behind are real, each at its measured distance. Earth imagery: <a href="https://www.solarsystemscope.com/textures/" style="color:inherit">Solar System Scope</a> (CC BY 4.0), from NASA data.</div>
+  <div class="hint">Planets, moons, the Sun and every distance are to true scale. Double-click a name to fly there; click empty space to close a card. The stars behind are real, each at its measured distance.</div>
 </div>
 
 <div id="controls" class="panel">
   <button id="zin" aria-label="Zoom in">+</button>
   <button id="zout" aria-label="Zoom out">−</button>
   <button class="txt" id="p-home" title="Fly home to Earth (in the sky: back to the opening look)" aria-label="Home">HOME</button>
+  <button class="txt" id="p-more" aria-label="More views" aria-expanded="false">⋯</button>
   <button class="txt" id="p-all" title="The whole solar system">ALL</button>
   <button class="txt two" id="p-top" title="Look straight down on the planets' orbits">TOP<br>VIEW</button>
   <button class="txt two" id="p-edge" title="Look along the plane of Earth's orbit">SIDE<br>VIEW</button>
@@ -332,12 +340,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=af54b2cc"></script>
-<script src="../shared/clock.js?v=af54b2cc"></script>
-<script src="../shared/fold.js?v=af54b2cc"></script>
-<script src="baked/manifest.js?v=af54b2cc"></script>
-<script src="../shared/perf.js?v=af54b2cc"></script>
-<script src="../shared/galaxy-volume.js?v=af54b2cc"></script>
+<script src="../shared/frame.js?v=5a1b3620"></script>
+<script src="../shared/clock.js?v=5a1b3620"></script>
+<script src="../shared/fold.js?v=5a1b3620"></script>
+<script src="baked/manifest.js?v=5a1b3620"></script>
+<script src="../shared/perf.js?v=5a1b3620"></script>
+<script src="../shared/galaxy-volume.js?v=5a1b3620"></script>
 <script>
 (() => {
 'use strict';
@@ -406,7 +414,7 @@ const SATURN = {
   intro: 'Saturn seen from above its north pole, with its rings and moons to scale and moving live. Moon spacing, sizes and periods are real; where each moon sits along its orbit is illustrative.',
   hint: 'Search a moon or ring — try “Titan”',
   note: 'Earth and the Sun are always within 6° of straight down. Moon positions are illustrative; orbits flattened to 2D.',
-  blurb: 'The ringed giant, nine and a half Earths wide — yet light enough that it would float in a big enough bathtub. Seen from above its north pole like this you can see the hexagon: a six-sided jet stream wider than two Earths, swirling around the pole.',
+  blurb: 'The ringed giant, nine and a half Earths wide — yet light enough that it would float in a big enough bathtub. Above its north pole spins the hexagon: a six-sided jet stream wider than two Earths, swirling around the pole.',
   facts: km => [['Diameter', '120,536 km (9.4 Earths)'], ['Day', '10 h 33 min'], ['Year', '29.4 Earth years'], ['Known moons', '293 (mid-2026) — the most of any planet'], ['From Earth now', fmtKm(km)], ['Light takes', `${(km / 299792.458 / 60).toFixed(1)} minutes`]],
   groups: {
     ring:   { label: 'Ring moons & shepherds', color: '#d9b98a' },
@@ -1273,7 +1281,7 @@ const OORT = farCloud(30000, 72, r => {
 // landmarks: [name, radius in AU, draw a ring in the plane of Earth's orbit?, angle of the label around the ring]
 const MARKS = [
   ['Kuiper belt', 44, false, 200], ['Heliopause · 120 AU', 120, true, 320], ['1,000 AU', 1000, true, 300],
-  ['10,000 AU', 10000, true, 320], ['Oort cloud (predicted)', 28000, false, 215], ['1 light-year', LYKM / AU, true, 305],
+  ['10,000 AU', 10000, true, 320], ['Oort cloud (predicted)', 52000, false, 35], ['1 light-year', LYKM / AU, true, 305],
 ].map(([name, au, ring, ang]) => {
   const m = { name, r: au * AUS, pos: new THREE.Vector3(Math.cos(ang * DEG), 0, -Math.sin(ang * DEG)).multiplyScalar(au * AUS) };
   if (ring) {
@@ -2398,6 +2406,9 @@ function showSee(o) {
   b.textContent = o.see ? (k === 'earth' ? 'Bring back the clouds' : 'Bring back the atmosphere') : (k === 'earth' ? 'Clear the clouds' : 'See the surface');
   n.textContent = SURF[k].note;
 }
+{ const mb = document.getElementById('p-more'), cp = document.getElementById('controls');   // phones: the extra views wait behind ⋯
+  mb.onclick = () => { const on = cp.classList.toggle('more'); mb.setAttribute('aria-expanded', on); };
+  cp.addEventListener('click', e => { if (e.target !== mb && e.target.closest('button') && e.target.id !== 'zin' && e.target.id !== 'zout') { cp.classList.remove('more'); mb.setAttribute('aria-expanded', false); } }); }
 document.getElementById('info-see').onclick = () => { if (selected) setSee(selected, !selected.see); };
 document.getElementById('info-sky').onclick = e => { e.stopPropagation(); const m = document.getElementById('skymenu'); m.hidden = false; if (window.timeFold) timeFold.set(false); };   // the hemisphere choice opens by the clock
 
@@ -2409,14 +2420,14 @@ let LIST = [];
 function makeLabels() {
   LIST = ALLBODIES();
   for (const o of LIST) {
-    const el = document.createElement('div'); el.className = 'lab' + (o.pr === 0 ? ' big' : '') + (o.isSun ? ' sun' : ''); el.textContent = o.name;
+    const el = document.createElement('div'); el.className = 'lab' + (o.pr === 0 ? ' big' : '') + (o.isSun ? ' sun' : '') + (o.kind === 'dwarf' ? ' dwarf' : ''); el.textContent = o.name;
     el.style.setProperty('--c', o.color); labelBox.appendChild(el); o.el = el;
     el.addEventListener('click', ev => { ev.stopPropagation(); select(o); });
     el.addEventListener('dblclick', ev => { ev.stopPropagation(); flyTo(o); });
   }
   for (const P of PROBES) { const el = document.createElement('div'); el.className = 'lab probe'; el.textContent = P.name; el.style.setProperty('--c', P.color); el.style.display = 'none'; labelBox.appendChild(el); P.el = el;
     el.addEventListener('click', ev => { ev.stopPropagation(); select(P); }); el.addEventListener('dblclick', ev => { ev.stopPropagation(); if (P.au) flyTo(P); }); }
-  for (const m of MARKS) { const el = document.createElement('div'); el.className = 'lab mark'; el.textContent = m.name; el.style.display = 'none'; labelBox.appendChild(el); m.el = el; }
+  for (const m of MARKS) { const el = document.createElement('div'); el.className = 'lab mark' + (m.name.startsWith('Oort') ? ' oort' : ''); el.textContent = m.name; el.style.display = 'none'; labelBox.appendChild(el); m.el = el; }
 }
 // the way to the centre of the Milky Way — Sagittarius A*, 26,990 light-years off (GRAVITY 2021) at l = 359.944°, b = −0.046°
 const GC_LY = 26990, GC_DIR = (() => { const l = 359.944 * DEG, b = -0.046 * DEG; return galToScene(Math.cos(b) * Math.cos(l), Math.cos(b) * Math.sin(l), Math.sin(b)); })();
@@ -2438,6 +2449,7 @@ function updateGC() {
   gcEl.innerHTML = `<span class="arr" style="transform:rotate(${ang.toFixed(0)}deg)"><svg class="arrsvg" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 3.9h7.4V1.2L13.2 5 8.4 8.8V6.1H1z" fill="currentColor"/></svg></span>Galactic centre`;
   gcEl.classList.add('edge'); gcEl.style.display = 'block';
   let lx = Math.min(W - bw - 8, Math.max(8, ex - bw / 2)), ly = ey;
+  ly = Math.min(ly, H - 100);   // clear of the clock bar's band
   const rects = ['top', 'info', 'legend', 'controls', 'time'].map(id => document.getElementById(id)).filter(Boolean).map(e => e.getBoundingClientRect()).filter(r => r.width);
   if (EMBED) rects.push({ left: W - 140, right: W, top: 0, bottom: 270 });   // the scale ladder of the joined page
   for (const r of rects) if (lx + bw > r.left && lx < r.right && ly + 14 > r.top && ly - 14 < r.bottom) { if (Math.abs(dy) > Math.abs(dx) * 0.95) lx = (lx + bw / 2 < W / 2) ? r.right + 10 : r.left - bw - 10; else ly = (ly < H / 2) ? r.bottom + 18 : r.top - 18; }
@@ -2497,7 +2509,7 @@ function updateLabels() {
       const ex = (dx + 1) / 2 * W, ey = (1 - dy) / 2 * H, ang = Math.atan2(-dy, dx) / DEG;
       o.el.innerHTML = `<span class="arr" style="transform:rotate(${ang.toFixed(0)}deg)"><svg class="arrsvg" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 3.9h7.4V1.2L13.2 5 8.4 8.8V6.1H1z" fill="currentColor"/></svg></span>Sun`;
       o.el.classList.add('edge'); o.el.style.display = 'block';
-      let lx = Math.min(W - 90, Math.max(8, ex - 30)), ly = ey;
+      let lx = Math.min(W - 90, Math.max(8, ex - 30)), ly = Math.min(ey, H - 100);   // clear of the clock bar's band
       for (const id of ['top', 'info', 'legend', 'controls', 'time', 'zodwheel', 'skypanel']) {
         const pn = document.getElementById(id); if (!pn) continue; const r = pn.getBoundingClientRect(); if (!r.width) continue;
         if (lx + 80 > r.left && lx < r.right && ly + 14 > r.top && ly - 14 < r.bottom) { if (Math.abs(dy) > Math.abs(dx) * 0.95) lx = (lx + 40 < W / 2) ? r.right + 10 : r.left - 90; else ly = (ly < H / 2) ? r.bottom + 18 : r.top - 18; }
@@ -3375,7 +3387,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=af54b2cc" data-place="info" defer></script>
+<script src="../music/music.js?v=5a1b3620" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
