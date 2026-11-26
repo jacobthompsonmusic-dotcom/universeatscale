@@ -134,6 +134,7 @@
   #skymenu[hidden] { display:none; }
   #skymenu button { text-align:left; }
   /* while time stands still, the play button breathes softly (like the soundtrack note) to say it sets things moving */
+  #time .step { min-width:28px; padding:0 6px; font:400 17px/1 Georgia, serif; }
   #time #play.invite { color:#ece2c8; border-color:rgba(255,207,110,0.3); animation:playglow 3.6s ease-in-out infinite; }
   @keyframes playglow { 0%,100% { box-shadow:0 0 4px rgba(255,207,110,0.06); } 50% { box-shadow:0 0 10px rgba(255,207,110,0.2); } }   /* a touch softer than the music note */
   @media (prefers-reduced-motion:reduce) { #time #play.invite { animation:none; box-shadow:0 0 8px rgba(255,207,110,0.14); } }
@@ -328,7 +329,9 @@
 <div id="skydirs"><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span></div>
 <div id="time" class="panel">
   <button id="play" aria-label="Play">▶︎</button>
+  <button id="slower" class="step" aria-label="Slower" title="Slower">−</button>
   <input id="speed" type="range" min="0" max="1000" step="1" value="418" aria-label="Speed">
+  <button id="faster" class="step" aria-label="Faster" title="Faster">+</button>
   <span class="spd" id="spd"></span>
   <span class="date" id="date" role="button" tabindex="0" title="Pick any date from 1800 to 2050 — your birthday, say">​</span>
   <div id="datepick" hidden><label>Date <input id="dp-d" type="date" min="1800-01-01" max="2050-12-31"></label><label>Time <input id="dp-t" type="time" value="12:00"></label><div id="dp-ecl"></div></div>
@@ -340,12 +343,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=0f1f5bb4"></script>
-<script src="../shared/clock.js?v=0f1f5bb4"></script>
-<script src="../shared/fold.js?v=0f1f5bb4"></script>
-<script src="baked/manifest.js?v=0f1f5bb4"></script>
-<script src="../shared/perf.js?v=0f1f5bb4"></script>
-<script src="../shared/galaxy-volume.js?v=0f1f5bb4"></script>
+<script src="../shared/frame.js?v=261c012e"></script>
+<script src="../shared/clock.js?v=261c012e"></script>
+<script src="../shared/fold.js?v=261c012e"></script>
+<script src="baked/manifest.js?v=261c012e"></script>
+<script src="../shared/perf.js?v=261c012e"></script>
+<script src="../shared/galaxy-volume.js?v=261c012e"></script>
 <script>
 (() => {
 'use strict';
@@ -1071,6 +1074,8 @@ const starMat = new THREE.ShaderMaterial({
     const o = i * 16; galToScene(dv.getFloat32(o, true), dv.getFloat32(o + 4, true), dv.getFloat32(o + 8, true), v);
     pos.set([v.x, v.y, v.z], i * 3); STARPOS.push(v.clone()); mag[i] = dv.getInt16(o + 12, true) / 100;
     const c = bv(dv.getInt8(o + 14) / 50); col.set([c[0] / 255, c[1] / 255, c[2] / 255], i * 3); on[i] = dv.getUint8(o + 15);
+    if (window.UAS_PERF.tier > 0 && on[i]) { const d = Math.hypot(dv.getFloat32(o, true), dv.getFloat32(o + 4, true), dv.getFloat32(o + 8, true)), m = mag[i] + 5 * Math.log10(Math.max(d, 0.01) / 32.6156);
+      if (m > 4 && d > 20) on[i] = 0; }   // phones, out among the stars: the brightest and the nearest only, matching the galaxy map's
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aCol', new THREE.BufferAttribute(col, 3));
   g.setAttribute('aM', new THREE.BufferAttribute(mag, 1)); g.setAttribute('aOn', new THREE.BufferAttribute(on, 1));
@@ -2310,6 +2315,12 @@ const lightTime = km => { const s = km / LIGHT; return s > 5400 ? `${(s / 3600).
 // astrological symbols (drawn from an embedded slice of Noto Sans Symbols, so they look the same on every device)
 const ASTRO = { sun: '\u2609', mercury: '\u263F', venus: '\u2640', earth: '\u{1F728}', mars: '\u2642', jupiter: '\u2643', saturn: '\u2644', uranus: '\u2645', neptune: '\u2646',
   pluto: '\u2BD3', ceres: '\u26B3', haumea: '\u{1F77B}', makemake: '\u{1F77C}', eris: '\u2BF0' };
+// the joined page's own buttons over this map (the Scale list, the camera and the soundtrack note), measured where they really are
+const hostRects = (() => { let at = -1e9, out = [];
+  return () => { const now = performance.now(); if (now - at < 250) return out; at = now; out = [];
+    try { if (parent !== window) for (const e of parent.document.querySelectorAll('#ladder, #snapbtn, .uas-mu-btn')) { const r = e.getBoundingClientRect();
+      if (r.width && !e.hidden) out.push({ left: r.left - 8, right: r.right + 8, top: r.top - 6, bottom: r.bottom + 6 }); } } catch (e) {}
+    return out; }; })();
 function select(o) {
   try { const t = SKY.on && !SKY.launch && o && o !== EARTH && o.kind !== 'ring' ? o : null; if (t !== SKY.track) { SKY.track = t; SKY.push = 0; } } catch (e) {}   // in the sky: turn to it, and zooming now closes in on it
   const prevSel = selected; selected = o; const info = document.getElementById('info');
@@ -2453,7 +2464,7 @@ function updateGC() {
   let lx = Math.min(W - bw - 8, Math.max(8, ex - bw / 2)), ly = ey;
   ly = Math.min(ly, H - 100);   // clear of the clock bar's band
   const rects = ['top', 'info', 'legend', 'controls', 'time'].map(id => document.getElementById(id)).filter(Boolean).map(e => e.getBoundingClientRect()).filter(r => r.width);
-  if (EMBED) rects.push({ left: W - 140, right: W, top: 0, bottom: 270 });   // the scale ladder of the joined page
+  rects.push(...hostRects());   // the joined page's Scale list, camera and note
   for (const r of rects) if (lx + bw > r.left && lx < r.right && ly + 14 > r.top && ly - 14 < r.bottom) { if (Math.abs(dy) > Math.abs(dx) * 0.95) lx = (lx + bw / 2 < W / 2) ? r.right + 10 : r.left - bw - 10; else ly = (ly < H / 2) ? r.bottom + 18 : r.top - 18; }
   if (SUN.el.classList.contains('edge') && SUN.el.style.display !== 'none') {   // don't sit on top of the Sun's pointer
     const r = SUN.el.getBoundingClientRect(); if (lx + bw > r.left && lx < r.right && Math.abs(ly - (r.top + r.bottom) / 2) < 26) ly += ly < H / 2 ? 30 : -30;
@@ -2594,6 +2605,16 @@ playBtn.textContent = playing ? '❚❚' : '▶\ufe0e';   // the planets start s
 let playTouched = false;   // the play button glows until it's first pressed, and again whenever time is paused
 playBtn.onclick = () => { playTouched = true; playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶\ufe0e'; };
 speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
+// − and +: step the clock's rate along a ladder of round speeds (real time, a minute, ten minutes, an hour, six hours, a day, a week,
+// a month, a year, ten years a second) — for tapping on a phone instead of sliding. + also starts a paused clock.
+{ const RUNGS = [1, 60, 600, 3600, 21600, 86400, 604800, 2629800, 31557600, 315576000].map(v => Math.log10(v));
+  const stepRate = dir => {
+    const cur = logTarget; let i = dir > 0 ? RUNGS.findIndex(v => v > cur + 1e-3) : RUNGS.length - 1 - [...RUNGS].reverse().findIndex(v => v < cur - 1e-3);
+    if (i < 0 || i >= RUNGS.length) i = dir > 0 ? RUNGS.length - 1 : 0;
+    logTarget = Math.min(MAXLOG, RUNGS[i]); speedIn.value = Math.round(logTarget / MAXLOG * 1000);
+    if (dir > 0 && !playing) playBtn.click();
+  };
+  document.getElementById('faster').onclick = () => stepRate(1); document.getElementById('slower').onclick = () => stepRate(-1); }
 // pick a date (a birthday, say): the planets, moons and probes jump to where they were, and time pauses there
 { const dEl = document.getElementById('date'), box = document.getElementById('datepick'), di = document.getElementById('dp-d'), ti = document.getElementById('dp-t');
   const pad = n => String(n).padStart(2, '0');
@@ -3439,7 +3460,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=0f1f5bb4" data-place="info" defer></script>
+<script src="../music/music.js?v=261c012e" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

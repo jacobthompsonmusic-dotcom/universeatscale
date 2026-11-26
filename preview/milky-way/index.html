@@ -190,11 +190,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=0f1f5bb4"></script>
-<script src="../shared/clock.js?v=0f1f5bb4"></script>
-<script src="../shared/fold.js?v=0f1f5bb4"></script>
-<script src="../shared/perf.js?v=0f1f5bb4"></script>
-<script src="../shared/galaxy-volume.js?v=0f1f5bb4"></script>
+<script src="../shared/frame.js?v=261c012e"></script>
+<script src="../shared/clock.js?v=261c012e"></script>
+<script src="../shared/fold.js?v=261c012e"></script>
+<script src="../shared/perf.js?v=261c012e"></script>
+<script src="../shared/galaxy-volume.js?v=261c012e"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1785,7 +1785,7 @@ function drawField() {
   // stars too faint for the eye are only complete out to 50 ly, so show them only when zoomed in — otherwise they fake a crowd around the Sun
   const faint = Math.max(0, Math.min(1, (350 - span) / 200)), batch = LITE ? new Map() : null, thin = LITE ? Math.max(1, Math.round(span / 60)) : 1;
   for (let i = 0; i < NF; i++) {
-    if (LITE && (fmag[i] > 6.5 || (thin > 1 && i % thin && !fprop[i] && fmag[i] > 3))) continue;   // phones: naked-eye stars only, thinner as you pull out (named and bright ones stay)
+    if (LITE && !fprop[i] && (fmag[i] > 4 || (thin > 1 && i % thin)) && (fx[i] - SUNW.x) ** 2 + (fy[i] - SUNW.y) ** 2 + (fz[i] - SUNW.z) ** 2 > 400) continue;   // phones: only the stars that matter — named ones, the brightest, and every star within 20 ly
     const dx = fx[i] - view.x, dy = fy[i] - view.y, ry = dx * SY + dy * CY, dz = fz[i] - view.z;
     let f = 1; if (PD !== Infinity) { const den = PD - (ry * ST + dz * CT); if (den < PD * 0.01) continue; f = PD / den; }
     const X = Wd / 2 + (dx * CY - dy * SY) * s * f, Y = Ht / 2 + (ry * CT - dz * ST) * s * f;
@@ -1883,12 +1883,18 @@ const LBL = { q: [], placed: [], PX: 9, PY: 4 }, SNAP = { id: null };
 const lblW = (font, s) => { ctx.font = font; return ctx.measureText(s).width; };
 // pr: lower = more important (selected −10, hovered −9); boxes: [x, y, w, h] or a list of them, screen px from the top-left; fn draws it
 function lbl(pr, boxes, fn) { if (typeof boxes[0] === 'number') boxes = [boxes]; LBL.q.push({ pr, boxes, fn, i: LBL.q.length }); }
+// the joined page's own buttons over this map (the Scale list, the camera and the soundtrack note), measured where they really are
+const hostRects = (() => { let at = -1e9, out = [];
+  return () => { const now = performance.now(); if (now - at < 250) return out; at = now; out = [];
+    try { if (parent !== window) for (const e of parent.document.querySelectorAll('#ladder, #snapbtn, .uas-mu-btn')) { const r = e.getBoundingClientRect();
+      if (r.width && !e.hidden) out.push({ left: r.left - 8, right: r.right + 8, top: r.top - 6, bottom: r.bottom + 6 }); } } catch (e) {}
+    return out; }; })();
 function lblFlush() {
   if (SNAP.id !== null) { LBL.q = []; return; }   // a picture for the camera button: no names
   const q = LBL.q.sort((a, b) => a.pr - b.pr || a.i - b.i), P = LBL.placed = [], px = LBL.PX, py = LBL.PY;
   const pan = [];   // the panels: labels (other than the picked or hovered one) keep out from under them
   for (const id of ['top', 'legend', 'controls', 'info', 'acpanel', 't1panel', 'qpanel', 'orbpanel']) { const e = document.getElementById(id); if (!e || e.hidden) continue; const r = e.getBoundingClientRect(); if (r.width) pan.push([r.left, r.top, r.width, r.height]); }
-  if (document.body.classList.contains('embed') && innerWidth > 760) pan.push([Wd - 140, 0, 140, 300]);   // the joined page's scale list
+  for (const r of hostRects()) pan.push([r.left, r.top, r.right - r.left, r.bottom - r.top]);   // the joined page's Scale list, camera and note
   P.push(...pan);
   for (const L of q) {
     if (L.boxes.every(([x, y, w, h]) => x + w < 0 || x > Wd || y + h < 0 || y > Ht)) continue;
@@ -2119,7 +2125,7 @@ function updateGC() {
   gcEl.style.display = 'block';
   let lx = Math.min(Wd - bw - 8, Math.max(8, ex - bw / 2)), ly = ey;
   const rects = ['top', 'info', 'legend', 'controls', 'readout'].map(id => document.getElementById(id)).filter(Boolean).map(e => e.getBoundingClientRect()).filter(r => r.width);
-  if (EMBED) rects.push({ left: Wd - 140, right: Wd, top: 0, bottom: 270 });   // the scale ladder of the joined page
+  rects.push(...hostRects());   // the joined page's Scale list, camera and note
   for (const r of rects) if (lx + bw > r.left && lx < r.right && ly + 14 > r.top && ly - 14 < r.bottom) { if (Math.abs(dy) > Math.abs(dx) * 0.95) lx = (lx + bw / 2 < Wd / 2) ? r.right + 10 : r.left - bw - 10; else ly = (ly < Ht / 2) ? r.bottom + 18 : r.top - 18; }
   gcEl.style.transform = `translate(${lx.toFixed(1)}px, ${(ly - 12).toFixed(1)}px)`;
 }
@@ -3489,7 +3495,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=0f1f5bb4" data-place="info" defer></script>
+<script src="../music/music.js?v=261c012e" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
