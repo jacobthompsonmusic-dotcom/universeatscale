@@ -340,12 +340,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=8abb7ee3"></script>
-<script src="../shared/clock.js?v=8abb7ee3"></script>
-<script src="../shared/fold.js?v=8abb7ee3"></script>
-<script src="baked/manifest.js?v=8abb7ee3"></script>
-<script src="../shared/perf.js?v=8abb7ee3"></script>
-<script src="../shared/galaxy-volume.js?v=8abb7ee3"></script>
+<script src="../shared/frame.js?v=fbfa0888"></script>
+<script src="../shared/clock.js?v=fbfa0888"></script>
+<script src="../shared/fold.js?v=fbfa0888"></script>
+<script src="baked/manifest.js?v=fbfa0888"></script>
+<script src="../shared/perf.js?v=fbfa0888"></script>
+<script src="../shared/galaxy-volume.js?v=fbfa0888"></script>
 <script>
 (() => {
 'use strict';
@@ -1094,6 +1094,7 @@ const GALAXY_FS = '#define MAX_STEPS ' + (window.UAS_PERF.tier > 0 ? 150 : 260) 
 const MWV = { ready: false };
 // phones (LITE) skip the ray-marched Milky Way and keep the pre-made band of stars and glow: the volume is the heaviest thing in the view
 const LITE = window.UAS_PERF.tier > 0;
+const SPH = (r, w, h) => new THREE.SphereGeometry(r, LITE ? Math.max(16, w >> 1) : w, LITE ? Math.max(10, h >> 1) : h);   // phones: half the segments
 {
   const tex = LITE ? null : new THREE.TextureLoader().load('../milky-way/galaxy-disc.jpg', () => { MWV.ready = true; });
   if (tex) { tex.flipY = false; tex.anisotropy = 8; }
@@ -1247,7 +1248,7 @@ SUN.mat.onBeforeCompile = sh => {   // from the ground, the Moon in front of the
   sh.fragmentShader = 'uniform float uOn; uniform vec3 uDir; uniform float uCos; varying vec3 vEclW;\n' + sh.fragmentShader.replace('#include <dithering_fragment>',
     '#include <dithering_fragment>\n  if (uOn > 0.5 && dot(normalize(vEclW - cameraPosition), uDir) > uCos) gl_FragColor.rgb = vec3(0.0);');
 };
-SUN.root.add(new THREE.Mesh(new THREE.SphereGeometry(SUN.R, 128, 64), SUN.mat));
+SUN.root.add(new THREE.Mesh(SPH(SUN.R, 128, 64), SUN.mat));
 SUN.corona = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialSprite([[0, 'rgba(255,240,200,0.9)'], [0.18, 'rgba(255,220,160,0.55)'], [0.45, 'rgba(255,200,130,0.12)'], [1, 'rgba(255,190,120,0)']]), depthWrite: false, transparent: true, blending: THREE.AdditiveBlending }));
 SUN.corona.scale.set(SUN.R * 6, SUN.R * 6, 1); SUN.root.add(SUN.corona);
 SUN.glare = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialSprite([[0, 'rgba(255,255,250,1)'], [0.08, 'rgba(255,250,235,1)'], [0.25, 'rgba(255,230,190,0.25)'], [1, 'rgba(255,220,180,0)']]), depthWrite: false, transparent: true, sizeAttenuation: false }));
@@ -1266,13 +1267,13 @@ function farCloud(n, seed, sample, color, size) {
 }
 const gaussR = r => { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v); };
 // Kuiper belt: the classical belt between the 3:2 (39.4 AU) and 2:1 (47.7 AU) resonances with Neptune, plus a thinner scattered fringe
-const KUIPER = farCloud(3600, 71, r => {
+const KUIPER = farCloud(LITE ? 1 : 3600, 71, r => {
   const a = r() < 0.8 ? 39.4 + r() * 8.3 : 34 + r() * 30, inc = Math.abs(gaussR(r)) * (r() < 0.5 ? 2.6 : 15) * DEG, u = r() * TAU, O = r() * TAU;
   return [a * (Math.cos(u) * Math.cos(O) - Math.sin(u) * Math.sin(O) * Math.cos(inc)), a * (Math.cos(u) * Math.sin(O) + Math.sin(u) * Math.cos(O) * Math.cos(inc)), a * Math.sin(u) * Math.sin(inc)];
 }, 0x9fb4d0, 1.2);
 // Oort cloud (predicted from the orbits of long-period comets; never seen directly): from roughly 2,000 AU, slightly flattened
 // toward the planets' plane on the inside, becoming a round shell that thins out near 100,000 AU. The dots are illustrative.
-const OORT = farCloud(30000, 72, r => {
+const OORT = farCloud(LITE ? 1 : 30000, 72, r => {
   const d = Math.exp(Math.log(2000) + Math.pow(r(), 0.62) * (Math.log(100000) - Math.log(2000)));
   const flat = THREE.MathUtils.clamp((Math.log(d) - Math.log(2500)) / (Math.log(15000) - Math.log(2500)), 0, 1);
   const sinb = THREE.MathUtils.clamp((1 - flat) * Math.sin(gaussR(r) * 48 * DEG) + flat * (r() * 2 - 1), -1, 1), cb = Math.sqrt(1 - sinb * sinb), l = r() * TAU;
@@ -1563,10 +1564,10 @@ for (const [key, name, Rkm, color, dia, year, blurb] of INNER) {
   b.root = new THREE.Group(); space.add(b.root);
   b.tilt = new THREE.Group(); b.root.add(b.tilt); // the planet's own axis: +Y = north pole (for Earth, +X = the March equinox)
   { const Yp = b.pole, Xp = key === 'earth' ? new THREE.Vector3(1, 0, 0) : eqToScene(vec(POLES[key][0] + 90, 0)).normalize(), Zp = new THREE.Vector3().crossVectors(Xp, Yp); b.tilt.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(Xp, Yp, Zp)); }
-  b.mesh = new THREE.Mesh(new THREE.SphereGeometry(b.R, 128, 64), key === 'earth' ? earthMaterial(b.sunDir) : new THREE.MeshStandardMaterial({ map: ROCKY_TEX[key](), roughness: 1, metalness: 0 })); b.tilt.add(b.mesh);
+  b.mesh = new THREE.Mesh(SPH(b.R, 128, 64), key === 'earth' ? earthMaterial(b.sunDir) : new THREE.MeshStandardMaterial({ map: ROCKY_TEX[key](), roughness: 1, metalness: 0 })); b.tilt.add(b.mesh);
   b.spinDays = SPIN_DAYS[key];
   if (key === 'earth') {
-    b.clouds = new THREE.Mesh(new THREE.SphereGeometry(b.R * 1.006, 128, 64), cloudMaterial(b.sunDir)); b.clouds.renderOrder = 1; b.tilt.add(b.clouds);
+    b.clouds = new THREE.Mesh(SPH(b.R * 1.006, 128, 64), cloudMaterial(b.sunDir)); b.clouds.renderOrder = 1; b.tilt.add(b.clouds);
     b.tilt.add(b.atm = rimGlow(b.R * 1.02, 0x6aa8ff, 0.9, b.sunDir));
   }
   if (key === 'venus') b.tilt.add(b.atm = rimGlow(b.R * 1.015, 0xf2deb0, 0.6, b.sunDir));
@@ -1589,7 +1590,7 @@ MOONTEX.Moon = (g, W, H, r) => { // the near side (the maria) faces Earth
 };
 function rockyMoon(parent, name, a, P, r, color, disc, blurb, extra = {}) {
   const o = { name, group: 'moon', a, P, r, e: 0, color, disc, blurb, kind: 'moon', parent, pr: 2, baseOpacity: 0.35, th0: extra.th0 || 0, incl: extra.incl || 0, ...extra };
-  o.mesh = new THREE.Mesh(new THREE.SphereGeometry(Math.max(r * U, 0.0008), r > 100 ? 64 : 24, r > 100 ? 32 : 12), new THREE.MeshStandardMaterial({ map: moonTexture(o, name.length * 7), roughness: 1 }));
+  o.mesh = new THREE.Mesh(SPH(Math.max(r * U, 0.0008), r > 100 ? 64 : 24, r > 100 ? 32 : 12), new THREE.MeshStandardMaterial({ map: moonTexture(o, name.length * 7), roughness: 1 }));
   parent.moons.push(o); MOONS.push(o); return o;
 }
 // the Moon: its real position, from Meeus' lunar theory (Astronomical Algorithms ch. 47, ELP-2000/82 truncated to its
@@ -1830,7 +1831,7 @@ for (const d of DWARFS) {
   b.root = new THREE.Group(); space.add(b.root);
   b.tilt = new THREE.Group(); b.root.add(b.tilt);
   { const Xp = SPIN_W_KEYS.includes(d.key) ? eqToScene(vec(d.pole[0] + 90, 0)).normalize() : new THREE.Vector3().crossVectors(b.pole, new THREE.Vector3(0, 0, 1)).normalize(), Zp = new THREE.Vector3().crossVectors(Xp, b.pole); b.tilt.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(Xp, b.pole, Zp)); }
-  b.mesh = new THREE.Mesh(new THREE.SphereGeometry(b.R, 96, 48), new THREE.MeshStandardMaterial({ map: d.tex(), roughness: 1, metalness: 0 })); b.tilt.add(b.mesh);
+  b.mesh = new THREE.Mesh(SPH(b.R, 96, 48), new THREE.MeshStandardMaterial({ map: d.tex(), roughness: 1, metalness: 0 })); b.tilt.add(b.mesh);
   if (d.shape) b.mesh.scale.set(...d.shape);
   if (d.ring) { const rg = radialRing(d.ring[0] * U, d.ring[1] * U, new THREE.MeshBasicMaterial({ color: 0xb8b2aa, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false })); b.tilt.add(rg); }
   if (d.spin) b.spinDays = d.spin;
@@ -1840,7 +1841,7 @@ for (const d of DWARFS) {
   b.orbit.userData = { base: 0.18, a: el[0] * AUS }; space.add(b.orbit);
   for (const [name, a, P, r, color, th0, disc, blurb, cap] of DWARF_MOONS[d.key] || []) {
     const o = { name, group: 'moon', a, P, r, e: 0, color, disc, blurb, kind: 'moon', parent: b, pr: 2, baseOpacity: 0.3, th0, incl: 0 };
-    o.mesh = new THREE.Mesh(new THREE.SphereGeometry(Math.max(r * U, 0.0008), r > 100 ? 64 : 24, r > 100 ? 32 : 12), new THREE.MeshStandardMaterial({ map: cap ? plainTexture(name.length * 11, [168, 162, 156], 0.2, cap) : moonTexture(o, name.length * 13), roughness: 1 }));
+    o.mesh = new THREE.Mesh(SPH(Math.max(r * U, 0.0008), r > 100 ? 64 : 24, r > 100 ? 32 : 12), new THREE.MeshStandardMaterial({ map: cap ? plainTexture(name.length * 11, [168, 162, 156], 0.2, cap) : moonTexture(o, name.length * 13), roughness: 1 }));
     o.live = isLive(name); (o.live ? b.root : b.tilt).add(o.mesh);
     const lp = []; for (let i = 0; i <= 128; i++) { const t = i / 128 * TAU; lp.push(new THREE.Vector3(a * U * Math.sin(t), 0, a * U * Math.cos(t))); }
     o.line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(lp), new THREE.LineBasicMaterial({ color: '#b8b0a4', transparent: true, opacity: 0.3, depthWrite: false })); (o.live ? b.root : b.tilt).add(o.line);
@@ -1866,7 +1867,7 @@ function buildGiant(key) {
   const g = { key, cf, sys, name: sys.name, kind: 'giant', isPlanet: true, color: sys.color, pr: 0, R: cf.R, abs: new THREE.Vector3(), sunDir: new THREE.Vector3(), blurb: sys.blurb, moons: [] };
   g.pole = eqToScene(vec(cf.pole[0], cf.pole[1])).normalize();
   g.root = new THREE.Group(); space.add(g.root); g.eq = new THREE.Group(); g.root.add(g.eq);
-  g.planet = new THREE.Mesh(new THREE.SphereGeometry(cf.R, 160, 96), new THREE.MeshStandardMaterial({ map: ({ saturn: saturnTexture, jupiter: jupiterTexture, uranus: uranusTexture, neptune: neptuneTexture })[key](), roughness: 1, metalness: 0 }));
+  g.planet = new THREE.Mesh(SPH(cf.R, 160, 96), new THREE.MeshStandardMaterial({ map: ({ saturn: saturnTexture, jupiter: jupiterTexture, uranus: uranusTexture, neptune: neptuneTexture })[key](), roughness: 1, metalness: 0 }));
   g.planet.scale.y = cf.Rp / cf.R; g.planet.castShadow = true; g.planet.receiveShadow = true; g.eq.add(g.planet);
   const atm = rimGlow(cf.R * 1.012, cf.glow, 0.5, g.sunDir); atm.scale.y = cf.Rp / cf.R; g.eq.add(atm);
   g.faint = new THREE.Group(); g.eq.add(g.faint);
@@ -3206,6 +3207,25 @@ function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.asp
   MAXD = SPAN_MAX * LY / (2 * TAN20) / Math.min(1, camera.aspect); controls.maxDistance = MAXD; starMat.uniforms.uPR.value = renderer.getPixelRatio(); }
 addEventListener('resize', resize); resize();
 // smoothness: shared/perf.js lowers the drawing's pixel density on machines that can't keep up, and raises it again with headroom
+// things in the distance: a world or ring smaller than about a third of a pixel on screen isn't drawn at all (its dot or label
+// stands in for it). From the whole Solar System that is nearly every sphere — hundreds of thousands of triangles saved.
+// Done with the camera's layers, so it never fights the code that shows and hides things.
+const CULL = { list: [], at: -1e9, v: new THREE.Vector3(), s: new THREE.Vector3() };
+function cullTiny() {
+  const now = performance.now();
+  if (now - CULL.at > 2000) { CULL.at = now; CULL.list.length = 0; space.traverse(o => { if (o.isMesh && o.geometry) CULL.list.push(o); }); }
+  const k = innerHeight / 2 / Math.tan(camera.fov * DEG / 2), cp = camera.position, off = SKY.on;
+  for (const o of CULL.list) {
+    const g = o.geometry; if (!g.boundingSphere) g.computeBoundingSphere();
+    let tiny = false;
+    if (!off && o.frustumCulled !== false) {
+      CULL.v.copy(g.boundingSphere.center).applyMatrix4(o.matrixWorld);
+      const e = o.matrixWorld.elements, sc = Math.sqrt(Math.max(e[0] * e[0] + e[1] * e[1] + e[2] * e[2], e[4] * e[4] + e[5] * e[5] + e[6] * e[6], e[8] * e[8] + e[9] * e[9] + e[10] * e[10]));
+      tiny = g.boundingSphere.radius * sc / Math.max(CULL.v.distanceTo(cp), 1e-12) * k < 0.33;
+    }
+    if (tiny) o.layers.set(31); else o.layers.set(0);
+  }
+}
 const SSQ = { pr: [2, 1.5, 1.25, 1] };
 SSQ.g = window.UAS_PERF.governor('ss', 4, [0, 1, 3][window.UAS_PERF.tier], l => { SSQ.level = l;
   const pr = Math.min(devicePixelRatio || 1, SSQ.pr[l]); if (pr !== renderer.getPixelRatio()) { renderer.setPixelRatio(pr); resize(); } },
@@ -3281,7 +3301,7 @@ function frame(t) {
   { const la = Math.log(camD / AUS);   // the icy outskirts fade in as you pull back
     KUIPER.material.opacity = 0.3 * sstep(la, Math.log(6), Math.log(30)) * (1 - sstep(la, Math.log(4000), Math.log(30000)));
     OORT.material.opacity = 0.42 * sstep(la, Math.log(300), Math.log(4000)) * (1 - 0.55 * sstep(la, Math.log(15000), Math.log(200000)));
-    KUIPER.visible = KUIPER.material.opacity > 0.004; OORT.visible = OORT.material.opacity > 0.004; }
+    KUIPER.visible = !LITE && KUIPER.material.opacity > 0.004; OORT.visible = !LITE && OORT.material.opacity > 0.004; }   // phones: the rings and names only, no dust
 
   // the camera the picture is actually drawn with (the controls keep working with the plain 40° one)
   camNom.copy(camera.position);
@@ -3313,7 +3333,7 @@ function frame(t) {
   renderer.render(skyScene, skyCam);
   renderer.clearDepth();
   updateProbes(camD);
-  renderer.render(scene, camera);
+  cullTiny(); renderer.render(scene, camera);
   updateLabels(); updateMarks(camD); updateGC(); updateNear();
   }
   camera.position.copy(camNom); camera.fov = 40; camera.updateProjectionMatrix();
@@ -3383,7 +3403,7 @@ function init() {
   canvas.addEventListener('webglcontextrestored', () => setTimeout(() => { precompile(); MWV.key = ''; IDLE.dirty++; }, 0));
   requestAnimationFrame(frame);
   setTimeout(earthHiRes, 400);
-  if (/[?&]debug=1/.test(location.search)) window.__ss = { IDLE, SKY, ECL, SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
+  if (/[?&]debug=1/.test(location.search)) window.__ss = { renderer, IDLE, SKY, ECL, SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
   if (EMBED) { parent.postMessage({ src: 'uas-ss', ready: true }, '*'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); document.querySelector('a.homelink').addEventListener('click', e => { try { if (top.UAS_WELCOME) { e.preventDefault(); top.UAS_WELCOME(); } } catch (_) {} });   /* on the home page: just bring the welcome sign back */ document.body.classList.add('embed'); }
   // lift the black loading screen once the opening view has actually been drawn, Milky Way included (or after 2.5 s at most)
   const t0 = performance.now(), lift = () => { if (!LITE && !MWV.ready && performance.now() - t0 < 2500) return setTimeout(lift, 100);
@@ -3393,7 +3413,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=8abb7ee3" data-place="info" defer></script>
+<script src="../music/music.js?v=fbfa0888" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
