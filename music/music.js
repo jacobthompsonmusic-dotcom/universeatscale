@@ -157,10 +157,10 @@
     }
     pop.hidden = false; btn.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); btn.title = 'Close the player'; position();
   }
-  // The album in Spotify's player, starting on "Nine Lives" and looping round the whole album for as long as the visitor leaves it playing.
+  // The album in Spotify's player, starting on "Trespasses" and looping round the whole album for as long as the visitor leaves it playing.
   // Uses Spotify's iFrame API: each track is loaded in turn, and when one ends the next one starts.
-  var ORDER = ['0A1rm66PkmAKY9TuVSpf0j', '1zpn2Yzesj7KiJyhYtpeB9', '4NpcCuM3yeyeHqxeR1Hvgy', '7yfLDlMZSLsICflCIsAqTN',   // Nine Lives (opens), The Last Time, Sacre Coeur in Winter, Three Dreams of a Lotus Garden,
-               '22gfwWPKtsDVZhUz6gmWs7', '6qxA5xihjqGV2o2BwDUOxc'];                                                      // Accelerando, Trespasses
+  var ORDER = ['6qxA5xihjqGV2o2BwDUOxc', '0A1rm66PkmAKY9TuVSpf0j', '1zpn2Yzesj7KiJyhYtpeB9', '4NpcCuM3yeyeHqxeR1Hvgy',   // Trespasses (opens), Nine Lives, The Last Time, Sacre Coeur in Winter,
+               '7yfLDlMZSLsICflCIsAqTN', '22gfwWPKtsDVZhUz6gmWs7'];                                                      // Three Dreams of a Lotus Garden, Accelerando
   function startPlayer(frame, autoplay) {
     var host = document.createElement('div'); frame.appendChild(host);
     var fallback = setTimeout(function () {                // if the API can't load, fall back to the plain album player
