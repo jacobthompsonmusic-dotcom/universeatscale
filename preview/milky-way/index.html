@@ -190,11 +190,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=2b0767b0"></script>
-<script src="../shared/clock.js?v=2b0767b0"></script>
-<script src="../shared/fold.js?v=2b0767b0"></script>
-<script src="../shared/perf.js?v=2b0767b0"></script>
-<script src="../shared/galaxy-volume.js?v=2b0767b0"></script>
+<script src="../shared/frame.js?v=7ce26430"></script>
+<script src="../shared/clock.js?v=7ce26430"></script>
+<script src="../shared/fold.js?v=7ce26430"></script>
+<script src="../shared/perf.js?v=7ce26430"></script>
+<script src="../shared/galaxy-volume.js?v=7ce26430"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -315,7 +315,7 @@ void main() {
     <button class="tg" data-k="cmb" title="The cosmic microwave background: the oldest light there is">CMB</button>
     <button class="tg" data-k="stalks">Depth lines</button>
     <button class="tg" data-k="zodiac">Zodiac</button>
-    <button class="tg" data-k="orbit">Sun’s orbit</button>
+    <button class="tg" data-k="orbit" title="See the Sun’s path around the Milky Way">Galactic motion</button>
   </div>
 </div>
 
@@ -966,7 +966,7 @@ const SPR = {};
 })();
 
 // layer chips appear only at the scales where their layer has something to show (the rest are always there)
-const CHIP_SPAN = { arms: [0, 5e6], stars: [0, 14000], zodiac: [0, 14000], orbit: [300, 3e5], voids: [5e6, Infinity], cmb: [5e9, Infinity] };
+const CHIP_SPAN = { arms: [0, 5e6], stars: [0, 14000], zodiac: [0, 14000], orbit: [0, 3e5], voids: [5e6, Infinity], cmb: [5e9, Infinity] };
 function chipRel(span) {
   const k = Math.round(Math.log(span) * 20); if (k === chipRel.k) return; chipRel.k = k;
   for (const b of document.querySelectorAll('#legend .tg')) { const r = CHIP_SPAN[b.dataset.k]; b.style.display = r && !(span >= r[0] && span <= r[1]) ? 'none' : ''; }
@@ -1510,6 +1510,22 @@ function drawOrbit() {
   orbitPanel(opts.orbit);
   if (!opts.orbit) return;
   const S = SORB, span = viewSpan(), fade = sstep(Math.log(span), Math.log(40), Math.log(400));
+  if (fade < 0.99 && Math.abs(S.t) < 0.25) {   // close in, the whole path is far bigger than the view: show which way the Sun is heading, and how fast
+    const a = S.P[0], b = S.F[1], d = Math.min(span * 0.12, 60), L = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+    const [X0, Y0] = proj(a.x, a.y, a.z), [X1, Y1] = proj(a.x + (b.x - a.x) / L * d, a.y + (b.y - a.y) / L * d, a.z + (b.z - a.z) / L * d);
+    const len = Math.hypot(X1 - X0, Y1 - Y0);
+    if (isFinite(X0) && isFinite(X1) && len > 0.5) {
+      const ux = (X1 - X0) / len, uy = (Y1 - Y0) / len, R = 0.22 * Math.min(Wd, Ht), al = 1 - fade, ex = X0 + ux * R, ey = Y0 + uy * R;
+      ctx.globalAlpha = al * 0.25; ctx.strokeStyle = '#ffcf6e'; ctx.lineWidth = 1.4;   // where it came from
+      ctx.beginPath(); ctx.moveTo(X0 - ux * R * 2.2, Y0 - uy * R * 2.2); ctx.lineTo(X0, Y0); ctx.stroke();
+      ctx.globalAlpha = al * 0.75; ctx.setLineDash([6, 6]); ctx.beginPath(); ctx.moveTo(X0, Y0); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex - ux * 9 - uy * 5, ey - uy * 9 + ux * 5); ctx.lineTo(ex - ux * 9 + uy * 5, ey - uy * 9 - ux * 5); ctx.closePath();
+      ctx.fillStyle = '#ffcf6e'; ctx.fill();
+      if (opts.labels) { const f = 'italic 14px "IM Fell English", Georgia, serif', t = 'The Sun’s motion: toward Cygnus, 247 km/s', w = lblW(f, t), lx = ex + (ux >= 0 ? 10 : -10 - w);
+        lbl(-7, [lx, ey - 8, w, 16], () => { ctx.globalAlpha = al; ctx.font = f; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#ffe6b4'; ctx.fillText(t, lx, ey); }); }
+      ctx.globalAlpha = 1;
+    }
+  }
   if (fade <= 0.01) return;
   ctx.lineWidth = 1.6; ctx.strokeStyle = '#ffcf6e';
   // the past, fading with age, drawn in short runs so the fade shows
@@ -3378,6 +3394,7 @@ var infoFold = UAS_FOLD.foldable(document.getElementById('info'), { closeBtn: do
 function cardOpen() { return document.getElementById('info').style.display === 'block' && !(infoFold && infoFold.folded()); }
 document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); draw();
   if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-mw', opt: 'zodiac', on: opts.zodiac }, '*');
+  if (EMBED && b.dataset.k === 'orbit') parent.postMessage({ src: 'uas-mw', opt: 'helix', on: opts.orbit }, '*');   // the same switch as the Solar System's
   if (b.dataset.k === 'orbit' && opts.orbit && viewSpan() < 40000) orbView(); });
 if (EMBED) {
   document.body.classList.add('embed'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); document.querySelector('a.homelink').addEventListener('click', e => { try { if (top.UAS_WELCOME) { e.preventDefault(); top.UAS_WELCOME(); } } catch (_) {} });   /* on the home page: just bring the welcome sign back */
@@ -3472,7 +3489,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=2b0767b0" data-place="info" defer></script>
+<script src="../music/music.js?v=7ce26430" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
