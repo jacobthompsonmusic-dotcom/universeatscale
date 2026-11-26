@@ -170,6 +170,7 @@
   .homelink { display:inline-block; margin-bottom:10px; font:italic 15px "IM Fell English", Georgia, serif; letter-spacing:0.02em; color:var(--muted); text-decoration:none; }
   .homelink:hover, .homelink:focus-visible { color:var(--accent); }
   .arrsvg { width:1em; height:0.72em; vertical-align:-0.02em; display:inline-block; }
+  body.walk > :not(canvas):not(#labels):not(#skydirs):not(#hx-dir):not(script):not(style) { display:none !important; }   /* spacewalk: just the view (and its names) */
 </style>
 <style id="globe-type">
   /* clean lining figures for read-outs (distances, dates, coordinates): digits come from a plain system face, letters stay in Fell */
@@ -190,11 +191,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=a2a78049"></script>
-<script src="../shared/clock.js?v=a2a78049"></script>
-<script src="../shared/fold.js?v=a2a78049"></script>
-<script src="../shared/perf.js?v=a2a78049"></script>
-<script src="../shared/galaxy-volume.js?v=a2a78049"></script>
+<script src="../shared/frame.js?v=feeb6ab4"></script>
+<script src="../shared/clock.js?v=feeb6ab4"></script>
+<script src="../shared/fold.js?v=feeb6ab4"></script>
+<script src="../shared/perf.js?v=feeb6ab4"></script>
+<script src="../shared/galaxy-volume.js?v=feeb6ab4"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -3402,6 +3403,7 @@ document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset
   if (EMBED && b.dataset.k === 'orbit') parent.postMessage({ src: 'uas-mw', opt: 'helix', on: opts.orbit }, '*');   // the same switch as the Solar System's
   if (b.dataset.k === 'orbit' && opts.orbit && viewSpan() < 40000) orbView(); });
 if (EMBED) {
+  try { if (parent.document.body.classList.contains('walk')) document.body.classList.add('walk'); } catch (e) {}   // loaded mid-spacewalk
   document.body.classList.add('embed'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); document.querySelector('a.homelink').addEventListener('click', e => { try { if (top.UAS_WELCOME) { e.preventDefault(); top.UAS_WELCOME(); } } catch (_) {} });   /* on the home page: just bring the welcome sign back */
   document.getElementById('info-go').onclick = diveToSun;
   addEventListener('message', e => {
@@ -3410,6 +3412,7 @@ if (EMBED) {
     if (m.cmd === 'results') { if (m.id !== searchId || !sIn.value.trim()) return; extHits = m.results.map(r => ({ ...r, ext: true })); hits = [...localHits.slice(0, Math.max(4, 10 - extHits.length)), ...extHits]; renderHits(); return; }
     if (m.cmd === 'pick') { following = false; const o = findHere(m.name); if (o) select(o, true); return; }
     if (m.cmd === 'snap') { SNAP.id = m.id; draw(); return; }
+    if (m.cmd === 'walk') { document.body.classList.toggle('walk', !!m.on); draw(); return; }
     if (m.cmd === 'ssready') ssReady = true;
     else if (m.cmd === 'follow') { following = true; anim = null; view.x = SUNW.x; view.y = SUNW.y; view.z = SUNW.z; view.s = m.s; view.yaw = m.yaw; view.tilt = m.tilt; draw(); }
     else if (m.cmd === 'release') { following = false; render.sp = 0; draw(); }
@@ -3494,7 +3497,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=a2a78049" data-place="info" defer></script>
+<script src="../music/music.js?v=feeb6ab4" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
