@@ -161,7 +161,7 @@
   // Uses Spotify's iFrame API: each track is loaded in turn, and when one ends the next one starts.
   var ORDER = ['1zpn2Yzesj7KiJyhYtpeB9', '4NpcCuM3yeyeHqxeR1Hvgy', '7yfLDlMZSLsICflCIsAqTN', '22gfwWPKtsDVZhUz6gmWs7',   // The Last Time, Sacre Coeur in Winter, Three Dreams of a Lotus Garden, Accelerando,
                '6qxA5xihjqGV2o2BwDUOxc', '0A1rm66PkmAKY9TuVSpf0j'];                                                      // Trespasses, Nine Lives
-  function startPlayer(frame) {
+  function startPlayer(frame, autoplay) {
     var host = document.createElement('div'); frame.appendChild(host);
     var fallback = setTimeout(function () {                // if the API can't load, fall back to the plain album player
       if (frame.querySelector('iframe')) return;
@@ -171,7 +171,7 @@
     window.onSpotifyIframeApiReady = function (API) {
       API.createController(host, { uri: 'spotify:track:' + ORDER[0], width: '100%', height: 80 }, function (ctl) {
         clearTimeout(fallback); window.__uasPlayer = ctl;
-        var i = 0, advancing = false, wantPlay = false, last = { position: 0, duration: 0, playing: false };
+        var i = 0, advancing = false, wantPlay = !!autoplay, last = { position: 0, duration: 0, playing: false };
         function next() {
           if (advancing) return; advancing = true; wantPlay = true;
           i = (i + 1) % ORDER.length; ctl.loadUri('spotify:track:' + ORDER[i]);
@@ -188,6 +188,13 @@
     };
     var sc = document.createElement('script'); sc.src = 'https://open.spotify.com/embed/iframe-api/v1'; sc.async = true; document.head.appendChild(sc);
   }
+  // the welcome page's 'Enter the universe' click starts the album (that click is the visitor's go-ahead for sound; browsers allow
+  // nothing earlier). Signed in to Spotify: whole tracks; otherwise Spotify plays 30-second previews. The ♪ pulses while it plays.
+  window.UAS_MUSIC_PLAY = function () {
+    if (!/(^|\.)universeatscale\.com$|\.github\.io$|^localhost$|^127\.0\.0\.1$/.test(location.hostname)) return;
+    if (!loaded) { loaded = true; btn.classList.remove('invite'); startPlayer(pop.querySelector('.frame'), true); }
+    else if (window.__uasPlayer) window.__uasPlayer.play();
+  };
   function close() { pop.hidden = true; btn.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); btn.title = 'Soundtrack: First Time Again by Jacob Thompson'; }
 
   btn.addEventListener('click', function (e) { e.stopPropagation(); pop.hidden ? open() : close(); });

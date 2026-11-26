@@ -65,8 +65,8 @@
 <body>
 <h1 class="sr-only">From Earth to the Edge of the Universe</h1>
 <p class="sr-only">One continuous, true-scale 3D zoom built on real measurements: start at Earth and scroll out past the Moon, the planets, the Kuiper belt, the Oort cloud and the nearest stars, through the Milky Way and the Local Group, to the edge of the observable universe.</p>
-<iframe id="mw" name="uas-embed" title="The Milky Way and beyond" src="about:blank"></iframe>
-<iframe id="ss" name="uas-embed" title="The Solar System" src="about:blank"></iframe>
+<iframe id="mw" name="uas-embed" allow="autoplay; encrypted-media" title="The Milky Way and beyond" src="about:blank"></iframe>
+<iframe id="ss" name="uas-embed" allow="autoplay; encrypted-media" title="The Solar System" src="about:blank"></iframe>
 <nav id="ladder" aria-label="Scale: jump to a level">
   <button data-go="observable-universe" title="The observable universe">Universe</button>
   <button data-go="laniakea" title="Laniakea, our supercluster">Laniakea</button>
@@ -173,7 +173,7 @@ addEventListener('message', e => {
 });
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-const UAS_V = '42f89e4b';
+const UAS_V = 'b9122090';
 const MW_SRC = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
 ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 // phones: load the galaxy map only once it's needed — zooming out past the Oort cloud, or a stop or search result out there —
@@ -183,9 +183,9 @@ if (STOPS[start].map === 'mw') loadMW();
 else if (!LAZY_MW) setTimeout(loadMW, 4000);   // desktop: after the Solar System is up (see its ready message), or 4 s at the latest
 })();
 </script>
-<script src="../shared/fold.js?v=42f89e4b"></script>
+<script src="../shared/fold.js?v=b9122090"></script>
 <script>UAS_FOLD.foldable(document.getElementById('ladder'), { title: 'Scale', arrow: '▾', onToggle: () => dispatchEvent(new Event('resize')) });   // the soundtrack note below it moves up</script>
-<script src="../music/music.js?v=42f89e4b" data-place="ladder" defer></script>
+<script src="../music/music.js?v=b9122090" data-place="ladder" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
