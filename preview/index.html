@@ -84,8 +84,9 @@
   #howto .k { font: 500 11.5px/1.9 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); }
   #howto li b:not(.k) { color: #f3ecdd; font-weight: 600; }
   #howto .t { display: none; }
-  @media (pointer: coarse) { #howto .m { display: none; } #howto .t { display: inline; } }
-  @media (max-width: 480px) { #howto li { grid-template-columns: 1fr; gap: 0; } #howto .card { padding: 22px 20px 20px; } #howto h2 { font-size: 32px; } }
+  #howto .k { display: block; }
+  @media (pointer: coarse) { #howto .m { display: none !important; } #howto .t { display: inline; } }
+  @media (max-width: 480px) { #howto li { grid-template-columns: 1fr; gap: 0; } #howto ul { gap: 8px; font-size: 14px; line-height: 1.38; } #howto .card { padding: 20px 18px 18px; } #howto h2 { font-size: 30px; margin-bottom: 12px; } #howto .k { line-height: 1.6; } #howto-go { margin-top: 16px; font-size: 21px; } }
   #howto-go { display: block; margin: 22px auto 0; font: 400 24px/1 var(--display); color: #16110a; background: var(--amber); border: 0; border-radius: 999px; padding: 12px 30px; cursor: pointer; }
   #howto-go:hover, #howto-go:focus-visible { background: #f6c886; outline: none; }
   .linkish { display: block; margin: 14px auto 0; background: none; border: 0; cursor: pointer; font: 500 11.5px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
@@ -137,13 +138,14 @@
   <div class="card">
     <h2 id="howto-h">How to explore</h2>
     <ul>
-      <li><b class="k">Zoom</b><span class="m">Scroll to zoom in and out. Keep zooming out past Neptune for the stars, the Milky Way and the whole universe.</span><span class="t">Pinch to zoom in and out. Keep zooming out past Neptune for the stars, the Milky Way and the whole universe.</span></li>
-      <li><b class="k">Look around</b><span class="m">Drag to turn the view.</span><span class="t">Drag to turn the view.</span></li>
-      <li><b class="k">Explore</b><span class="m">Click anything for its story. Double-click to fly there.</span><span class="t">Tap anything for its story, with a button to fly there.</span></li>
-      <li><b class="k">Jump</b>The <b>Scale</b> list jumps between levels; <b>HOME</b> flies you back to Earth.</li>
-      <li><b class="k">Time</b><b>▶</b> sets the planets moving. Tap the date to visit any day from 1800 to 2050, or an eclipse.</li>
-      <li><b class="k">Stand on Earth</b><b>See the sky</b> puts you on the ground under that moment's sky.</li>
-      <li><b class="k">Listen</b>The <b>♪</b> plays or pauses the soundtrack.</li>
+      <li><b class="k">Zoom</b><span><span class="m">Scroll to zoom in and out. Keep zooming out past Neptune for the stars, the Milky Way and the whole universe.</span><span class="t">Pinch to zoom in and out. Keep zooming out past Neptune for the stars, the Milky Way and the whole universe.</span></span></li>
+      <li><b class="k">Look around</b><span><span class="m">Drag to turn the view.</span><span class="t">Drag to turn the view.</span></span></li>
+      <li><b class="k">Explore</b><span><span class="m">Click anything for its story. Double-click to fly there.</span><span class="t">Tap anything for its story, with a button to fly there.</span></span></li>
+      <li><b class="k">Jump</b><span>The <b>Scale</b> list jumps between levels; <b>HOME</b> flies you back to Earth.</span></li>
+      <li><b class="k">Time</b><span><b>▶</b> sets the planets moving. Tap the date to visit any day from 1800 to 2050, or an eclipse.</span></li>
+      <li><b class="k">Stand on Earth</b><span><b>See the sky</b> puts you on the ground under that moment's sky.</span></li>
+      <li><b class="k">Picture</b><span>The <b>camera</b> saves a clean shot of the view, without the menus or names.</span></li>
+      <li><b class="k">Listen</b><span>The <b>♪</b> plays or pauses the soundtrack.</span></li>
     </ul>
     <button id="howto-go" type="button">Start exploring</button>
   </div>
@@ -247,7 +249,7 @@
     if (location.hash !== '#universe') history.pushState(null, '', '#universe');   // Back brings the sign back; a reload goes straight in
   }
   const howto = document.getElementById('howto');
-  function showHowto() { howto.hidden = false; document.getElementById('howto-go').focus(); }
+  function showHowto() { howto.hidden = false; document.getElementById('howto-go').focus({ preventScroll: true }); howto.querySelector('.card').scrollTop = 0; }
   function hideHowto() { howto.hidden = true; try { localStorage.setItem('uas-howto', '1'); } catch (e) {} try { uni.focus(); } catch (e) {} }
   document.getElementById('howto-go').onclick = hideHowto;
   howto.addEventListener('click', e => { if (e.target === howto) hideHowto(); });
@@ -270,4 +272,4 @@
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
-<!-- preview built 2026-11-26T05:49:39Z from 897da62 -->
+<!-- preview built 2026-11-26T05:52:07Z from 6f75390 -->
