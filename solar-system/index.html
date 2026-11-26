@@ -340,12 +340,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=7ce26430"></script>
-<script src="../shared/clock.js?v=7ce26430"></script>
-<script src="../shared/fold.js?v=7ce26430"></script>
-<script src="baked/manifest.js?v=7ce26430"></script>
-<script src="../shared/perf.js?v=7ce26430"></script>
-<script src="../shared/galaxy-volume.js?v=7ce26430"></script>
+<script src="../shared/frame.js?v=165e388e"></script>
+<script src="../shared/clock.js?v=165e388e"></script>
+<script src="../shared/fold.js?v=165e388e"></script>
+<script src="baked/manifest.js?v=165e388e"></script>
+<script src="../shared/perf.js?v=165e388e"></script>
+<script src="../shared/galaxy-volume.js?v=165e388e"></script>
 <script>
 (() => {
 'use strict';
@@ -2949,7 +2949,8 @@ function skyOn(hemi) {
   skyPhotoLoad();
   fly = null; SKY.hemi = hemi; SKY.az = hemi === 's' ? 0 : 180; SKY.alt = 22; SKY.fov = 75;   // face the side of the sky the Sun, Moon and planets cross
   if (!SKY.on) {
-    SKY.saved = { constel: opts.constel, orbits: opts.orbits };
+    SKY.saved = { constel: opts.constel, orbits: opts.orbits, helix: opts.helix, mag: opts.mag };
+    for (const k of ['helix', 'mag']) if (opts[k]) document.querySelector(`.tg[data-k="${k}"]`).click();   // galactic motion and magnetic fields mean nothing from the ground: off while standing there, back on after
     if (!opts.constel) document.querySelector('.tg[data-k="constel"]').click();
     opts.orbits = false;
   }
@@ -2963,7 +2964,8 @@ function skyOff(keep) {
   controls.enabled = true; EARTH.mesh.visible = true; EARTH.clouds.visible = !EARTH.see; if (EARTH.atm) EARTH.atm.visible = true;
   skyGround.visible = skyDome.visible = false; document.body.classList.remove('sky'); skyPanel.hidden = true; document.getElementById('info').style.top = '';
   skyRoot.visible = bandRoot.visible = true; bandCam.fov = 40; SUN.glare.visible = SUN.corona.visible = true;
-  if (SKY.saved) { opts.orbits = SKY.saved.orbits; if (!SKY.saved.constel && opts.constel) document.querySelector('.tg[data-k="constel"]').click(); SKY.saved = null; }
+  if (SKY.saved) { opts.orbits = SKY.saved.orbits; if (!SKY.saved.constel && opts.constel) document.querySelector('.tg[data-k="constel"]').click();
+    for (const k of ['helix', 'mag']) if (SKY.saved[k] && !opts[k]) document.querySelector(`.tg[data-k="${k}"]`).click(); SKY.saved = null; }
   if (!keep) { camera.position.copy(SKY.up).multiplyScalar(EARTH.R * 4); controls.target.set(0, 0, 0); controls.update(); flyTo(EARTH); }
 }
 // double-click a planet (or "Fly here") from the ground: turn to it, rise through the sky as the blue fades to black, then fly on
@@ -3418,7 +3420,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=7ce26430" data-place="info" defer></script>
+<script src="../music/music.js?v=165e388e" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
