@@ -73,6 +73,23 @@
   #enter::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 38px 8px rgba(240, 181, 106, 0.5);
     opacity: .35; animation: breathe 3.2s ease-in-out infinite; pointer-events: none; }
   #enter:hover, #enter:focus-visible { transform: scale(1.04); background: #f6c886; outline: none; }
+  /* the how-to card, shown over the map the first time someone enters (and from 'How to explore' on the sign) */
+  #howto { position: fixed; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(3, 4, 8, 0.55); backdrop-filter: blur(2px); }
+  #howto[hidden] { display: none; }
+  #howto .card { max-width: 520px; width: 100%; max-height: calc(100svh - 36px); overflow-y: auto; background: rgba(12, 13, 20, 0.97); border: 1px solid rgba(240, 181, 106, 0.28);
+    border-radius: 16px; padding: 26px 28px 24px; box-shadow: 0 18px 60px rgba(0, 0, 0, 0.6); }
+  #howto h2 { margin: 0 0 18px; font-size: 38px; }
+  #howto ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 11px; font-size: 15px; line-height: 1.45; color: #d9d2c3; }
+  #howto li { display: grid; grid-template-columns: 118px 1fr; gap: 12px; }
+  #howto .k { font: 500 11.5px/1.9 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); }
+  #howto li b:not(.k) { color: #f3ecdd; font-weight: 600; }
+  #howto .t { display: none; }
+  @media (pointer: coarse) { #howto .m { display: none; } #howto .t { display: inline; } }
+  @media (max-width: 480px) { #howto li { grid-template-columns: 1fr; gap: 0; } #howto .card { padding: 22px 20px 20px; } #howto h2 { font-size: 32px; } }
+  #howto-go { display: block; margin: 22px auto 0; font: 400 24px/1 var(--display); color: #16110a; background: var(--amber); border: 0; border-radius: 999px; padding: 12px 30px; cursor: pointer; }
+  #howto-go:hover, #howto-go:focus-visible { background: #f6c886; outline: none; }
+  .linkish { display: block; margin: 14px auto 0; background: none; border: 0; cursor: pointer; font: 500 11.5px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+  .linkish:hover, .linkish:focus-visible { color: var(--amber); outline: none; }
   #enter:focus-visible { box-shadow: 0 0 0 2px var(--sky), 0 0 0 3px rgba(240, 181, 106, 0.7); }
   @keyframes breathe { 50% { opacity: 1; } }
   #status { margin: 18px 0 0; font: 400 12.5px/1.4 var(--mono); letter-spacing: 0.06em; color: var(--dim); min-height: 1.4em; }
@@ -116,6 +133,22 @@
 <!-- the universe, loading from the moment the page opens -->
 <iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=8abb7ee3" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
 
+<div id="howto" role="dialog" aria-modal="true" aria-labelledby="howto-h" hidden>
+  <div class="card">
+    <h2 id="howto-h">How to explore</h2>
+    <ul>
+      <li><b class="k">Zoom</b><span class="m">Scroll to zoom in and out. Keep zooming out past Neptune for the stars, the Milky Way and the whole universe.</span><span class="t">Pinch to zoom in and out. Keep zooming out past Neptune for the stars, the Milky Way and the whole universe.</span></li>
+      <li><b class="k">Look around</b><span class="m">Drag to turn the view.</span><span class="t">Drag to turn the view.</span></li>
+      <li><b class="k">Explore</b><span class="m">Click anything for its story. Double-click to fly there.</span><span class="t">Tap anything for its story, with a button to fly there.</span></li>
+      <li><b class="k">Jump</b>The <b>Scale</b> list jumps between levels; <b>HOME</b> flies you back to Earth.</li>
+      <li><b class="k">Time</b><b>▶</b> sets the planets moving. Tap the date to visit any day from 1800 to 2050, or an eclipse.</li>
+      <li><b class="k">Stand on Earth</b><b>See the sky</b> puts you on the ground under that moment's sky.</li>
+      <li><b class="k">Listen</b>The <b>♪</b> plays or pauses the soundtrack.</li>
+    </ul>
+    <button id="howto-go" type="button">Start exploring</button>
+  </div>
+</div>
+
 <div id="welcome">
   <canvas id="sky" aria-hidden="true"></canvas>
   <div class="wrap">
@@ -123,6 +156,7 @@
       <h1>Universe <em>at&nbsp;Scale</em></h1>
       <button id="enter" type="button">Enter the universe</button>
       <p id="status" aria-live="polite">Loading the Solar System…</p>
+      <button class="linkish" id="howto-open" type="button">How to explore</button>
       <a class="cue" href="#credits">Credits ↓</a>
     </div>
 
@@ -206,10 +240,19 @@
     uni.inert = false;
     try { window.gtag && gtag('event', 'enter_universe', { ready }); } catch (e) {}
     const done = () => { wel.hidden = true; wel.classList.remove('leaving'); try { uni.focus(); } catch (e) {}
+      let seen = false; try { seen = localStorage.getItem('uas-howto') === '1'; } catch (e) {}
+      if (animate && !seen) showHowto();   // first time in: how to get around
       try { const w = uni.contentWindow; w.UAS_MUSIC_ARRIVE ? w.UAS_MUSIC_ARRIVE() : w.addEventListener('load', () => w.UAS_MUSIC_ARRIVE && w.UAS_MUSIC_ARRIVE()); } catch (e) {} };   // the soundtrack note pulses as the map comes into view
     if (animate) { wel.classList.add('leaving'); setTimeout(done, 800); } else done();
     if (location.hash !== '#universe') history.pushState(null, '', '#universe');   // Back brings the sign back; a reload goes straight in
   }
+  const howto = document.getElementById('howto');
+  function showHowto() { howto.hidden = false; document.getElementById('howto-go').focus(); }
+  function hideHowto() { howto.hidden = true; try { localStorage.setItem('uas-howto', '1'); } catch (e) {} try { uni.focus(); } catch (e) {} }
+  document.getElementById('howto-go').onclick = hideHowto;
+  howto.addEventListener('click', e => { if (e.target === howto) hideHowto(); });
+  addEventListener('keydown', e => { if (!howto.hidden && e.key === 'Escape') hideHowto(); });
+  document.getElementById('howto-open').onclick = () => { try { localStorage.removeItem('uas-howto'); } catch (e) {} document.getElementById('enter').click(); };
   function leave() {
     if (!inside) return; inside = false;
     uni.inert = true; wel.hidden = false; wel.scrollTop = 0;
@@ -227,4 +270,4 @@
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
-<!-- preview built 2026-11-26T05:24:12Z from ba481dd -->
+<!-- preview built 2026-11-26T05:38:47Z from b454403 -->
