@@ -343,12 +343,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=261c012e"></script>
-<script src="../shared/clock.js?v=261c012e"></script>
-<script src="../shared/fold.js?v=261c012e"></script>
-<script src="baked/manifest.js?v=261c012e"></script>
-<script src="../shared/perf.js?v=261c012e"></script>
-<script src="../shared/galaxy-volume.js?v=261c012e"></script>
+<script src="../shared/frame.js?v=a2a78049"></script>
+<script src="../shared/clock.js?v=a2a78049"></script>
+<script src="../shared/fold.js?v=a2a78049"></script>
+<script src="baked/manifest.js?v=a2a78049"></script>
+<script src="../shared/perf.js?v=a2a78049"></script>
+<script src="../shared/galaxy-volume.js?v=a2a78049"></script>
 <script>
 (() => {
 'use strict';
@@ -3268,6 +3268,38 @@ function cullTiny() {
     if (tiny) o.layers.set(31); else o.layers.set(0);
   }
 }
+// the camera button: the frame just drawn plus the names on it (when Labels is on) — no panels, cards or buttons. The names are
+// HTML over the canvas, so each is painted onto the picture in its own font, colour and place.
+function snapNow() {
+  let url = '';
+  try {
+    const pr = canvas.width / innerWidth, c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height;
+    const g = c.getContext('2d'); g.drawImage(canvas, 0, 0); g.scale(pr, pr);
+    const vis = el => { for (let e = el; e && e !== document.body; e = e.parentElement) { const cs = getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden' || e.hidden) return 0; } return 1; };
+    const alpha = el => { let a = 1; for (let e = el; e && e !== document.body; e = e.parentElement) a *= +getComputedStyle(e).opacity; return a; };
+    for (const root of [labelBox, document.getElementById('skydirs'), document.getElementById('hx-dir')]) {
+      if (!root || !vis(root)) continue;
+      for (const el of root.querySelectorAll('*')) {
+        if (!vis(el) || el.closest('svg')) continue;
+        const a = alpha(el); if (a < 0.03) continue;
+        const cs = getComputedStyle(el), r = el.getBoundingClientRect();
+        if (el.classList.contains('lab')) { const b = getComputedStyle(el, '::before');   // the coloured dot in front of a name
+          if (b.content !== 'none' && b.display !== 'none' && parseFloat(b.width) > 0) { g.globalAlpha = a; g.fillStyle = b.backgroundColor; g.shadowColor = b.backgroundColor; g.shadowBlur = 6;
+            g.beginPath(); g.arc(r.left - 10 + parseFloat(b.width) / 2, r.top + r.height / 2, parseFloat(b.width) / 2, 0, 7); g.fill(); } }
+        for (const n of el.childNodes) {
+          if (n.nodeType !== 3 || !n.textContent.trim()) continue;
+          const rg = document.createRange(); rg.selectNodeContents(n); const q = rg.getBoundingClientRect(); if (!q.width) continue;
+          let t = n.textContent; if (cs.textTransform === 'uppercase') t = t.toUpperCase();
+          g.globalAlpha = a; g.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`; g.fillStyle = cs.color; g.textBaseline = 'middle'; g.textAlign = 'left';
+          try { g.letterSpacing = cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing; } catch (e) {}
+          g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 3; g.fillText(t, q.left, q.top + q.height / 2);
+        }
+      }
+    }
+    url = c.toDataURL('image/jpeg', 0.92);
+  } catch (e) { try { url = canvas.toDataURL('image/jpeg', 0.92); } catch (e2) {} }
+  parent.postMessage({ src: 'uas-ss', snap: url, id: SNAP.id }, '*'); SNAP.id = null;
+}
 const SNAP = { id: null };
 const SSQ = { pr: [2, 1.5, 1.25, 1] };
 SSQ.g = window.UAS_PERF.governor('ss', 4, [0, 2, 3][window.UAS_PERF.tier], l => { SSQ.level = l;
@@ -3377,10 +3409,8 @@ function frame(t) {
   renderer.clearDepth();
   updateProbes(camD);
   cullTiny(); renderer.render(scene, camera);
-  if (SNAP.id !== null) {   // the camera button: the picture just drawn, without the page's menus and names (those are HTML, not in the canvas)
-    let url = ''; try { url = canvas.toDataURL('image/jpeg', 0.92); } catch (e) {}
-    parent.postMessage({ src: 'uas-ss', snap: url, id: SNAP.id }, '*'); SNAP.id = null; }
   updateLabels(); updateMarks(camD); updateGC(); updateNear();
+  if (SNAP.id !== null) snapNow();   // the camera button (same task as the render, so the picture is still there to copy)
   }
   camera.position.copy(camNom); camera.fov = 40; camera.updateProjectionMatrix();
   if (t - (frame.lt || 0) > 250) {
@@ -3460,7 +3490,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=261c012e" data-place="info" defer></script>
+<script src="../music/music.js?v=a2a78049" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

@@ -190,11 +190,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=261c012e"></script>
-<script src="../shared/clock.js?v=261c012e"></script>
-<script src="../shared/fold.js?v=261c012e"></script>
-<script src="../shared/perf.js?v=261c012e"></script>
-<script src="../shared/galaxy-volume.js?v=261c012e"></script>
+<script src="../shared/frame.js?v=a2a78049"></script>
+<script src="../shared/clock.js?v=a2a78049"></script>
+<script src="../shared/fold.js?v=a2a78049"></script>
+<script src="../shared/perf.js?v=a2a78049"></script>
+<script src="../shared/galaxy-volume.js?v=a2a78049"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1189,7 +1189,7 @@ function render(t) {
   acenPanel(ACEN.IN > 0.5, acenClock());
   qsoPanel(QSO.active && QSO.IN > 0.5 ? QSO.active : null, qsoClock());
   psrPanel(PSR.active && PSR.IN > 0.5 ? PSR.active : null, psrClock());
-  if (SNAP.id !== null) {   // the camera button: the map as drawn this frame (with the black hole's picture on top when it's showing), no names
+  if (SNAP.id !== null) {   // the camera button: the map as drawn this frame, names and all (with the black hole's picture on top when it's showing)
     let url = ''; try { const c = document.createElement('canvas'); c.width = cv.width; c.height = cv.height; const g = c.getContext('2d');
       g.fillStyle = '#000'; g.fillRect(0, 0, c.width, c.height); g.drawImage(cv, 0, 0);
       if (bhCv.style.display === 'block' && bhCv.width) g.drawImage(bhCv, 0, 0, c.width, c.height);
@@ -1890,7 +1890,6 @@ const hostRects = (() => { let at = -1e9, out = [];
       if (r.width && !e.hidden) out.push({ left: r.left - 8, right: r.right + 8, top: r.top - 6, bottom: r.bottom + 6 }); } } catch (e) {}
     return out; }; })();
 function lblFlush() {
-  if (SNAP.id !== null) { LBL.q = []; return; }   // a picture for the camera button: no names
   const q = LBL.q.sort((a, b) => a.pr - b.pr || a.i - b.i), P = LBL.placed = [], px = LBL.PX, py = LBL.PY;
   const pan = [];   // the panels: labels (other than the picked or hovered one) keep out from under them
   for (const id of ['top', 'legend', 'controls', 'info', 'acpanel', 't1panel', 'qpanel', 'orbpanel']) { const e = document.getElementById(id); if (!e || e.hidden) continue; const r = e.getBoundingClientRect(); if (r.width) pan.push([r.left, r.top, r.width, r.height]); }
@@ -3495,7 +3494,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=261c012e" data-place="info" defer></script>
+<script src="../music/music.js?v=a2a78049" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
