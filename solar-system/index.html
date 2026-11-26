@@ -340,12 +340,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=165e388e"></script>
-<script src="../shared/clock.js?v=165e388e"></script>
-<script src="../shared/fold.js?v=165e388e"></script>
-<script src="baked/manifest.js?v=165e388e"></script>
-<script src="../shared/perf.js?v=165e388e"></script>
-<script src="../shared/galaxy-volume.js?v=165e388e"></script>
+<script src="../shared/frame.js?v=5591d65b"></script>
+<script src="../shared/clock.js?v=5591d65b"></script>
+<script src="../shared/fold.js?v=5591d65b"></script>
+<script src="baked/manifest.js?v=5591d65b"></script>
+<script src="../shared/perf.js?v=5591d65b"></script>
+<script src="../shared/galaxy-volume.js?v=5591d65b"></script>
 <script>
 (() => {
 'use strict';
@@ -3230,7 +3230,7 @@ function cullTiny() {
 }
 const SNAP = { id: null };
 const SSQ = { pr: [2, 1.5, 1.25, 1] };
-SSQ.g = window.UAS_PERF.governor('ss', 4, [0, 1, 3][window.UAS_PERF.tier], l => { SSQ.level = l;
+SSQ.g = window.UAS_PERF.governor('ss', 4, [0, 2, 3][window.UAS_PERF.tier], l => { SSQ.level = l;
   const pr = Math.min(devicePixelRatio || 1, SSQ.pr[l]); if (pr !== renderer.getPixelRatio()) { renderer.setPixelRatio(pr); resize(); } },
   LITE ? { slow: 45, fast: 36 } : null);   // phones run at a capped 30 fps
 let lastFG = undefined, paused = false, lastPost = '', FREED = false;
@@ -3420,7 +3420,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=165e388e" data-place="info" defer></script>
+<script src="../music/music.js?v=5591d65b" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
