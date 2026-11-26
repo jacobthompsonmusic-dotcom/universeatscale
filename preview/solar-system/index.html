@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=feeb6ab4"></script>
-<script src="../shared/clock.js?v=feeb6ab4"></script>
-<script src="../shared/fold.js?v=feeb6ab4"></script>
-<script src="baked/manifest.js?v=feeb6ab4"></script>
-<script src="../shared/perf.js?v=feeb6ab4"></script>
-<script src="../shared/galaxy-volume.js?v=feeb6ab4"></script>
+<script src="../shared/frame.js?v=e32dc49c"></script>
+<script src="../shared/clock.js?v=e32dc49c"></script>
+<script src="../shared/fold.js?v=e32dc49c"></script>
+<script src="baked/manifest.js?v=e32dc49c"></script>
+<script src="../shared/perf.js?v=e32dc49c"></script>
+<script src="../shared/galaxy-volume.js?v=e32dc49c"></script>
 <script>
 (() => {
 'use strict';
@@ -1627,6 +1627,14 @@ function moonGeo(ms) {
 {
   const M = rockyMoon(EARTH, 'Moon', 384400, 27.321661, 1737.4, '#cfcac2', 'Known since prehistory', 'Earth\'s only natural satellite, about a quarter of Earth\'s width: enormous for a moon of such a small planet. It probably formed from debris thrown out when a Mars-sized body slammed into the young Earth. It always shows us the same face, and it is drifting away by about 3.8 cm a year.', { fact: ['Position', 'Real, worked out for this moment'] });
   EARTH.root.add(M.mesh);
+  // the surface as mapped: LRO's Wide Angle Camera colour mosaic, and the relief from its laser altimeter (LOLA's 16-pixels-a-degree
+  // elevation model, turned into the slopes that catch the light along the terminator). NASA SVS CGI Moon Kit. Until they arrive the
+  // drawn stand-in shows. Lon 0° (the middle of the near side) sits at u = 0.25, the face the mesh turns toward the Earth.
+  M.mesh.geometry.dispose(); M.mesh.geometry = SPH(1737.4 * U, 128, 64);
+  { const L = new THREE.TextureLoader(), m = M.mesh.material, aniso = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    const prep = t => { t.wrapS = THREE.RepeatWrapping; t.offset.x = 0.25; t.anisotropy = aniso; return t; };
+    const c = prep(L.load(LITE ? 'moon/color-2k.jpg' : 'moon/color-4k.jpg', () => { m.map = c; m.color.setHex(0xffffff); m.needsUpdate = true; bumpIdle(); })); c.encoding = THREE.sRGBEncoding;
+    const n = prep(L.load(LITE ? 'moon/normal-1k.jpg' : 'moon/normal-2k.jpg', () => { m.normalMap = n; m.normalScale.set(1, 1); m.needsUpdate = true; bumpIdle(); })); }
   M.mesh.material.onBeforeCompile = sh => {   // the Earth's shadow: a red-brown umbra (sunlight bent through our atmosphere) inside a soft penumbra
     const u = M.mesh.material.userData.ecl = { uEarth: { value: new THREE.Vector3() }, uAxis: { value: new THREE.Vector3(1, 0, 0) } };
     Object.assign(sh.uniforms, u);
@@ -3492,7 +3500,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=feeb6ab4" data-place="info" defer></script>
+<script src="../music/music.js?v=e32dc49c" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
