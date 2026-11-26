@@ -190,11 +190,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=287bf38f"></script>
-<script src="../shared/clock.js?v=287bf38f"></script>
-<script src="../shared/fold.js?v=287bf38f"></script>
-<script src="../shared/perf.js?v=287bf38f"></script>
-<script src="../shared/galaxy-volume.js?v=287bf38f"></script>
+<script src="../shared/frame.js?v=42f89e4b"></script>
+<script src="../shared/clock.js?v=42f89e4b"></script>
+<script src="../shared/fold.js?v=42f89e4b"></script>
+<script src="../shared/perf.js?v=42f89e4b"></script>
+<script src="../shared/galaxy-volume.js?v=42f89e4b"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1963,7 +1963,7 @@ function updateScale() {
 }
 
 // ---------- interaction ----------
-function pick(X, Y) {
+function pick(X, Y, loose) {
   let best = null, bd = 14;
   for (const p of screenPts) { const d = Math.hypot(p.X - X, p.Y - Y); if (d < bd || (d === bd && best && p.o.pr < best.pr)) { bd = d; best = p.o; } }
   if (best) return best;
@@ -1973,6 +1973,13 @@ function pick(X, Y) {
     if (d < bd) { bd = d; bi = fieldPts[k]; }
   }
   if (bi >= 0) return fieldObj(bi);
+  if (loose) { // a click a little way off still picks the nearest object or star, as long as nothing else is nearly as close
+    const R = matchMedia('(pointer: coarse)').matches ? 60 : 44; let a = null, da = 1e9, db = 1e9;
+    const consider = (d, o) => { if (d < da) { db = da; da = d; a = o; } else if (d < db) db = d; };
+    for (const p of screenPts) consider(Math.hypot(p.X - X, p.Y - Y), p.o);
+    for (let k = 0; k < fieldPts.length; k += 3) consider(Math.hypot(fieldPts[k + 1] - X, fieldPts[k + 2] - Y), fieldPts[k]);
+    if (a !== null && da < R && db > da * 1.8 + 12) return typeof a === 'number' ? fieldObj(a) : a;
+  }
   for (const rg of REGIONS) {
     if (rg.shape) { if (nearShape(rg, X, Y) < 8) return rg; continue; }
     if (rg.cmb && !opts.cmb) continue;
@@ -3318,7 +3325,7 @@ cv.addEventListener('pointermove', e => {
 const endPtr = e => {
   pointers.delete(e.pointerId);
   if (drag && drag.moved <= 3 && e.type === 'pointerup' && !drag.orbit) {
-    const o = pick(e.clientX, e.clientY); select(o || null, false);
+    const o = pick(e.clientX, e.clientY, true); select(o || null, false);
     if (e.pointerType === 'touch') {   // a second tap within 0.35 s, close to the first: fly in
       const now = performance.now();
       if (lastTap && now - lastTap.t < 350 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) { lastTap = null; tapFlyAt = now; flyIn(e.clientX, e.clientY); }
@@ -3338,7 +3345,7 @@ let lastTap = null, tapFlyAt = 0;
 cv.addEventListener('dblclick', e => { if (performance.now() - tapFlyAt > 600) flyIn(e.clientX, e.clientY); });
 function flyIn(X, Y) {
   const e = { clientX: X, clientY: Y };
-  const o = pick(e.clientX, e.clientY);
+  const o = pick(e.clientX, e.clientY, true);
   if (o) { if (selected !== o) select(o); if (o.type === 'sun') diveToSun(); else if (o === GCO) flyTo(GCO.x, GCO.y, GCO.z, 1.4e-5, { raw: true }); else flyTo(o.x, o.y, o.z || 0, spanFor(o)); return; }   // the Sun: into the Solar System; Sgr A*: down to the black hole   // the Sun: all the way into the Solar System
   setupView(); const p = unproj(e.clientX, e.clientY), sp = viewSpan() / 2.5;   // empty space: a short glide in, toward the spot clicked
   flyTo(p.x + (view.x - p.x) / 2.5, p.y + (view.y - p.y) / 2.5, p.z + (view.z - p.z) / 2.5, sp, { dur: 900 });
@@ -3457,7 +3464,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=287bf38f" data-place="info" defer></script>
+<script src="../music/music.js?v=42f89e4b" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
