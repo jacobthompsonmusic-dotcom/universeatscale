@@ -58,6 +58,7 @@
     font: italic 17px/1 "IM Fell English", Georgia, serif; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
   #helpbtn[hidden] { display: none; } #helpbtn:hover, #helpbtn:focus-visible { border-color: rgba(255,207,110,0.55); outline: none; }
   body.walk #helpbtn { display: none !important; }
+  body.intro #walkbtn { display: none !important; }
   #snapbtn { position: fixed; z-index: 30; top: 262px; right: 70px; box-sizing: border-box; min-width: 34px; padding: 0 9px; display: flex; align-items: center; justify-content: center;
     border: 1px solid rgba(255,255,255,0.14); border-radius: 999px; background: rgba(12,13,20,0.72); color: #ffcf6e; cursor: pointer; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
   #snapbtn:hover, #snapbtn:focus-visible { border-color: rgba(255,207,110,0.55); outline: none; }
@@ -244,11 +245,14 @@ helpBtn.onclick = () => { try { top.UAS_HOWTO(); } catch (e) {} };   // the how-
 function walk(on) { document.body.classList.toggle('walk', on); walkBtn.setAttribute('aria-pressed', on); walkBtn.setAttribute('aria-label', on ? 'Bring the panels back' : 'Spacewalk: hide the panels');
   toSS({ cmd: 'walk', on }); toMW({ cmd: 'walk', on }); if (on && typeof gtag === 'function') try { gtag('event', 'spacewalk'); } catch (e) {} }
 walkBtn.onclick = () => walk(!document.body.classList.contains('walk'));
+// behind the home page's welcome sign: the view on its own, no panels or buttons (the sign is the only thing to press)
+window.UAS_INTRO = on => { if (document.body.classList.contains('intro') === on) return; document.body.classList.toggle('intro', on);
+  document.body.classList.toggle('walk', on); toSS({ cmd: 'walk', on }); toMW({ cmd: 'walk', on }); };
 addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('walk')) walk(false); });
 
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-const UAS_V = '4adf15bd';
+const UAS_V = '4e682091';
 const MW_SRC = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
 ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 // phones: load the galaxy map only once it's needed — zooming out past the Oort cloud, or a stop or search result out there —
@@ -258,9 +262,9 @@ if (STOPS[start].map === 'mw') loadMW();
 else if (!LAZY_MW) setTimeout(loadMW, 4000);   // desktop: after the Solar System is up (see its ready message), or 4 s at the latest
 })();
 </script>
-<script src="../shared/fold.js?v=4adf15bd"></script>
+<script src="../shared/fold.js?v=4e682091"></script>
 <script>UAS_FOLD.foldable(document.getElementById('ladder'), { title: 'Scale', arrow: '▾', onToggle: () => dispatchEvent(new Event('resize')) });   // the soundtrack note below it moves up</script>
-<script src="../music/music.js?v=4adf15bd" data-place="ladder" defer></script>
+<script src="../music/music.js?v=4e682091" data-place="ladder" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

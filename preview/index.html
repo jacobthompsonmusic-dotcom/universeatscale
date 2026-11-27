@@ -53,13 +53,17 @@
   body { font: 400 16px/1.6 var(--body); }
   #uni { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #020205; z-index: 0; }
 
-  #welcome { position: fixed; inset: 0; z-index: 5; overflow-y: auto; overscroll-behavior: contain; background: var(--sky);
+  /* the sign sits over the live view (the Solar System with the Milky Way's bright heart behind it), dimmed just enough to read;
+     below the first screen (credits, tip) it turns solid */
+  #welcome { position: fixed; inset: 0; z-index: 5; overflow-y: auto; overscroll-behavior: contain;
+    background: linear-gradient(to bottom, rgba(5,6,11,0.42) 0, rgba(5,6,11,0.3) 70vh, rgba(5,6,11,0.85) 100vh, var(--sky) 115vh) local;
     transition: opacity .75s ease, transform .9s cubic-bezier(.3, 0, .2, 1); }
   #welcome.leaving { opacity: 0; transform: scale(1.06); pointer-events: none; }
   #welcome[hidden] { display: none; }
   #sky { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   .wrap { position: relative; max-width: 980px; margin: 0 auto; padding: 0 24px; }
 
+  .hero::before { content: ''; position: absolute; left: 50%; top: 50%; width: min(1100px, 120vw); height: 70vh; transform: translate(-50%, -50%); background: radial-gradient(ellipse at center, rgba(3,4,8,0.55) 0, rgba(3,4,8,0.25) 45%, rgba(3,4,8,0) 70%); pointer-events: none; z-index: -1; }
   .hero { position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 64px 0 96px; }
   .kicker { font: 500 12px/1 var(--mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--amber); margin: 0 0 22px; }
   /* the title: tall, heavy, cut-in serif capitals with an offset shadow, after the 1980 'Cosmos' cover */
@@ -132,7 +136,7 @@
 </head>
 <body>
 <!-- the universe, loading from the moment the page opens -->
-<iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=4adf15bd" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
+<iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=4e682091" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
 
 <div id="howto" role="dialog" aria-modal="true" aria-labelledby="howto-h" hidden>
   <div class="card">
@@ -238,8 +242,13 @@
     if (e.source !== uni.contentWindow || !e.data || e.data.src !== 'uas-uni' || !e.data.ready || ready) return;
     ready = true; status.textContent = 'Ready when you are'; status.classList.add('ready');
   });
+  // behind the sign the view shows on its own, its panels put away; they come back as you enter
+  let introOn = null, introT = 0;
+  function intro(on) { introOn = on; const go = () => { try { const w = uni.contentWindow; if (w.UAS_INTRO) { w.UAS_INTRO(introOn); return true; } } catch (e) {} return false; };
+    clearInterval(introT); if (!go()) { let n = 0; introT = setInterval(() => { if (go() || ++n > 120) clearInterval(introT); }, 150); } }
+  if (location.hash !== '#universe') intro(true);
   function enter(animate) {
-    if (inside) return; inside = true;
+    if (inside) return; inside = true; intro(false);
     uni.inert = false;
     try { window.gtag && gtag('event', 'enter_universe', { ready }); } catch (e) {}
     const done = () => { wel.hidden = true; wel.classList.remove('leaving'); try { uni.focus(); } catch (e) {}
@@ -259,7 +268,7 @@
   document.getElementById('howto-open').onclick = () => { try { localStorage.removeItem('uas-howto'); } catch (e) {} document.getElementById('enter').click(); };
   function leave() {
     if (!inside) return; inside = false;
-    uni.inert = true; wel.hidden = false; wel.scrollTop = 0;
+    uni.inert = true; wel.hidden = false; wel.scrollTop = 0; intro(true);
   }
   addEventListener('keydown', e => { if (!inside && e.key === 'Enter' && document.activeElement === document.body) enter(true); });
   document.getElementById('enter').onclick = () => {
@@ -274,4 +283,4 @@
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
-<!-- preview built 2026-11-27T16:35:28Z from 7e35f47 -->
+<!-- preview built 2026-11-27T16:39:20Z from 14aecdf -->
