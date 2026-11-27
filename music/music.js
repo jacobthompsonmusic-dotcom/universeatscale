@@ -186,9 +186,9 @@
           var d = e.data || {}, pos = d.position || 0, dur = d.duration || 0;
           btn.classList.toggle('playing', !d.isPaused);
           // the track has ended: it reached its end, or it stopped right after being near the end
-          if (dur > 0 && (pos >= dur - 300 || (d.isPaused && last.playing && last.duration === dur && last.position >= dur - 1500))) next();
+          // Spotify plays 30-second clips to anyone not logged in: let the first one play out, then ask (quietly, once)
+          if (dur > 0 && (pos >= dur - 300 || (d.isPaused && last.playing && last.duration === dur && last.position >= dur - 1500))) { if (dur <= 31000) preview(); next(); }
           last = { position: pos, duration: dur, playing: !d.isPaused };
-          if (!d.isPaused && dur > 0 && dur <= 31000) preview();   // Spotify plays 30-second clips to anyone not logged in
         });
       });
     }
@@ -198,8 +198,8 @@
   }
   // Not logged in to Spotify: say so once, with a way to log in — whole tracks for the visitor, and every full listen counts as a play.
   // After logging in (in a new tab) Spotify's player has to start again, which needs a tap here: browsers only allow sound after one.
-  // Logged in already: nothing shows, the music just plays. Spotify only says which it is once a track starts, so this appears a moment
-  // after 'Enter the universe'. If it's still previews after logging in, the browser is keeping Spotify's login out of other sites'
+  // Logged in already: nothing shows, the music just plays. Spotify only says which it is once a track starts, so this appears when the
+  // first 30-second preview ends. If it's still previews after logging in, the browser is keeping Spotify's login out of other sites'
   // pages (Safari and Firefox do), so offer the album in Spotify itself instead.
   var toast = null, toldPreview = false, retried = false;
   function preview() {

@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=eb84cd44"></script>
-<script src="../shared/clock.js?v=eb84cd44"></script>
-<script src="../shared/fold.js?v=eb84cd44"></script>
-<script src="../shared/perf.js?v=eb84cd44"></script>
-<script src="../shared/galaxy-volume.js?v=eb84cd44"></script>
+<script src="../shared/frame.js?v=138e6e43"></script>
+<script src="../shared/clock.js?v=138e6e43"></script>
+<script src="../shared/fold.js?v=138e6e43"></script>
+<script src="../shared/perf.js?v=138e6e43"></script>
+<script src="../shared/galaxy-volume.js?v=138e6e43"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -2269,13 +2269,18 @@ function pick(X, Y, loose) {
     for (let k = 0; k < fieldPts.length; k += 3) consider(Math.hypot(fieldPts[k + 1] - X, fieldPts[k + 2] - Y), fieldPts[k]);
     if (a !== null && da < R && db > da * 1.8 + 12) return typeof a === 'number' ? fieldObj(a) : a;
   }
+  let inner = null;
   for (const rg of REGIONS) {
-    if (rg.shape) { if (nearShape(rg, X, Y) < 8) return rg; continue; }
+    if (rg.shape) { if (nearShape(rg, X, Y) < 12) return rg; continue; }
     if (rg.cmb && !opts.cmb) continue;
     const [RX, RY] = proj(rg.x, rg.y, rg.z), Rr = rg.r * view.s;
     if (Rr < 40 || Rr > 40 * Math.max(Wd, Ht)) continue;
-    if (Math.abs(Math.hypot(RX - X, RY - Y) - Rr) < 7) return rg;
+    const dc = Math.hypot(RX - X, RY - Y);
+    if (Math.abs(dc - Rr) < 12) return rg;
+    // groups drawn as a swarm of members (quasars, bursts): a click anywhere among them picks the group, smallest first
+    if (rg.members && dc < Rr && Rr < 0.6 * Math.max(Wd, Ht) && (!inner || rg.r < inner.r)) inner = rg;
   }
+  if (inner) return inner;
   if (opts.voids) {
     let bv = null;
     for (const v of VOIDS) {
@@ -3759,7 +3764,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=eb84cd44" data-place="info" defer></script>
+<script src="../music/music.js?v=138e6e43" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
