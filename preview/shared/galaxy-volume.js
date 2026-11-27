@@ -28,7 +28,7 @@ vec3 skyPhoto(vec3 d) {
   float xh = xg * 0.99999684 - zg * 0.0025136, zh = xg * 0.0025136 + zg * 0.99999684;
   float l = atan(yh, xh), b = asin(clamp(zh, -1.0, 1.0));
   vec3 c = texture2D(uSky, vec2(fract(0.5 - l / 6.2831853), 0.5 + b / 3.14159265)).rgb;
-  return pow(max(c - 0.035, 0.0) / 0.965, vec3(1.15)) * 1.05;                // a truly dark sky between the stars (as in the sky view)
+  return pow(max(c - 0.05, 0.0) / 0.95, vec3(1.3)) * 0.9;                    // a truly dark sky between the stars, a little quieter than from the ground so the map reads on top
 }
 const float GW = 62000.0, ZM = 9000.0, RSUN = 26989.0;
 const float HY = 330.0, H1 = 978.0, H2 = 2935.0, HB = 1630.0, HD = 437.0, RD = 7557.0, K0 = 1.7e-4;
