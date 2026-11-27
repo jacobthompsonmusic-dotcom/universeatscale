@@ -349,12 +349,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=37ee2f1a"></script>
-<script src="../shared/clock.js?v=37ee2f1a"></script>
-<script src="../shared/fold.js?v=37ee2f1a"></script>
-<script src="baked/manifest.js?v=37ee2f1a"></script>
-<script src="../shared/perf.js?v=37ee2f1a"></script>
-<script src="../shared/galaxy-volume.js?v=37ee2f1a"></script>
+<script src="../shared/frame.js?v=b21fdc20"></script>
+<script src="../shared/clock.js?v=b21fdc20"></script>
+<script src="../shared/fold.js?v=b21fdc20"></script>
+<script src="baked/manifest.js?v=b21fdc20"></script>
+<script src="../shared/perf.js?v=b21fdc20"></script>
+<script src="../shared/galaxy-volume.js?v=b21fdc20"></script>
 <script>
 (() => {
 'use strict';
@@ -1058,13 +1058,13 @@ const bandScene = new THREE.Scene(), bandRoot = new THREE.Group(), bandCam = new
 const backdrop = new THREE.Group(); bandRoot.add(backdrop);
 const STARPOS = [];
 const starMat = new THREE.ShaderMaterial({
-  uniforms: { uMix: { value: 0 }, uPR: { value: renderer.getPixelRatio() } },
-  vertexShader: `attribute float aM; attribute float aOn; attribute vec3 aCol; uniform float uMix; uniform float uPR; varying vec3 vCol; varying float vA;
+  uniforms: { uMix: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uLim: { value: 9 } },
+  vertexShader: `attribute float aM; attribute float aOn; attribute vec3 aCol; uniform float uMix; uniform float uPR; uniform float uLim; varying vec3 vCol; varying float vA;
     void main() {
       vec4 wp = modelMatrix * vec4(position, 1.0);
       float pc = max(distance(wp.xyz, cameraPosition), 0.001) / ${FR.PC_LY.toFixed(5)};
       float m = aM + 5.0 * log(pc / 10.0) / 2.302585;                    // apparent magnitude from wherever the camera is
-      float sSky = clamp(5.6 - 0.72 * m, 1.5, 8.0), aSky = clamp(1.4 - 0.13 * m, 0.0, 1.0) * smoothstep(7.6, 6.5, m);
+      float sSky = clamp(5.6 - 0.72 * m, 1.5, 8.0), aSky = clamp(1.4 - 0.13 * m, 0.0, 1.0) * smoothstep(7.6, 6.5, m) * smoothstep(uLim + 0.6, uLim - 0.6, m);   // uLim: the faintest that shows (an eclipse's twilight)
       float fr = clamp(0.75 + (6.0 - aM) * 0.17, 0.55, 2.6);            // the galaxy map's star dots, sized by true brightness
       float sMap = 2.0 * fr + 0.8, aMap = clamp(0.45 + (5.0 - aM) * 0.07, 0.28, 1.0) * aOn;
       gl_PointSize = mix(sSky, sMap, uMix) * uPR; vA = mix(aSky, aMap, uMix); vCol = aCol;
@@ -3612,16 +3612,17 @@ function skyPaint() {
   weather(skySeason(), sAlt);
   const thin = SKY.launch ? 1 - sstep(SKY.launch.e, 0.0, 0.32) : 1;   // climbing out: the blue thins away to black
   ECL.update(); const ob = ECL.obsc, tot = sstep(ob, 0.975, 1.0);
-  { const mm = ECL.moon().mesh.material, gnd = !SKY.lifted;   // from the ground the Moon's dark side shows the sky through it, as it really does
+  { const mm = ECL.moon().mesh.material, gnd = !SKY.lifted && ob < 0.2;   // from the ground the Moon's dark side shows the sky through it, as it really does — except crossing the Sun, where it's a black disc in front of the corona
     if (mm.depthWrite === gnd) { mm.blending = gnd ? THREE.AdditiveBlending : THREE.NormalBlending; mm.transparent = gnd; mm.depthWrite = !gnd; mm.needsUpdate = true; } }
   const eDim = 1 - 0.97 * Math.pow(ob, 6);   // an eclipse: the light hardly changes until the Sun is almost covered, then falls away fast
+  starMat.uniforms.uLim.value = 9 - 7.6 * sstep(ob, 0.9, 1);   // in totality it's deep twilight, not night: only the brightest stars and the planets come out
   const day = sstep(sAlt, -8, 6) * thin * eDim, dusk = sstep(sAlt, -16, -2) * (1 - sstep(sAlt, 2, 10)) * thin;
   skyDome.material.uniforms.tot.value = tot * sstep(sAlt, -2, 4);
   skyDome.material.uniforms.sun.value.copy(sp); gu.sun.value.copy(sp); skyDome.material.uniforms.day.value = day; skyDome.material.uniforms.dusk.value = dusk;
   gu.day.value = day; gu.dusk.value = dusk; SKY.day = day;
   skyRoot.visible = bandRoot.visible = day < 0.55;   // the stars and the Milky Way vanish in daylight
   SUN.glare.visible = SUN.corona.visible = SKY.lifted || !behindSkyline(relOf(SUN));   // the glare is drawn over everything: hide it once the Sun has set
-  if (constel) constel.visible = opts.constel && day < 0.55;
+  if (constel) constel.visible = opts.constel && day < 0.55 && ob < 0.9;
   if (performance.now() - ZW.last > 150) { ZW.last = performance.now(); drawZodiac(); drawChinese();
     const zr = document.getElementById('zodwheel').getBoundingClientRect(); document.getElementById('info').style.top = (zr.bottom + 10) + 'px'; }
   // compass points round the horizon
@@ -4007,7 +4008,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=37ee2f1a" data-place="info" defer></script>
+<script src="../music/music.js?v=b21fdc20" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
