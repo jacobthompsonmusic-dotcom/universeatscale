@@ -184,7 +184,7 @@ addEventListener('message', e => {
   if ((m.src === 'uas-ss' && e.source === ssEl.contentWindow && relaySearch(m, true)) || (m.src === 'uas-mw' && e.source === mwEl.contentWindow && relaySearch(m, false))) return;
   if (m.src === 'uas-ss' && e.source === ssEl.contentWindow) {
     if (m.ready) {
-      st.ssReady = true; toMW({ cmd: 'ssready' }); if (parent !== window) post({ contentWindow: parent }, { src: 'uas-uni', ready: true });   /* tells the welcome sign on the home page */ setTimeout(loadMW, LAZY_MW ? 2500 : 600);   // phones too, but a little later: building it mid-zoom (they share one thread) was the big stutter on the way out   // the two maps share one thread: let the first picture appear before the galaxy map starts up
+      st.ssReady = true; toMW({ cmd: 'ssready' }); if (document.body.classList.contains('walk')) toSS({ cmd: 'walk', on: true }); if (parent !== window) post({ contentWindow: parent }, { src: 'uas-uni', ready: true });   /* tells the welcome sign on the home page */ setTimeout(loadMW, LAZY_MW ? 2500 : 600);   // phones too, but a little later: building it mid-zoom (they share one thread) was the big stutter on the way out   // the two maps share one thread: let the first picture appear before the galaxy map starts up
       if (st.driver === 'ss') { if (!st.started) { st.started = true; if (start !== 'solar-system') toSS(STOPS[start].cmd); } }
       else if (st.pending && st.pending.map === 'ss') toMW({ cmd: 'dive' });
       else toSS({ cmd: 'pause' });
@@ -200,7 +200,7 @@ addEventListener('message', e => {
     mark(m.span);
     if (m.q >= 0.999) toMap();
   } else if (m.src === 'uas-mw' && e.source === mwEl.contentWindow) {
-    if (m.ready) { st.mwReady = true; if (st.ssReady) toMW({ cmd: 'ssready' });
+    if (m.ready) { st.mwReady = true; if (st.ssReady) toMW({ cmd: 'ssready' }); if (document.body.classList.contains('walk')) toMW({ cmd: 'walk', on: true });
       const L = st.lastSS; if (st.driver === 'ss' && L && L.q > 0) { toMW({ cmd: 'follow', s: L.s, yaw: L.yaw, tilt: L.tilt }); ssEl.style.opacity = (1 - L.q).toFixed(3); if (L.q >= 0.999) toMap(); }   /* it loaded while we waited at the edge */ if (st.driver === 'mw' && !st.started) { st.started = true; toMW(STOPS[start].cmd); } return; }
     if (m.opt) { toSS({ cmd: 'opt', k: m.opt, on: m.on }); return; }
     if (m.go) { go(m.go); return; }   // HOME on the galaxy map
@@ -252,7 +252,7 @@ addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.class
 
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-const UAS_V = '4e682091';
+const UAS_V = 'a6f78138';
 const MW_SRC = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
 ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 // phones: load the galaxy map only once it's needed — zooming out past the Oort cloud, or a stop or search result out there —
@@ -262,9 +262,9 @@ if (STOPS[start].map === 'mw') loadMW();
 else if (!LAZY_MW) setTimeout(loadMW, 4000);   // desktop: after the Solar System is up (see its ready message), or 4 s at the latest
 })();
 </script>
-<script src="../shared/fold.js?v=4e682091"></script>
+<script src="../shared/fold.js?v=a6f78138"></script>
 <script>UAS_FOLD.foldable(document.getElementById('ladder'), { title: 'Scale', arrow: '▾', onToggle: () => dispatchEvent(new Event('resize')) });   // the soundtrack note below it moves up</script>
-<script src="../music/music.js?v=4e682091" data-place="ladder" defer></script>
+<script src="../music/music.js?v=a6f78138" data-place="ladder" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
