@@ -56,7 +56,7 @@
   /* the sign sits over the live view (the Solar System with the Milky Way's bright heart behind it), dimmed just enough to read;
      below the first screen (credits, tip) it turns solid */
   #welcome { position: fixed; inset: 0; z-index: 5; overflow-y: auto; overscroll-behavior: contain;
-    background: linear-gradient(to bottom, rgba(5,6,11,0.42) 0, rgba(5,6,11,0.3) 70vh, rgba(5,6,11,0.85) 100vh, var(--sky) 115vh) local;
+    background: linear-gradient(to bottom, rgba(5,6,11,0.28) 0, rgba(5,6,11,0.16) 70vh, rgba(5,6,11,0.85) 100vh, var(--sky) 115vh) local;
     transition: opacity .75s ease, transform .9s cubic-bezier(.3, 0, .2, 1); }
   #welcome.leaving { opacity: 0; transform: scale(1.06); pointer-events: none; }
   #welcome[hidden] { display: none; }
@@ -283,4 +283,4 @@
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
-<!-- preview built 2026-11-27T16:42:11Z from 54b4844 -->
+<!-- preview built 2026-11-27T16:45:19Z from 7cc697e -->
