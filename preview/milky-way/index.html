@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=8bc0cdc5"></script>
-<script src="../shared/clock.js?v=8bc0cdc5"></script>
-<script src="../shared/fold.js?v=8bc0cdc5"></script>
-<script src="../shared/perf.js?v=8bc0cdc5"></script>
-<script src="../shared/galaxy-volume.js?v=8bc0cdc5"></script>
+<script src="../shared/frame.js?v=bea93c6d"></script>
+<script src="../shared/clock.js?v=bea93c6d"></script>
+<script src="../shared/fold.js?v=bea93c6d"></script>
+<script src="../shared/perf.js?v=bea93c6d"></script>
+<script src="../shared/galaxy-volume.js?v=bea93c6d"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1299,14 +1299,21 @@ function gxInit() {
   gl.useProgram(pr); const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
   const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  for (const n of ['uGal', 'uCam', 'uRight', 'uUp', 'uFwd', 'uRes', 'uTanH', 'uOrtho', 'uHalfH', 'uExpo', 'uAlpha', 'uGam']) GX.u[n] = gl.getUniformLocation(pr, n);
+  for (const n of ['uGal', 'uCam', 'uRight', 'uUp', 'uFwd', 'uRes', 'uTanH', 'uOrtho', 'uHalfH', 'uExpo', 'uAlpha', 'uGam', 'uSky', 'uSkyMix']) GX.u[n] = gl.getUniformLocation(pr, n);
   // the face-on picture of the disc, on black (so its colours are premultiplied), 2048² so it can be mipmapped
   const c = document.createElement('canvas'); c.width = c.height = 2048; const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, 2048, 2048); g.filter = 'blur(1.6px)'; g.drawImage(gal, 0, 0, 2048, 2048); g.filter = 'none';
   const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, c); gl.generateMipmap(gl.TEXTURE_2D);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   const ext = gl.getExtension('EXT_texture_filter_anisotropic'); if (ext) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, 8);
-  gl.uniform1i(GX.u.uGal, 0); GX.gl = gl;
+  gl.uniform1i(GX.u.uGal, 0); gl.uniform1i(GX.u.uSky, 1); gl.uniform1f(GX.u.uSkyMix, 0); GX.gl = gl;
+  // the all-sky photograph near home (texture unit 1); until it arrives the model is drawn everywhere
+  GX.sky = false; { const im = new Image(); im.crossOrigin = 'anonymous'; im.decoding = 'async';
+    im.onload = () => { if (GX.gl !== gl) return; const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, im); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+      gl.activeTexture(gl.TEXTURE0); GX.sky = true; GX.key = ''; draw(); };
+    im.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/ESO_-_Milky_Way.jpg/3840px-ESO_-_Milky_Way.jpg'; }
 }
 // the Milky Way as a volume, seen from wherever the camera is: the band of light from inside, the disc from outside
 // phones (LITE) never build the 3D volume — it's the heaviest thing here, and loading it mid-hand-over crashed them: near the Sun
@@ -1317,7 +1324,7 @@ function drawGalaxy3D() {
   if (viewSpan() < 2e5 && Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z) > 3e7) return true;   // zoomed in somewhere far beyond the Local Group: nothing of ours to draw
   if (!GX.gl) { gxInit(); if (!GX.gl) return false; }
   // the volume only changes when the view does: keep the last picture while just the stars and gas on top move
-  const key = [view.x, view.y, view.z, view.s, view.yaw, view.tilt, Wd, Ht, PT, dpr].join();
+  const key = [view.x, view.y, view.z, view.s, view.yaw, view.tilt, Wd, Ht, PT, dpr, GX.sky].join();
   if (key !== GX.key) {
     const now = performance.now(), ft = now - GX.last; GX.last = now;   // too slow? draw it a little coarser
     const settle = GX.settle; GX.settle = false;   // the one full-quality redraw after moving: don't let it adjust quality or schedule another
@@ -1340,6 +1347,9 @@ function drawGalaxy3D() {
       gl.uniform1f(U.uOrtho, 1); gl.uniform3f(U.uCam, view.x - fw[0] * k, view.y - fw[1] * k, view.z - fw[2] * k); gl.uniform1f(U.uHalfH, Ht / 2 / view.s); gl.uniform1f(U.uTanH, 0); }
     else { const cx = view.x + F[0] * PD, cy = view.y + F[1] * PD, cz = view.z + F[2] * PD, T = Math.max(0, -(cx * fw[0] + cy * fw[1] + cz * fw[2]) - GB);
       gl.uniform1f(U.uOrtho, 0); gl.uniform3f(U.uCam, cx + fw[0] * T, cy + fw[1] * T, cz + fw[2] * T); gl.uniform1f(U.uTanH, PT); gl.uniform1f(U.uHalfH, T * PT); }
+    { // the photograph near home, by how far the eye is from the Sun (300 → 3,000 ly); the same as the Solar System view's at the hand-over
+      const eye = PD === Infinity ? null : [view.x + F[0] * PD, view.y + F[1] * PD, view.z + F[2] * PD], dS = eye ? Math.hypot(eye[0] - SUNW.x, eye[1] - SUNW.y, eye[2] - SUNW.z) : Infinity;
+      gl.uniform1f(U.uSkyMix, GX.sky && eye ? 1 - sstep(Math.log(Math.max(dS, 1)), Math.log(300), Math.log(3000)) : 0); }
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); if (PROF) gl.finish();
     GX.key = key;
     // drawn coarser to keep up with movement? once you stop, draw it again at full quality
@@ -3609,7 +3619,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=8bc0cdc5" data-place="info" defer></script>
+<script src="../music/music.js?v=bea93c6d" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

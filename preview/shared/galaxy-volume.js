@@ -18,6 +18,18 @@ uniform sampler2D uGal;
 uniform vec3 uCam, uRight, uUp, uFwd;
 uniform vec2 uRes;
 uniform float uTanH, uOrtho, uHalfH, uExpo, uAlpha, uGam;
+// Near home the band is the photograph: ESO/S. Brunier's all-sky panorama (galactic coordinates, l = 0 at the centre, l growing to the
+// left). Each page passes uSkyMix: 1 from the Solar System out to a few hundred light-years (where the view from Earth still holds),
+// fading to the model by ~3,000 ly. While it's 1 the ray march is skipped altogether.
+uniform sampler2D uSky;
+uniform float uSkyMix;
+vec3 skyPhoto(vec3 d) {
+  float yh = -d.x, xg = -d.y, zg = d.z;                                       // map world → heliocentric galactic (undo the Sun's 20.8 pc tilt)
+  float xh = xg * 0.99999684 - zg * 0.0025136, zh = xg * 0.0025136 + zg * 0.99999684;
+  float l = atan(yh, xh), b = asin(clamp(zh, -1.0, 1.0));
+  vec3 c = texture2D(uSky, vec2(fract(0.5 - l / 6.2831853), 0.5 + b / 3.14159265)).rgb;
+  return pow(max(c - 0.035, 0.0) / 0.965, vec3(1.15)) * 1.05;                // a truly dark sky between the stars (as in the sky view)
+}
 const float GW = 62000.0, ZM = 9000.0, RSUN = 26989.0;
 const float HY = 330.0, H1 = 978.0, H2 = 2935.0, HB = 1630.0, HD = 437.0, RD = 7557.0, K0 = 1.7e-4;
 vec2 slab(vec3 ro, vec3 rd) {
@@ -38,9 +50,12 @@ void main() {
   // uHalfH: half the view's height at that plane, in ly (0 = rays all start at uCam, as in the Solar System view)
   ro = uCam + (uRight * p.x + uUp * p.y) * uHalfH;
   rd = uOrtho > 0.5 ? uFwd : normalize(uFwd + (uRight * p.x + uUp * p.y) * uTanH);
+  float sm = uOrtho < 0.5 ? uSkyMix : 0.0;
+  vec3 photo = sm > 0.001 ? skyPhoto(rd) : vec3(0.0);
+  if (sm > 0.999) { gl_FragColor = vec4(photo * uAlpha, max(photo.r, max(photo.g, photo.b)) * uAlpha); return; }
   vec2 s1 = slab(ro, rd), s2 = cyl(ro, rd);
   float t0 = max(max(s1.x, s2.x), 0.0), t1 = min(s1.y, s2.y);
-  if (t1 <= t0) { gl_FragColor = vec4(0.0); return; }
+  if (t1 <= t0) { gl_FragColor = vec4(photo * uAlpha, max(photo.r, max(photo.g, photo.b)) * uAlpha); return; }
   vec3 I = vec3(0.0), T = vec3(1.0);
   float t = t0, jit = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));   // interleaved-gradient dither: even, fine-grained, no clumps   // per-pixel offset: turns banding into fine grain
   bool first = true;
@@ -73,6 +88,7 @@ void main() {
   vec3 col = pow(clamp(1.0 - exp(-I * uExpo), 0.0, 1.0), vec3(uGam));   // a deep black point: faint light off the band falls to near-black, the band itself keeps most of its glow
   // phones' GPUs can slip a hair below zero or to NaN here (pow of a negative), which the view's blur then spreads into coloured specks
   if (!(col.r >= 0.0 && col.g >= 0.0 && col.b >= 0.0 && col.r <= 1.0 && col.g <= 1.0 && col.b <= 1.0)) col = vec3(0.0);
+  col = mix(col, photo, sm);
   gl_FragColor = vec4(col * uAlpha, max(col.r, max(col.g, col.b)) * uAlpha);
 }
 `;
