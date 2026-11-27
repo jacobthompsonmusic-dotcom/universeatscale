@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=0fe77292"></script>
-<script src="../shared/clock.js?v=0fe77292"></script>
-<script src="../shared/fold.js?v=0fe77292"></script>
-<script src="../shared/perf.js?v=0fe77292"></script>
-<script src="../shared/galaxy-volume.js?v=0fe77292"></script>
+<script src="../shared/frame.js?v=257749ae"></script>
+<script src="../shared/clock.js?v=257749ae"></script>
+<script src="../shared/fold.js?v=257749ae"></script>
+<script src="../shared/perf.js?v=257749ae"></script>
+<script src="../shared/galaxy-volume.js?v=257749ae"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -315,6 +315,7 @@ void main() {
     <button class="tg on" data-k="labels">Labels</button>
     <button class="tg on" data-k="stars">Star field</button>
     <button class="tg on" data-k="voids">Voids</button>
+    <button class="tg on" data-k="web" title="The cosmic web: galaxies strung along filaments round empty voids (illustrative)">Cosmic web</button>
     <button class="tg" data-k="cmb" title="The cosmic microwave background: the oldest light there is">CMB</button>
     <button class="tg" data-k="stalks">Depth lines</button>
     <button class="tg" data-k="zodiac">Zodiac</button>
@@ -653,6 +654,20 @@ const REGIONS = [
     blurb: 'Our home group of galaxies: the Milky Way, Andromeda, Triangulum and about 100 known smaller galaxies, some 10 million light-years across. Andromeda and the Milky Way are its heavyweights, of roughly equal weight, so the group\'s centre lies about halfway between them.' },
   { name: 'Laniakea Supercluster', type: 'region', x: gpos('Norma').x, y: gpos('Norma').y, z: gpos('Norma').z, r: 2.6e8, d: 2.2e8,
     blurb: 'Our home supercluster, mapped in 2014 by following how galaxies flow. About 520 million light-years across with some 100,000 galaxies. Laniakea is Hawaiian for "immeasurable heaven". Its real boundary is irregular; the sphere here is a simplification. Newer data (Cosmicflows-4, Valade et al. 2024) give about a 60% chance that Laniakea is itself part of a basin around ten times bigger, centred on the Shapley Supercluster.' },
+  // more of the great structures, as spheres round their measured centres (their real shapes are irregular; distances comoving)
+  ...[['Perseus–Pisces Supercluster', 134.54, -28.77, 2.5e8, 1.5e8, 'Perseus, Pisces & Andromeda', 'Redshift surveys (Haynes & Giovanelli 1986); centre approximate',
+      'A long chain of galaxy clusters a quarter of a billion light-years away, one of the first giant structures mapped (1980s). It and Laniakea are separated by the Local Void.'],
+    ['Coma Supercluster & CfA2 Great Wall', 58.09, 87.96, 3.2e8, 2.5e8, 'Coma Berenices', 'CfA2 redshift survey (Geller & Huchra 1989); centred on the Coma Cluster',
+      'Found in 1989 as a sheet of galaxies about 500 million light-years long and 300 million wide — then the biggest thing known. The Coma Cluster, with thousands of galaxies, sits at its heart.'],
+    ['Shapley Supercluster', 312.09, 31.22, 6.5e8, 2.0e8, 'Centaurus', 'Redshift surveys (z ≈ 0.048); centre at the Shapley concentration (RA 13h25m, Dec −31°)',
+      'The richest gathering of galaxy clusters in our part of the universe, more than 8,000 galaxies. Its pull adds to the Great Attractor\'s in drawing the Local Group, Laniakea and all, toward it.'],
+    ['Saraswati Supercluster', 87.18, -57.38, 3.75e9, 3.3e8, 'Pisces', 'SDSS Stripe 82 (Bagchi et al. 2017), z ≈ 0.28',
+      'One of the largest superclusters known, about 650 million light-years long, seen as it was 4 billion years ago, holding the mass of some 20 million billion suns.'],
+    ['Huge-LQG', 230.81, 58.78, 1.29e10, 2.0e9, 'Leo', 'A group of 73 quasars (Clowes et al. 2013), z ≈ 1.27; debated',
+      'A group of 73 quasars about 4 billion light-years long. Some astronomers argue a pattern this size can turn up by chance among quasars.', true],
+    ['Hercules–Corona Borealis Great Wall', 48.46, 48.79, 1.58e10, 5.0e9, 'Hercules, Corona Borealis & Boötes', 'Clustering of gamma-ray bursts (Horváth et al. 2014), z ≈ 1.6–2.1; debated',
+      'The largest structure ever claimed, about 10 billion light-years long, inferred from where gamma-ray bursts cluster on the sky. Many doubt it is real: there are few bursts to go on.', true],
+  ].map(([name, l, b, d, r, con, src, blurb, debated]) => { const q = galToWorld(d, l, b); return { name, type: 'region', x: q.x, y: q.y, z: q.z, r, d, con, src, blurb, debated, size: ['Across', `~${(2 * r / (r >= 1e9 ? 1e9 : 1e6)).toLocaleString('en-CA', { maximumFractionDigits: 1 })} ${r >= 1e9 ? 'billion' : 'million'} ly`] }; }),
   // the largest structures claimed: drawn along their measured spines (outlines simplified), at their comoving distance
   { name: 'Sloan Great Wall', type: 'region', shape: shapeOf(SGW_PTS), size: ['Length', '~1.4 billion ly'], con: 'Sextans, Leo & Virgo', d: 1.1e9,
     src: 'SDSS galaxy maps (Gott et al. 2005; Sheth & Diaferio 2011); spine simplified, the galaxies drawn along it illustrative',
@@ -1044,13 +1059,53 @@ const SPR = {};
 })();
 
 // layer chips appear only at the scales where their layer has something to show (the rest are always there)
-const CHIP_SPAN = { arms: [0, 5e6], stars: [0, 14000], zodiac: [0, 14000], orbit: [0, 3e5], voids: [5e6, Infinity], cmb: [5e9, Infinity] };
+const CHIP_SPAN = { arms: [0, 5e6], stars: [0, 14000], zodiac: [0, 14000], orbit: [0, 3e5], voids: [5e6, Infinity], cmb: [5e9, Infinity], web: [2e8, Infinity] };
 // near Sgr A* the Sun's 26,000-light-year journey is beside the point: the galactic-motion layer bows out (chip, path, marker, panel)
 function nearGC() { const span = viewSpan(), d = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z);
   return (1 - sstep(Math.log(Math.max(d, 0.3 * span, 1e-9)), Math.log(900), Math.log(4500))) * (1 - sstep(Math.log(span), Math.log(3000), Math.log(12000))); }
 function chipRel(span) {
   const gc = nearGC() > 0.5, k = Math.round(Math.log(span) * 20) + (gc ? 1e6 : 0); if (k === chipRel.k) return; chipRel.k = k;
   for (const b of document.querySelectorAll('#legend .tg')) { const r = CHIP_SPAN[b.dataset.k]; b.style.display = (r && !(span >= r[0] && span <= r[1])) || (gc && b.dataset.k === 'orbit') ? 'none' : ''; }
+}
+// ---------- the cosmic web (illustrative): galaxies strung along filaments between knots of clusters, round empty voids ----------
+// Beyond the structures mapped above, every map of the universe shows this pattern, but not this exact web: the knots, the filaments
+// and their galaxies here are a seeded sketch of its look and scale (knots ~100 million ly apart near us, the pattern the same
+// everywhere), drawn only once you're out past the Local Supercluster. Kept out of our own neighbourhood, which is mapped.
+const WEB = { pts: null, nodes: null };
+function webBuild() {
+  let seed = 9001; const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296), gau = () => Math.sqrt(-2 * Math.log(rnd() + 1e-9)) * Math.cos(6.2831853 * rnd());
+  const RU = 4.35e10, R0 = 3.5e8, N = LITE ? 700 : 1400, nodes = [];
+  while (nodes.length < N) { const r = RU * Math.cbrt(rnd()); if (r < R0) continue; const ct = 2 * rnd() - 1, st = Math.sqrt(1 - ct * ct), ph = 6.2831853 * rnd();
+    nodes.push({ x: SUNW.x + r * st * Math.cos(ph), y: SUNW.y + r * st * Math.sin(ph), z: SUNW.z + r * ct, m: 0.3 + Math.pow(rnd(), 3) * 1.7, k: 0 }); }
+  const pts = [], per = LITE ? 14 : 30;
+  for (let i = 0; i < N; i++) {   // each knot joined to its three nearest
+    const a = nodes[i], near = [];
+    for (let j = 0; j < N; j++) if (j !== i) { const b = nodes[j], d = (a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2; if (near.length < 3 || d < near[2][0]) { near.push([d, j]); near.sort((p, q) => p[0] - q[0]); if (near.length > 3) near.pop(); } }
+    for (const [d2, j] of near) { if (j < i && nodes[j].lk && nodes[j].lk.includes(i)) continue; (a.lk = a.lk || []).push(j); a.k++; nodes[j].k++;
+      const b = nodes[j], L = Math.sqrt(d2), sx = gau() * 0.12 * L, sy = gau() * 0.12 * L, sz = gau() * 0.12 * L, n = Math.round(per * Math.min(3, L / 2.5e9) + 6);
+      for (let q = 0; q < n; q++) { const t = rnd(), bow = 4 * t * (1 - t), w = 0.025 * L * (0.4 + bow);
+        pts.push({ x: a.x + (b.x - a.x) * t + sx * bow + gau() * w, y: a.y + (b.y - a.y) * t + sy * bow + gau() * w, z: a.z + (b.z - a.z) * t + sz * bow + gau() * w, b: 0.3 + 0.7 * rnd() * rnd(), c: rnd() < 0.5 }); } }
+  }
+  for (const a of nodes) for (let q = 0; q < 10 * a.m; q++) pts.push({ x: a.x + gau() * 6e7 * a.m, y: a.y + gau() * 6e7 * a.m, z: a.z + gau() * 6e7 * a.m, b: 0.5 + 0.5 * rnd(), c: rnd() < 0.3 });   // the clusters at the knots
+  WEB.pts = pts; WEB.nodes = nodes;
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(235,230,255,0.9)'); gr.addColorStop(0.15, 'rgba(190,170,255,0.45)'); gr.addColorStop(0.5, 'rgba(120,110,255,0.12)'); gr.addColorStop(1, 'rgba(90,90,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64); WEB.spr = c;
+}
+function drawWeb() {
+  if (!opts.web) return;
+  const span = viewSpan(), a = sstep(Math.log(span), Math.log(4e8), Math.log(4e9)) * (1 - sstep(PT, 0, 1e-3)); if (a < 0.01) return;
+  if (!WEB.pts) webBuild();
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const sz = Math.max(0.7, Math.min(1.8, 2.2e9 * view.s / 40));
+  for (const [cool, col] of [[true, '#8e94ff'], [false, '#c7a8ff']]) {   // filaments: blue-violet galaxies, some cooler, some warmer
+    ctx.fillStyle = col; ctx.globalAlpha = 0.5 * a; ctx.beginPath();
+    for (const q of WEB.pts) { if (q.c !== cool) continue; const [X, Y] = proj(q.x, q.y, q.z); if (!(X > -2 && X < Wd + 2 && Y > -2 && Y < Ht + 2)) continue; const r = sz * (0.5 + q.b); ctx.rect(X - r / 2, Y - r / 2, r, r); }
+    ctx.fill(); }
+  for (const n of WEB.nodes) {   // the knots: clusters of galaxies, glowing where the filaments meet
+    const [X, Y] = proj(n.x, n.y, n.z), R = Math.max(4, Math.min(40, n.m * (0.6 + 0.25 * n.k) * 8e7 * view.s * 6)); if (!(X > -R && X < Wd + R && Y > -R && Y < Ht + R)) continue;
+    ctx.globalAlpha = a * Math.min(1, 0.35 + 0.12 * n.k); ctx.drawImage(WEB.spr, X - R, Y - R, 2 * R, 2 * R); }
+  ctx.restore();
 }
 function drawVoids() {
   const span = viewSpan();
@@ -1078,7 +1133,7 @@ function drawVoids() {
 const cv = document.getElementById('map'), ctx = cv.getContext('2d');
 let Wd = 0, Ht = 0, dpr = 1;
 const view = { x: 0, y: 4000, z: 0, s: 0.01, yaw: 0, tilt: 0 };
-const opts = { arms: false, grid: true, labels: true, stars: true, stalks: false, voids: true, cmb: false, zodiac: false, orbit: false };   // depth lines and the arm outlines start off, to keep the view clean (Jacob, Nov 2026)
+const opts = { arms: false, grid: true, labels: true, stars: true, stalks: false, voids: true, cmb: false, web: true, zodiac: false, orbit: false };   // depth lines and the arm outlines start off, to keep the view clean (Jacob, Nov 2026)
 let sky = null, hover = null, selected = null, anim = null;
 let CY = 1, SY = 0, CT = 1, ST = 0;
 // Close in, the map is drawn through a real camera with a 40° lens (the same as the Solar System view), so you see the Milky Way
@@ -1238,6 +1293,7 @@ function render(t) {
   if (opts.grid) drawGrid();
   if (opts.arms) drawArms();
   orbTick(t); drawOrbit();
+  drawWeb();
   drawVoids();
   pf('grid/arms/orbit/voids');
   drawGalaxies();
@@ -3537,6 +3593,7 @@ document.getElementById('golg').onclick = () => { const m = gpos('Andromeda'); f
 var infoFold = UAS_FOLD.foldable(document.getElementById('info'), { closeBtn: document.querySelector('#info .close'), title: () => selected ? selected.name : 'Info', startFolded: false, arrow: '▾' });
 function cardOpen() { return document.getElementById('info').style.display === 'block' && !(infoFold && infoFold.folded()); }
 document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset.k] = !opts[b.dataset.k]; b.classList.toggle('on', opts[b.dataset.k]); draw();
+  for (const [a, z] of [['web', 'cmb'], ['cmb', 'web']]) if (b.dataset.k === a && opts[a] && opts[z]) { opts[z] = false; document.querySelector(`.tg[data-k="${z}"]`).classList.remove('on'); }   // the web and the CMB take turns
   if (EMBED && b.dataset.k === 'zodiac') parent.postMessage({ src: 'uas-mw', opt: 'zodiac', on: opts.zodiac }, '*');
   if (EMBED && b.dataset.k === 'orbit') parent.postMessage({ src: 'uas-mw', opt: 'helix', on: opts.orbit }, '*');   // the same switch as the Solar System's
   if (b.dataset.k === 'orbit' && opts.orbit && viewSpan() < 40000) orbView(); });
@@ -3635,7 +3692,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=0fe77292" data-place="info" defer></script>
+<script src="../music/music.js?v=257749ae" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
