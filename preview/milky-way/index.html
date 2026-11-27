@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=e9a09733"></script>
-<script src="../shared/clock.js?v=e9a09733"></script>
-<script src="../shared/fold.js?v=e9a09733"></script>
-<script src="../shared/perf.js?v=e9a09733"></script>
-<script src="../shared/galaxy-volume.js?v=e9a09733"></script>
+<script src="../shared/frame.js?v=cb441583"></script>
+<script src="../shared/clock.js?v=cb441583"></script>
+<script src="../shared/fold.js?v=cb441583"></script>
+<script src="../shared/perf.js?v=cb441583"></script>
+<script src="../shared/galaxy-volume.js?v=cb441583"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -310,7 +310,7 @@ void main() {
 <div id="legend" class="panel">
   <div id="legend-rows"></div>
   <div class="toggles">
-    <button class="tg on" data-k="arms">Arms</button>
+    <button class="tg" data-k="arms">Arms</button>
     <button class="tg on" data-k="grid">Distance rings</button>
     <button class="tg on" data-k="labels">Labels</button>
     <button class="tg on" data-k="stars">Star field</button>
@@ -1045,9 +1045,12 @@ const SPR = {};
 
 // layer chips appear only at the scales where their layer has something to show (the rest are always there)
 const CHIP_SPAN = { arms: [0, 5e6], stars: [0, 14000], zodiac: [0, 14000], orbit: [0, 3e5], voids: [5e6, Infinity], cmb: [5e9, Infinity] };
+// near Sgr A* the Sun's 26,000-light-year journey is beside the point: the galactic-motion layer bows out (chip, path, marker, panel)
+function nearGC() { const span = viewSpan(), d = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z);
+  return (1 - sstep(Math.log(Math.max(d, 0.3 * span, 1e-9)), Math.log(900), Math.log(4500))) * (1 - sstep(Math.log(span), Math.log(3000), Math.log(12000))); }
 function chipRel(span) {
-  const k = Math.round(Math.log(span) * 20); if (k === chipRel.k) return; chipRel.k = k;
-  for (const b of document.querySelectorAll('#legend .tg')) { const r = CHIP_SPAN[b.dataset.k]; b.style.display = r && !(span >= r[0] && span <= r[1]) ? 'none' : ''; }
+  const gc = nearGC() > 0.5, k = Math.round(Math.log(span) * 20) + (gc ? 1e6 : 0); if (k === chipRel.k) return; chipRel.k = k;
+  for (const b of document.querySelectorAll('#legend .tg')) { const r = CHIP_SPAN[b.dataset.k]; b.style.display = (r && !(span >= r[0] && span <= r[1])) || (gc && b.dataset.k === 'orbit') ? 'none' : ''; }
 }
 function drawVoids() {
   const span = viewSpan();
@@ -1075,7 +1078,7 @@ function drawVoids() {
 const cv = document.getElementById('map'), ctx = cv.getContext('2d');
 let Wd = 0, Ht = 0, dpr = 1;
 const view = { x: 0, y: 4000, z: 0, s: 0.01, yaw: 0, tilt: 0 };
-const opts = { arms: true, grid: true, labels: true, stars: true, stalks: false, voids: true, cmb: false, zodiac: false, orbit: false };   // depth lines start off, to keep the view clean
+const opts = { arms: false, grid: true, labels: true, stars: true, stalks: false, voids: true, cmb: false, zodiac: false, orbit: false };   // depth lines and the arm outlines start off, to keep the view clean (Jacob, Nov 2026)
 let sky = null, hover = null, selected = null, anim = null;
 let CY = 1, SY = 0, CT = 1, ST = 0;
 // Close in, the map is drawn through a real camera with a 40° lens (the same as the Solar System view), so you see the Milky Way
@@ -1598,9 +1601,10 @@ document.getElementById('orb-t').oninput = e => { orbPlay(false); orbSet(+e.targ
 document.querySelectorAll('#orbpanel .orb-seg button').forEach(b => b.onclick = () => { SORB.rate = +b.dataset.r;
   document.querySelectorAll('#orbpanel .orb-seg button').forEach(x => x.classList.toggle('on', x === b)); });
 function drawOrbit() {
-  orbitPanel(opts.orbit);
-  if (!opts.orbit) return;
-  const S = SORB, span = viewSpan(), fade = sstep(Math.log(span), Math.log(40), Math.log(400));
+  const span = viewSpan(), gcF = nearGC(), shown = opts.orbit && span <= CHIP_SPAN.orbit[1] && gcF < 0.5;   // only where its chip is on screen
+  orbitPanel(shown);
+  if (!shown) { if (SORB.play) { SORB.play = false; document.getElementById('orb-pp').textContent = '▶\ufe0e'; document.getElementById('orbpanel').classList.remove('playing'); } return; }
+  const S = SORB, fade = sstep(Math.log(span), Math.log(40), Math.log(400)) * (1 - gcF);
   if (fade < 0.99 && Math.abs(S.t) < 0.25) {   // close in, the whole path is far bigger than the view: show which way the Sun is heading, and how fast
     const a = S.P[0], b = S.F[1], d = Math.min(span * 0.12, 60), L = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
     const [X0, Y0] = proj(a.x, a.y, a.z), [X1, Y1] = proj(a.x + (b.x - a.x) / L * d, a.y + (b.y - a.y) / L * d, a.z + (b.z - a.z) / L * d);
@@ -1683,19 +1687,23 @@ function shapeSwarm(rg) {
 function drawShape(rg, Rr) {
   rg.scr = null;
   if (Rr < 10 || Rr > 30 * Math.max(Wd, Ht)) return;
-  const sel = rg === selected || rg === hover, a = Math.min(1, (Rr - 10) / 25), P = rg.shape.map(q => proj(q.x, q.y, q.z));
+  // only once you've pulled back far enough for it to be out there in the view, not lined up behind the galaxy you're looking at
+  const span = viewSpan(), dv = Math.hypot(view.x - rg.x, view.y - rg.y, view.z - rg.z), far = sstep(Math.log(span), Math.log(0.04 * dv), Math.log(0.12 * dv)) * (1 - sstep(PT, 0, 1e-3));
+  if (far < 0.01) return;
+  const sel = rg === selected || rg === hover, a = Math.min(1, (Rr - 10) / 25) * far, P = rg.shape.map(q => proj(q.x, q.y, q.z));
   if (P.some(p => !isFinite(p[0]))) return;
   ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  { const sw = shapeSwarm(rg), g = Math.min(1, (Rr - 10) / 60), dr = Math.max(0.7, Math.min(1.9, Rr / 160));   // the galaxies (illustrative)
+  { const sw = shapeSwarm(rg), g = Math.min(1, (Rr - 10) / 60) * far, dr = Math.max(0.7, Math.min(1.9, Rr / 160));   // the galaxies (illustrative): the structure is shown by them alone
     ctx.globalCompositeOperation = 'lighter';
-    for (const pass of [true, false]) { ctx.fillStyle = pass ? '#fff0d8' : '#cdd8ff'; ctx.beginPath();
-      for (const q of sw) { if (q.w !== pass) continue; const [X, Y] = proj(q.x, q.y, q.z); if (!(X > -4 && X < Wd + 4 && Y > -4 && Y < Ht + 4)) continue; const r = dr * (0.6 + q.b); ctx.moveTo(X + r, Y); ctx.arc(X, Y, r, 0, 6.2832); }
-      ctx.globalAlpha = g * 0.55; ctx.fill(); }
+    for (const [halo, k] of [[2.6, 0.12], [1, 0.6]]) for (const pass of [true, false]) {   // each a soft glow round a small bright core, old yellow-white or young blue-white
+      ctx.fillStyle = pass ? '#ffeccc' : '#d2dcff'; ctx.beginPath();
+      for (const q of sw) { if (q.w !== pass) continue; const [X, Y] = proj(q.x, q.y, q.z); if (!(X > -6 && X < Wd + 6 && Y > -6 && Y < Ht + 6)) continue; const r = dr * (0.55 + q.b) * halo; ctx.moveTo(X + r, Y); ctx.arc(X, Y, r, 0, 6.2832); }
+      ctx.globalAlpha = g * k; ctx.fill(); }
     ctx.globalCompositeOperation = 'source-over'; }
-  ctx.beginPath(); PEN.start(); for (const [X, Y] of P) PEN.to(X, Y); if (rg.closed) PEN.to(P[0][0], P[0][1]);
-  ctx.globalAlpha = a * 0.16; ctx.strokeStyle = '#c9b6ff'; ctx.lineWidth = 9; ctx.stroke();   // a soft glow under the line
-  ctx.globalAlpha = a * 0.6; ctx.strokeStyle = `rgba(214,198,255,${sel ? 0.95 : 0.55})`; ctx.lineWidth = sel ? 2.2 : 1.2;
-  ctx.setLineDash(rg.debated ? [7, 5] : []); ctx.stroke(); ctx.restore();
+  if (sel) {   // picked: its measured spine, faintly, so you can see what's meant
+    ctx.beginPath(); PEN.start(); for (const [X, Y] of P) PEN.to(X, Y); if (rg.closed) PEN.to(P[0][0], P[0][1]);
+    ctx.globalAlpha = a * 0.45; ctx.strokeStyle = 'rgba(214,198,255,0.8)'; ctx.lineWidth = 1.2; ctx.setLineDash(rg.debated ? [7, 5] : [3, 6]); ctx.stroke(); }
+  ctx.restore();
   rg.scr = P;
   if (opts.labels) {
     const top = P.reduce((m, p) => p[1] < m[1] ? p : m), X = P.reduce((t, p) => t + p[0], 0) / P.length, ly = top[1] - 14;
@@ -3623,7 +3631,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=e9a09733" data-place="info" defer></script>
+<script src="../music/music.js?v=cb441583" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
