@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=c3ef62ef"></script>
-<script src="../shared/clock.js?v=c3ef62ef"></script>
-<script src="../shared/fold.js?v=c3ef62ef"></script>
-<script src="baked/manifest.js?v=c3ef62ef"></script>
-<script src="../shared/perf.js?v=c3ef62ef"></script>
-<script src="../shared/galaxy-volume.js?v=c3ef62ef"></script>
+<script src="../shared/frame.js?v=1c2971ec"></script>
+<script src="../shared/clock.js?v=1c2971ec"></script>
+<script src="../shared/fold.js?v=1c2971ec"></script>
+<script src="baked/manifest.js?v=1c2971ec"></script>
+<script src="../shared/perf.js?v=1c2971ec"></script>
+<script src="../shared/galaxy-volume.js?v=1c2971ec"></script>
 <script>
 (() => {
 'use strict';
@@ -2413,6 +2413,39 @@ const SURF = {
     note: 'Surface: Cassini’s mosaic of 9,873 near-infrared images (938 nm, where the haze thins), 2004–17; dark areas are mostly dune fields. Brightness is real; the orange tint is added. NASA/JPL-Caltech/SSI.' },
   earth: { note: 'Clouds cleared. The surface is from NASA’s Blue Marble.' },
 };
+// ---- the planets as photographed: global maps stitched from spacecraft images (Wikimedia Commons, which serves them to any site).
+// The painted stand-ins show until each map arrives. Desktop fetches them one after another once the page has settled; phones only
+// fetch a planet's map (a smaller one) when you're near it. Longitudes: for planets turned by the IAU rotation models, the mesh's
+// u = 0.5 is 0° E, so a map centred on lon0 needs offset −lon0/360; tidally locked dwarfs face their moon with u = 0.25.
+const CM = 'https://upload.wikimedia.org/wikipedia/commons/', CMT = (p, w) => CM + 'thumb/' + p + '/' + w + 'px-' + p.split('/').pop();
+const PHOTO = {
+  mercury: { u: CMT('0/04/Mercury_-_complete_mono_basemap_2500mpp_equirectangular.png', LITE ? 1920 : 3840), tint: 0xcdc3b6, off: 0 },   // MESSENGER MDIS mosaic (monochrome; Mercury's own faint brownish grey added)
+  mars: { u: CMT('1/1f/Mars_Viking_MDIM21_ClrMosaic_1km.jpg', LITE ? 1920 : 3840), tint: 0xffffff, off: 0 },                                // Viking Orbiter colour mosaic (MDIM 2.1)
+  jupiter: { u: CM + '1/1e/Jupiter_Cylindrical_Map_-_Dec_2000_PIA07782.jpg', tint: 0xffffff, off: 0 },                                        // Cassini, Dec 2000 (PIA07782)
+  saturn: { u: CM + (LITE ? 'e/ea/Solarsystemscope_texture_2k_saturn.jpg' : '1/1e/Solarsystemscope_texture_8k_saturn.jpg'), tint: 0xffffff, off: 0 },   // Solar System Scope, from Cassini imagery
+  uranus: { u: CM + '9/95/Solarsystemscope_texture_2k_uranus.jpg', tint: 0xffffff, off: 0 },                                                  // Solar System Scope, from Voyager 2 imagery
+  neptune: { u: CM + '1/1e/Solarsystemscope_texture_2k_neptune.jpg', tint: 0xffffff, off: 0 },                                                // Solar System Scope, from Voyager 2 imagery
+  pluto: { u: CMT('a/ad/Pluto_color_mapmosaic.jpg', LITE ? 1920 : 3840), tint: 0xffffff, off: -0.25 },                                        // New Horizons colour mosaic (centred on Sputnik Planitia, 180° E, the side away from Charon)
+};
+const photoQ = [];
+function photoLoad(item) {
+  if (item.state) return; item.state = 1;
+  const P = PHOTO[item.b.key], m = item.mesh.material;
+  new THREE.TextureLoader().setCrossOrigin('anonymous').load(P.u, t => {
+    t.encoding = THREE.sRGBEncoding; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); t.wrapS = THREE.RepeatWrapping; t.offset.x = P.off;
+    item.state = 2; item.tex = t;
+    if (item.b.see && item.b.origMap !== undefined) { item.b.origMap = t; item.b.origColor = P.tint; }   // Venus/Titan-style "see the surface" keeps its own map until turned off
+    else { m.map = t; m.color.setHex(P.tint); m.needsUpdate = true; }
+    bumpIdle(); photoNext();
+  }, undefined, () => { item.state = 3; photoNext(); });
+}
+function photoNext() { if (LITE) return; const it = photoQ.find(x => !x.state); if (it) setTimeout(() => photoLoad(it), 600); }
+for (const b of PLANETS) if (PHOTO[b.key]) photoQ.push({ b, mesh: b.planet || b.mesh });
+if (!LITE) setTimeout(photoNext, 3500);   // desktop: start once the first views are up
+else setInterval(() => {                  // phones: only the planet you're near
+  for (const it of photoQ) if (!it.state) { const p = it.mesh.getWorldPosition(_photoV); if (p.distanceTo(camera.position) < 400 * it.b.R) photoLoad(it); }
+}, 1000);
+const _photoV = new THREE.Vector3();
 const seeKey = o => o && (o.key === 'venus' || o.key === 'earth' ? o.key : o.name === 'Titan' ? 'Titan' : null);
 const surfTex = {};
 function setSee(o, on) {
@@ -3508,7 +3541,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=c3ef62ef" data-place="info" defer></script>
+<script src="../music/music.js?v=1c2971ec" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
