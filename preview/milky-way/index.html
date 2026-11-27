@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=76fa0374"></script>
-<script src="../shared/clock.js?v=76fa0374"></script>
-<script src="../shared/fold.js?v=76fa0374"></script>
-<script src="../shared/perf.js?v=76fa0374"></script>
-<script src="../shared/galaxy-volume.js?v=76fa0374"></script>
+<script src="../shared/frame.js?v=dbc10dde"></script>
+<script src="../shared/clock.js?v=dbc10dde"></script>
+<script src="../shared/fold.js?v=dbc10dde"></script>
+<script src="../shared/perf.js?v=dbc10dde"></script>
+<script src="../shared/galaxy-volume.js?v=dbc10dde"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -3858,7 +3858,7 @@ if (EMBED) {
   });
   parent.postMessage({ src: 'uas-mw', ready: true }, '*');
 }
-if (/[?&]debug=1/.test(location.search)) window.__mw = { pick, sunDive, get ssReady() { return ssReady; }, PROF, REGIONS, MWQ, PSR, QSO, ACEN, ACEN_A, fieldObj, get selected() { return selected; }, spanFor, GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, gcScale, drawGCNear, drawS2, drawBH, GC, get following() { return following; }, get ssReady() { return ssReady; } };
+if (/[?&]debug=1/.test(location.search)) window.__mw = { NSUN, drawNearSuns, pick, sunDive, get ssReady() { return ssReady; }, PROF, REGIONS, MWQ, PSR, QSO, ACEN, ACEN_A, fieldObj, get selected() { return selected; }, spanFor, GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, gcScale, drawGCNear, drawS2, drawBH, GC, get following() { return following; }, get ssReady() { return ssReady; } };
 
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
@@ -3931,7 +3931,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=76fa0374" data-place="info" defer></script>
+<script src="../music/music.js?v=dbc10dde" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
