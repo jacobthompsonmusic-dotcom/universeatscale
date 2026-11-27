@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=23049810"></script>
-<script src="../shared/clock.js?v=23049810"></script>
-<script src="../shared/fold.js?v=23049810"></script>
-<script src="../shared/perf.js?v=23049810"></script>
-<script src="../shared/galaxy-volume.js?v=23049810"></script>
+<script src="../shared/frame.js?v=42c5cb81"></script>
+<script src="../shared/clock.js?v=42c5cb81"></script>
+<script src="../shared/fold.js?v=42c5cb81"></script>
+<script src="../shared/perf.js?v=42c5cb81"></script>
+<script src="../shared/galaxy-volume.js?v=42c5cb81"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1119,11 +1119,14 @@ function laniBuild() {
     const ct = 2 * rnd() - 1, st = Math.sqrt(1 - ct * ct), ph = 6.2831853 * rnd(), rr = R * (0.55 + 0.6 * Math.cbrt(rnd()));
     const sq = 0.65 + 0.5 * rnd();   // the basin is lopsided: squash it a little, a different way for each stream
     let p = { x: rg.x + rr * st * Math.cos(ph), y: rg.y + rr * st * Math.sin(ph) * sq, z: rg.z + rr * ct * (1.4 - sq) };
-    const pts = [p], tw = (rnd() - 0.5) * 1.2;
-    for (let k = 0; k < 40; k++) {   // step toward the attractor, curling round it
-      const dx = A.x - p.x, dy = A.y - p.y, dz = A.z - p.z, d = Math.hypot(dx, dy, dz); if (d < 0.06 * R) break;
-      const st2 = Math.min(0.08 * R, 0.12 * d), cx = -dy * tw, cy = dx * tw;
-      p = { x: p.x + (dx / d) * st2 + (cx / d) * st2 * 0.5, y: p.y + (dy / d) * st2 + (cy / d) * st2 * 0.5, z: p.z + (dz / d) * st2 }; pts.push(p);
+    const pts = [p], ax = [rnd() - 0.5, rnd() - 0.5, rnd() - 0.5], tw = 0.6 + 0.9 * rnd(), ph0 = 6.28 * rnd(), wf = 0.15 + 0.2 * rnd();
+    for (let k = 0; k < 90; k++) {   // drift toward the attractor along a swirling, wandering path, like the streams in Tully's map
+      const dx = A.x - p.x, dy = A.y - p.y, dz = A.z - p.z, d = Math.hypot(dx, dy, dz); if (d < 0.12 * R) break;
+      const ux = dx / d, uy = dy / d, uz = dz / d;
+      let px = uy * ax[2] - uz * ax[1], py = uz * ax[0] - ux * ax[2], pz = ux * ax[1] - uy * ax[0]; const pl = Math.hypot(px, py, pz) || 1; px /= pl; py /= pl; pz /= pl;
+      const sw = tw * Math.min(1, d / (0.7 * R)) + wf * Math.sin(k * 0.35 + ph0), st2 = Math.min(0.035 * R, 0.08 * d);
+      const vx = ux + sw * px, vy = uy + sw * py, vz = uz + sw * pz, vl = Math.hypot(vx, vy, vz);
+      p = { x: p.x + vx / vl * st2, y: p.y + vy / vl * st2, z: p.z + vz / vl * st2 }; pts.push(p);
     }
     lines.push({ pts, w: 0.4 + rnd() });
   }
@@ -1134,7 +1137,7 @@ function drawLaniakea() {
   LANI.a = a; if (a < 0.01) return;
   if (!LANI.lines) laniBuild();
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  for (const [lw, al] of [[7, 0.05], [2.2, 0.16], [0.9, 0.45]]) {   // a broad soft glow, then the brighter thread
+  for (const [lw, al] of [[9, 0.035], [3, 0.1], [1, 0.26]]) {   // a broad soft glow, then the brighter thread
     ctx.lineWidth = lw; ctx.strokeStyle = `rgba(255,196,110,${(al * a).toFixed(3)})`; ctx.beginPath();
     for (const L of LANI.lines) { let first = true; for (const q of L.pts) { const [X, Y] = proj(q.x, q.y, q.z); if (!isFinite(X)) { first = true; continue; } if (first) ctx.moveTo(X, Y); else ctx.lineTo(X, Y); first = false; } }
     ctx.stroke(); }
@@ -3735,7 +3738,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=23049810" data-place="info" defer></script>
+<script src="../music/music.js?v=42c5cb81" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
