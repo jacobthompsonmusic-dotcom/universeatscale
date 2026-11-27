@@ -349,12 +349,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=6b8645ad"></script>
-<script src="../shared/clock.js?v=6b8645ad"></script>
-<script src="../shared/fold.js?v=6b8645ad"></script>
-<script src="baked/manifest.js?v=6b8645ad"></script>
-<script src="../shared/perf.js?v=6b8645ad"></script>
-<script src="../shared/galaxy-volume.js?v=6b8645ad"></script>
+<script src="../shared/frame.js?v=d58c0a96"></script>
+<script src="../shared/clock.js?v=d58c0a96"></script>
+<script src="../shared/fold.js?v=d58c0a96"></script>
+<script src="baked/manifest.js?v=d58c0a96"></script>
+<script src="../shared/perf.js?v=d58c0a96"></script>
+<script src="../shared/galaxy-volume.js?v=d58c0a96"></script>
 <script>
 (() => {
 'use strict';
@@ -1262,7 +1262,7 @@ SUN.root = new THREE.Group(); space.add(SUN.root);
 // The photosphere, alive: granulation (cells ~1,300 km across that boil away in minutes — sped up here so you can see them move),
 // the larger supergranulation network with bright faculae near the edge, and limb darkening, strongest in blue
 // (the edge is cooler and redder because we see less deep into the gas there). The Sun turns once in 25.4 days at its equator about its
-// real pole (RA 286.13°, Dec 63.87°). Coloured as SDO sees it in extreme ultraviolet; the active regions are illustrative, not today's.
+// real pole (RA 286.13°, Dec 63.87°). True colour (white); the network is exaggerated so it shows, and the active regions are illustrative, not today's.
 SUN.spots = (() => { const r = mulberry32(11), out = [];
   for (let i = 0; i < 9; i++) { const lat = (r() < 0.5 ? -1 : 1) * (7 + r() * 23) * DEG, lon = r() * TAU, rad = 0.006 + Math.pow(r(), 2) * 0.02;
     out.push(new THREE.Vector4(Math.cos(lat) * Math.sin(lon), Math.sin(lat), Math.cos(lat) * Math.cos(lon), rad)); }
@@ -1287,24 +1287,24 @@ vec2 sunCells(vec3 p, float t) {   // distance to the nearest and second-nearest
   {
     vec3 n = normalize(vSunP); float cs = cos(uSpin), sn = sin(uSpin); vec3 q = vec3(cs * n.x + sn * n.z, n.y, -sn * n.x + cs * n.z);   // the turning surface
     float mu = clamp(dot(normalize(vSunVN), normalize(-vSunVP)), 0.0, 1.0);
-    // coloured as NASA's Solar Dynamics Observatory sees it in extreme ultraviolet (304 Å, the chromosphere): a deep orange disc
-    // netted with bright magnetic network, lit up by active regions; in visible light the Sun is white
-    vec3 col = vec3(1.0, 0.22, 0.02) * (0.6 + 0.4 * pow(mu, 0.35));                        // a little darker toward the edge…
-    col += vec3(1.0, 0.45, 0.08) * 0.35 * smoothstep(0.22, 0.0, mu);                          // …then a bright rim right at the limb
+    // true colour: in space the Sun is white (it peaks in green but puts out every colour, so the eye sees white); the edge is
+    // darker and warmer because there we see only the cooler upper gas. The magnetic network is brightened so its texture shows.
+    vec3 col = 0.9 * vec3(pow(mu, 0.3), pow(mu, 0.4), pow(mu, 0.55)) * vec3(1.0, 0.985, 0.96);   // limb darkening, strongest in blue
     float sg = 1.0 - smoothstep(0.3, 0.9, uPix * 23.0 / max(mu, 0.2));                        // the chromospheric network (~30,000 km cells)
     if (sg > 0.0) { vec2 c = sunCells(q * 23.0, uTime * 0.02); float lane = 1.0 - smoothstep(0.0, 0.22, c.y - c.x);
       vec2 c2 = sunCells(q * 61.0 + 3.7, uTime * 0.05); float fine = 1.0 - smoothstep(0.0, 0.3, c2.y - c2.x);
       float h = fract(sin(dot(floor(q * 23.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453);   // each cell's network lit unevenly, as in SDO's pictures
-      col *= 1.0 + sg * ((0.25 + 0.55 * h) * lane - 0.2 + 0.45 * fine - 0.15 + 0.25 * (0.45 - c.x)); }
+      col *= 1.0 + sg * (0.6 + 0.4 * pow(1.0 - mu, 1.5)) * ((0.25 + 0.55 * h) * lane - 0.2 + 0.45 * fine - 0.15 + 0.25 * (0.45 - c.x)); }
     #ifndef UAS_SUN_LITE
     float gv = 1.0 - smoothstep(0.25, 0.7, uPix * 535.0 / max(mu, 0.15));                     // close up: the fine mottling boils
     if (gv > 0.0) { vec2 c = sunCells(q * 535.0, uTime * 0.6); float g = smoothstep(0.0, 0.5, c.y - c.x) * (1.25 - c.x);
       col *= 1.0 + gv * 0.3 * (g - 0.5); }
     #endif
-    for (int i = 0; i < 9; i++) { float d = acos(clamp(dot(q, uSpots[i].xyz), -1.0, 1.0)), r = uSpots[i].w;   // active regions: bright plage round a white-hot core
+    for (int i = 0; i < 9; i++) { float d = acos(clamp(dot(q, uSpots[i].xyz), -1.0, 1.0)), r = uSpots[i].w;   // active regions: sunspots (dark umbra, grey penumbra) in bright faculae
       vec2 c = sunCells(q * 140.0 + float(i) * 7.0, uTime * 0.04); float knot = 1.0 - smoothstep(0.0, 0.3, c.y - c.x);
-      float halo = smoothstep(r * 5.0, r * 1.2, d), core = smoothstep(r * 1.6, r * 0.3, d);
-      col += vec3(1.0, 0.5, 0.1) * halo * (0.3 + 0.8 * knot) + vec3(1.0, 0.85, 0.6) * core * 1.2; }
+      float halo = smoothstep(r * 5.0, r * 1.5, d);
+      col *= 1.0 + halo * (0.06 + 0.25 * pow(1.0 - mu, 1.5)) * (0.4 + 0.8 * knot);
+      col *= mix(vec3(0.2, 0.15, 0.12), vec3(1.0), smoothstep(r * 0.35, r * 0.5, d)) * mix(vec3(0.7, 0.64, 0.58), vec3(1.0), smoothstep(r * 0.8, r * 1.0, d)); }
     diffuseColor.rgb = col;
   }`).replace('#include <dithering_fragment>',
     '#include <dithering_fragment>\n  if (uOn > 0.5 && dot(normalize(vEclW - cameraPosition), uDir) > uCos) gl_FragColor.rgb = vec3(0.0);');
@@ -3827,7 +3827,7 @@ function frame(t) {
   const sz = (Math.min(0.6, 2.4 / dAU) + 0.04) * fk; SUN.glare.scale.set(sz, sz, 1);
   SUN.glare.material.opacity = THREE.MathUtils.clamp((dAU - 0.01) / 0.05, 0, 1) * (SKY.on ? Math.pow(1 - ECL.obsc, 1.5) : 1);
   SUN.corona.material.opacity = SKY.on ? 0.35 + 0.65 * sstep(ECL.obsc, 0.97, 1) : 1;   // the corona shows round the black Moon at totality
-  if (SUN.corona.userData.sky !== SKY.on) { SUN.corona.userData.sky = SKY.on; SUN.corona.material.color.setRGB(...(SKY.on ? [1, 1, 1] : [1, 0.42, 0.16])); }   // out in space a red-orange glow, as in SDO's ultraviolet; from the ground, pearly white
+  if (SUN.corona.userData.sky !== SKY.on) { SUN.corona.userData.sky = SKY.on; SUN.corona.material.color.setRGB(...(SKY.on ? [1, 1, 1] : [1, 0.96, 0.9])); }   // white, as the eye would see it
 
   for (const b of PLANETS) {
     relOf(b, p); const dist = p.distanceTo(camera.position), px = b.R / dist * pxs;
@@ -4016,7 +4016,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=6b8645ad" data-place="info" defer></script>
+<script src="../music/music.js?v=d58c0a96" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
