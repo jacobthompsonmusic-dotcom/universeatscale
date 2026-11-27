@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=36bbaf0a"></script>
-<script src="../shared/clock.js?v=36bbaf0a"></script>
-<script src="../shared/fold.js?v=36bbaf0a"></script>
-<script src="baked/manifest.js?v=36bbaf0a"></script>
-<script src="../shared/perf.js?v=36bbaf0a"></script>
-<script src="../shared/galaxy-volume.js?v=36bbaf0a"></script>
+<script src="../shared/frame.js?v=dedf5e77"></script>
+<script src="../shared/clock.js?v=dedf5e77"></script>
+<script src="../shared/fold.js?v=dedf5e77"></script>
+<script src="baked/manifest.js?v=dedf5e77"></script>
+<script src="../shared/perf.js?v=dedf5e77"></script>
+<script src="../shared/galaxy-volume.js?v=dedf5e77"></script>
 <script>
 (() => {
 'use strict';
@@ -2427,15 +2427,49 @@ const PHOTO = {
   neptune: { u: CM + '1/1e/Solarsystemscope_texture_2k_neptune.jpg', tint: 0xffffff, off: 0 },                                                // Solar System Scope, from Voyager 2 imagery
   pluto: { u: CMT('a/ad/Pluto_color_mapmosaic.jpg', LITE ? 1920 : 3840), tint: 0xffffff, off: -0.25 },                                        // New Horizons colour mosaic (centred on Sputnik Planitia, 180° E, the side away from Charon)
 };
+// The moons, the same way. They keep one face toward their planet: lon 0° (the sub-planet point) sits at u = 0.25, so a map centred on
+// lon0 needs offset 0.25 − lon0/360 (each map's centre was checked against known features or a map of known centring). Brightness: each
+// map is scaled so its average matches the moon's measured albedo on the same scale as our Moon's map (capped at the photo's own level),
+// so dark Phobos stays dark beside icy Enceladus. Cassini's maps were released in enhanced colour (into the UV and IR): toned back here.
+const MW = LITE ? 960 : 1920;
+const MOONPHOTO = {
+  Io: { u: CM + '4/48/Io_for_GeoHacks.jpg', A: 0.63, lon0: 0 },                                        // USGS Galileo/Voyager merged mosaic
+  Europa: { u: CMT('3/33/Moon_Europa_color_map.jpg', MW), A: 0.67, lon0: 180 },                        // Galileo/Voyager-based colour map (CC0)
+  Ganymede: { u: CMT('8/81/Ganymede_map_by_Askaniy.png', MW), A: 0.43, lon0: 0 },                      // Askaniy Anpilogov, from USGS/Björn Jónsson/Juno
+  Callisto: { u: CMT('a/a1/Callisto_map_by_Askaniy.png', MW), A: 0.22, lon0: 0 },                      // Askaniy Anpilogov, John van Vliet
+  Mimas: { u: CMT('4/4f/Map_of_Mimas_colorized_2014-04_PIA18437.jpg', MW), A: 0.96, lon0: 180, desat: 0.75 },   // Cassini colour maps (PIA18434–39, LPI/Paul Schenk)
+  Enceladus: { u: CMT('a/aa/Enceladus_Color_Map.jpg', MW), A: 1.375, lon0: 180, desat: 0.75 },
+  Tethys: { u: CMT('4/40/Tethys_Color_Map.jpg', MW), A: 1.229, lon0: 180, desat: 0.75 },
+  Dione: { u: CMT('1/18/Dione_Color_Map.jpg', MW), A: 0.998, lon0: 180, desat: 0.75 },
+  Rhea: { u: CMT('2/21/Rhea_Color_Map.jpg', MW), A: 0.949, lon0: 180, desat: 0.75 },
+  Iapetus: { u: CMT('5/53/Iapetus_Color_Map.jpg', MW), A: 0, lon0: 180, desat: 0.6 },                  // two-faced: its own map sets the contrast
+  Phobos: { u: CMT('3/30/Phobos_map_by_Askaniy.png', 960), A: 0.071, lon0: 0 },
+  Deimos: { u: CMT('7/72/Deimos_map_by_Askaniy.png', 960), A: 0.068, lon0: 0 },
+  Titania: { u: CM + '8/85/Titania_map_JPL_USGS.jpg', A: 0.35, lon0: 0 },                              // Voyager 2 (only the southern half was lit in 1986)
+  Umbriel: { u: CM + '4/42/Umbriel_map_JPL_USGS.jpg', A: 0.26, lon0: 0 },
+  Oberon: { u: CM + '1/1d/Oberon_map_JPL_USGS.jpg', A: 0.31, lon0: 0 },
+};
+const MOON_K = 2.6;   // our Moon's map averages 0.315 (linear) for an albedo of 0.12
+function moonPrep(t, P, m) {   // returns the texture to use, after toning; sets the brightness
+  const img = t.image, c = document.createElement('canvas'), w = P.desat ? img.width : 64, h = P.desat ? img.height : 32; c.width = w; c.height = h;
+  const g = c.getContext('2d'); g.drawImage(img, 0, 0, w, h); const im = g.getImageData(0, 0, w, h), d = im.data, lin = v => (v /= 255) <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  let s = 0, n = 0; const step = Math.max(1, Math.floor(w * h / 4096));
+  for (let i = 0; i < w * h; i += step) { s += (lin(d[4 * i]) + lin(d[4 * i + 1]) + lin(d[4 * i + 2])) / 3; n++; }
+  m.color.setScalar(P.A ? Math.min(1, MOON_K * P.A / (s / n)) : 1);
+  if (!P.desat) return t;
+  for (let i = 0; i < w * h; i++) { const o = 4 * i, y = 0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2]; d[o] += (y - d[o]) * P.desat; d[o + 1] += (y - d[o + 1]) * P.desat; d[o + 2] += (y - d[o + 2]) * P.desat; }
+  g.putImageData(im, 0, 0); const ct = new THREE.CanvasTexture(c); ct.encoding = THREE.sRGBEncoding; t.dispose(); return ct;
+}
 const photoQ = [];
 function photoLoad(item) {
   if (item.state) return; item.state = 1;
-  const P = PHOTO[item.b.key], m = item.mesh.material;
+  const P = item.P || PHOTO[item.b.key], m = item.mesh.material;
   new THREE.TextureLoader().setCrossOrigin('anonymous').load(P.u, t => {
+    if (item.P) { t = moonPrep(t, P, m); P.off = 0.25 - P.lon0 / 360; P.tint = null; }
     t.encoding = THREE.sRGBEncoding; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); t.wrapS = THREE.RepeatWrapping; t.offset.x = P.off;
     item.state = 2; item.tex = t;
     if (item.b.see && item.b.origMap !== undefined) { item.b.origMap = t; item.b.origColor = P.tint; }   // Venus/Titan-style "see the surface" keeps its own map until turned off
-    else { m.map = t; m.color.setHex(P.tint); m.needsUpdate = true; }
+    else { m.map = t; if (P.tint !== null) m.color.setHex(P.tint); m.needsUpdate = true; }
     if (item.b.key === 'jupiter' && !LITE) junoPoles(item.mesh.material);
     if (RELIEF[item.b.key]) reliefLoad(item.b.key, m);
     bumpIdle(); photoNext();
@@ -2552,12 +2586,16 @@ function reliefLoad(key, mat) {
   img.onerror = () => { P.state = 3; };
   img.src = P.u;
 }
-function photoSync() { for (const b of PLANETS) if (PHOTO[b.key] && !photoQ.some(x => x.b === b)) photoQ.push({ b, mesh: b.planet || b.mesh }); }   // the giants are built later on
+function photoSync() {   // the giants (and their moons) are built later on; planets first, then moons
+  for (const b of PLANETS) if (PHOTO[b.key] && !photoQ.some(x => x.b === b)) photoQ.push({ b, mesh: b.planet || b.mesh });
+  for (const o of MOONS) if (MOONPHOTO[o.name] && o.mesh && !photoQ.some(x => x.b === o)) photoQ.push({ b: o, mesh: o.mesh, P: MOONPHOTO[o.name] });
+  photoQ.sort((a, b) => !!a.P - !!b.P);
+}
 function photoNext() { photoSync(); if (LITE) return; const it = photoQ.find(x => !x.state); if (it) setTimeout(() => photoLoad(it), 600); }
 photoSync();
 if (!LITE) setTimeout(photoNext, 3500);   // desktop: start once the first views are up
 else setInterval(() => {                  // phones: only the planet you're near
-  photoSync(); for (const it of photoQ) if (!it.state) { const p = it.mesh.getWorldPosition(_photoV); if (p.distanceTo(camera.position) < 400 * it.b.R) photoLoad(it); }
+  photoSync(); for (const it of photoQ) if (!it.state) { const p = it.mesh.getWorldPosition(_photoV); if (p.distanceTo(camera.position) < 400 * (it.b.R || it.b.r * U)) photoLoad(it); }
 }, 1000);
 const _photoV = new THREE.Vector3();
 const seeKey = o => o && (o.key === 'venus' || o.key === 'earth' ? o.key : o.name === 'Titan' ? 'Titan' : null);
@@ -3649,7 +3687,7 @@ function init() {
   canvas.addEventListener('webglcontextrestored', () => setTimeout(() => { precompile(); MWV.key = ''; IDLE.dirty++; }, 0));
   requestAnimationFrame(frame);
   setTimeout(earthHiRes, 400);
-  if (/[?&]debug=1/.test(location.search)) window.__ss = { renderer, IDLE, RELIEF, reliefLoad, SKY, ECL, SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
+  if (/[?&]debug=1/.test(location.search)) window.__ss = { renderer, IDLE, RELIEF, reliefLoad, photoQ, MOONPHOTO, SKY, ECL, SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
   if (EMBED) { parent.postMessage({ src: 'uas-ss', ready: true }, '*'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); document.querySelector('a.homelink').addEventListener('click', e => { try { if (top.UAS_WELCOME) { e.preventDefault(); top.UAS_WELCOME(); } } catch (_) {} });   /* on the home page: just bring the welcome sign back */ document.body.classList.add('embed'); }
   // lift the black loading screen once the opening view has actually been drawn, Milky Way included (or after 2.5 s at most)
   const t0 = performance.now(), lift = () => { if (!LITE && !MWV.ready && performance.now() - t0 < 2500) return setTimeout(lift, 100);
@@ -3659,7 +3697,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=36bbaf0a" data-place="info" defer></script>
+<script src="../music/music.js?v=dedf5e77" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
