@@ -28,6 +28,7 @@ const srv = http.createServer((q, r) => { let p = decodeURIComponent(q.url.split
       if (u.includes('OrbitControls.js')) return rt.fulfill({ path: T3 + 'examples/js/controls/OrbitControls.js', contentType: 'text/javascript' });
       return u.startsWith('http://localhost:8124') ? rt.continue() : rt.abort(); });
     pg.on('pageerror', e => errs.push(e.message));
+    pg.on('console', m => { if (m.type() === 'error' && /WebGLProgram|shader|GLSL/i.test(m.text())) errs.push('shader: ' + m.text().slice(0, 200)); });   // a shader that fails to compile only logs
     await pg.goto('http://localhost:8124' + url); await pg.waitForTimeout(7000);
     errs.length ? bad(`${url}: ${errs.join(' | ').slice(0, 300)}`) : ok(`${url} loads without errors`);
     if (url.startsWith('/universe')) {
