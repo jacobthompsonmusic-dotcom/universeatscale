@@ -38,6 +38,7 @@
   * { box-sizing:border-box; }
   html, body { margin:0; height:100%; background:#020205; color:var(--text); font:15.5px/1.45 IM Fell English, Georgia, serif; overflow:hidden; -webkit-font-smoothing:antialiased; }
   canvas#gl { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+  canvas#wx { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; display:none; }
   .panel { position:fixed; background:var(--panel); border:1px solid var(--line); border-radius:14px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); }
   #top { top:16px; left:16px; padding:14px 16px; width:340px; z-index:3; }
   #top h1 { margin:6px 0 0; font:600 18px/1.2 "IM Fell English SC", Georgia, serif; }
@@ -234,6 +235,7 @@
 </head>
 <body>
 <canvas id="gl"></canvas>
+<canvas id="wx" aria-hidden="true"></canvas>
 <div id="labels"></div>
 <div id="loading">Placing the planets…</div>
 
@@ -344,12 +346,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=e2a91a87"></script>
-<script src="../shared/clock.js?v=e2a91a87"></script>
-<script src="../shared/fold.js?v=e2a91a87"></script>
-<script src="baked/manifest.js?v=e2a91a87"></script>
-<script src="../shared/perf.js?v=e2a91a87"></script>
-<script src="../shared/galaxy-volume.js?v=e2a91a87"></script>
+<script src="../shared/frame.js?v=03256a39"></script>
+<script src="../shared/clock.js?v=03256a39"></script>
+<script src="../shared/fold.js?v=03256a39"></script>
+<script src="baked/manifest.js?v=03256a39"></script>
+<script src="../shared/perf.js?v=03256a39"></script>
+<script src="../shared/galaxy-volume.js?v=03256a39"></script>
 <script>
 (() => {
 'use strict';
@@ -3399,6 +3401,37 @@ ECL.update = () => {
 // after the frame's own camera settings: the lens, the ground and sky, day and night
 // the season where you stand, from the date: the north spot (45° N) has an Ontario-like year, snow from December to March;
 // the south spot (34° S) has the same year six months on, but its winters are mild (no snow lies at that latitude near the sea)
+// Weather on the ground (illustrative): on some winter days a light snowfall, on some spring days passing showers — sun showers when
+// the Sun is up. Which days is fixed by the date (the same day always has the same weather), not a forecast or a record.
+const WX = { cv: document.getElementById('wx'), g: null, flakes: [], drops: [], on: false };
+function wxDay(ms) { const d = Math.floor(ms / 864e5), x = Math.sin(d * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); }
+function weather(S, sAlt) {
+  const h = wxDay(simMs), hrs = simMs / 36e5, pulse = Math.max(0, Math.sin(hrs / 3 * Math.PI + h * 20));   // showers come and go every few hours
+  const snow = S.snow > 0.6 && h < 0.45 ? S.snow * (0.55 + 0.45 * Math.max(0, Math.sin(hrs / 5 * Math.PI + h * 9))) : 0;
+  const rain = !snow && S.bud > 0.4 && h < 0.4 ? S.bud * pulse : 0;
+  const c = WX.cv, on = (snow > 0.02 || rain > 0.02) && !SKY.lifted && !SKY.launch;
+  if (on !== WX.on) { WX.on = on; c.style.display = on ? 'block' : 'none'; }
+  if (!on) return;
+  const d = Math.min(2, devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  if (c.width !== Math.round(W * d) || c.height !== Math.round(H * d)) { c.width = Math.round(W * d); c.height = Math.round(H * d); WX.g = c.getContext('2d'); WX.flakes = []; WX.drops = []; }
+  const g = WX.g, t = performance.now() / 1000, day = THREE.MathUtils.clamp((sAlt + 6) / 14, 0, 1), lit = 0.25 + 0.75 * day;
+  g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, W, H);
+  if (snow > 0.02) {   // flakes drift down and sway; nearer ones bigger and faster
+    const n = Math.round(260 * snow * (W * H) / 1.3e6); while (WX.flakes.length < n) WX.flakes.push({ x: Math.random(), y: Math.random(), z: 0.3 + Math.random() * 0.7, p: Math.random() * 6.3 });
+    g.fillStyle = `rgba(${Math.round(235 * lit + 20)},${Math.round(240 * lit + 20)},${Math.round(250 * lit + 25)},0.85)`;
+    g.beginPath();
+    for (let i = 0; i < n; i++) { const f = WX.flakes[i], y = ((f.y + t * 0.045 * f.z) % 1) * (H + 20) - 10, x = ((f.x + 0.012 * Math.sin(t * 0.7 * f.z + f.p)) % 1 + 1) % 1 * W, r = 0.6 + 2.1 * f.z * f.z;
+      g.moveTo(x + r, y); g.arc(x, y, r, 0, 6.2832); }
+    g.globalAlpha = 0.45 + 0.4 * snow; g.fill(); g.globalAlpha = 1;
+  }
+  if (rain > 0.02) {   // thin slanting streaks, catching the light when the Sun is out
+    const n = Math.round(320 * rain * (W * H) / 1.3e6); while (WX.drops.length < n) WX.drops.push({ x: Math.random(), y: Math.random(), z: 0.4 + Math.random() * 0.6 });
+    g.strokeStyle = `rgba(${Math.round(200 * lit + 30)},${Math.round(210 * lit + 30)},${Math.round(225 * lit + 30)},${(0.18 + 0.22 * day).toFixed(2)})`; g.lineWidth = 1;
+    g.beginPath();
+    for (let i = 0; i < n; i++) { const q = WX.drops[i], y = ((q.y + t * 0.9 * q.z) % 1) * (H + 60) - 30, x = ((q.x + t * 0.05) % 1) * W, L = 10 + 16 * q.z; g.moveTo(x, y); g.lineTo(x - L * 0.18, y - L); }
+    g.globalAlpha = Math.min(1, rain * 1.4); g.stroke(); g.globalAlpha = 1;
+  }
+}
 function skySeason() {
   const y0 = Date.UTC(new Date(simMs).getUTCFullYear(), 0, 1); let d = (simMs - y0) / 864e5;
   if (SKY.hemi === 's') d = (d + 182.6) % 365.25;
@@ -3421,6 +3454,7 @@ function skyPaint() {
   if (!SKY.lifted) IDLE.dirty++;   // the grass and clouds move: keep drawing
   { const S = skySeason(); for (const k of ['snow', 'fall', 'bare', 'bud', 'dry', 'hz']) gu[k].value = S[k]; du.hz.value = S.hz; }
   const sp = relOf(SUN).sub(camera.position).normalize(), sAlt = Math.asin(THREE.MathUtils.clamp(sp.dot(SKY.up), -1, 1)) / DEG;
+  weather(skySeason(), sAlt);
   const thin = SKY.launch ? 1 - sstep(SKY.launch.e, 0.0, 0.32) : 1;   // climbing out: the blue thins away to black
   ECL.update(); const ob = ECL.obsc, tot = sstep(ob, 0.975, 1.0);
   { const mm = ECL.moon().mesh.material, gnd = !SKY.lifted;   // from the ground the Moon's dark side shows the sky through it, as it really does
@@ -3652,7 +3686,7 @@ function frame(t) {
   camNom.copy(camera.position);
   if (deep.p > 0) camera.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target);
   camera.fov = deep.fov; camera.far = camD > 1e7 ? 1e15 : 2e8; camera.near = Math.min(0.0005, Math.max(1e-9, camD * 0.02)); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
-  if (SKY.on) skyPaint();
+  if (SKY.on) skyPaint(); else if (WX.on) { WX.on = false; WX.cv.style.display = 'none'; }
 
   { // the Sun's surface moves: while it's big enough on screen to see that, keep drawing
     const sp = relOf(SUN).sub(camera.position), d = sp.length(), px = SUN.R / Math.max(d, 1e-9) * innerHeight / (2 * Math.tan(camera.fov * DEG / 2));
@@ -3766,7 +3800,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=e2a91a87" data-place="info" defer></script>
+<script src="../music/music.js?v=03256a39" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
