@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=b343f508"></script>
-<script src="../shared/clock.js?v=b343f508"></script>
-<script src="../shared/fold.js?v=b343f508"></script>
-<script src="baked/manifest.js?v=b343f508"></script>
-<script src="../shared/perf.js?v=b343f508"></script>
-<script src="../shared/galaxy-volume.js?v=b343f508"></script>
+<script src="../shared/frame.js?v=72fa95b1"></script>
+<script src="../shared/clock.js?v=72fa95b1"></script>
+<script src="../shared/fold.js?v=72fa95b1"></script>
+<script src="baked/manifest.js?v=72fa95b1"></script>
+<script src="../shared/perf.js?v=72fa95b1"></script>
+<script src="../shared/galaxy-volume.js?v=72fa95b1"></script>
 <script>
 (() => {
 'use strict';
@@ -1255,7 +1255,7 @@ const SUN = { key: 'sun', name: 'Sun', kind: 'sun', isSun: true, color: '#ffe27a
   blurb: 'Our star, holding 99.86% of all the mass in the solar system. Everything here is drawn at its true size and distance from it, which is why most of this map is empty: Neptune is thirty times farther out than Earth.' };
 SUN.root = new THREE.Group(); space.add(SUN.root);
 // The photosphere, alive: granulation (cells ~1,300 km across that boil away in minutes — sped up here so you can see them move),
-// the larger supergranulation network with bright faculae near the edge, and limb darkening with the measured fall-off in each colour
+// the larger supergranulation network with bright faculae near the edge, and limb darkening, strongest in blue
 // (the edge is cooler and redder because we see less deep into the gas there). The Sun turns once in 25.4 days at its equator about its
 // real pole (RA 286.13°, Dec 63.87°). The sunspots are illustrative: placed in the active latitudes, not today's spots.
 SUN.spots = (() => { const r = mulberry32(11), out = [];
@@ -3764,7 +3764,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=b343f508" data-place="info" defer></script>
+<script src="../music/music.js?v=72fa95b1" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
