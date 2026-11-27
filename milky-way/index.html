@@ -107,6 +107,7 @@
   #info dd.src { color: #a9b0c6; font-size:14px; }
   #info .blurb { margin: 0; color: #c9cee0; font-size:13.5px; }
   canvas#bh { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+  canvas#tw { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   #bhnote { position: fixed; left: 50%; bottom: 118px; transform: translateX(-50%); display: none; max-width: min(620px, calc(100% - 32px)); text-align: center;
     font: 400 13px/1.45 "IM Fell English", Georgia, serif; color: rgba(214,218,232,0.78); text-shadow: 0 1px 3px #000; pointer-events: none; }
   #bhnote b { color: #ffd9a0; font-weight: 600; }
@@ -190,12 +191,13 @@
 <body>
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
+<canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=a8f37ca4"></script>
-<script src="../shared/clock.js?v=a8f37ca4"></script>
-<script src="../shared/fold.js?v=a8f37ca4"></script>
-<script src="../shared/perf.js?v=a8f37ca4"></script>
-<script src="../shared/galaxy-volume.js?v=a8f37ca4"></script>
+<script src="../shared/frame.js?v=8bc0cdc5"></script>
+<script src="../shared/clock.js?v=8bc0cdc5"></script>
+<script src="../shared/fold.js?v=8bc0cdc5"></script>
+<script src="../shared/perf.js?v=8bc0cdc5"></script>
+<script src="../shared/galaxy-volume.js?v=8bc0cdc5"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -714,7 +716,7 @@ const FIELD_RAW = "79|-44.7|-249.4|6.28|1.73|0.76|HD 224750|G3IV|Phe|H|0\n-54.7|
 const FR = FIELD_RAW.split('\n'), NF = FR.length;
 const fx = new Float32Array(NF), fy = new Float32Array(NF), fz = new Float32Array(NF), fd = new Float32Array(NF),
   fmag = new Float32Array(NF), fabs = new Float32Array(NF), fr = new Float32Array(NF), fa = new Float32Array(NF);
-const fname = [], fsp = [], fcon = [], fsrc = [], fprop = new Uint8Array(NF), fcol = [];
+const fname = [], fsp = [], fcon = [], fsrc = [], fprop = new Uint8Array(NF), fcol = [], fkey = [], fcolW = [];
 const bvColor = bv => FRM.starRGB(FRM.bvToT(bv));   // shared/frame.js: B−V → temperature → colour
 for (let i = 0; i < NF; i++) {
   const p = FR[i].split('|');
@@ -723,6 +725,8 @@ for (let i = 0; i < NF; i++) {
   fmag[i] = +p[3]; fabs[i] = p[4] === '' ? 99 : +p[4];
   const bv = p[5] === '' ? 0.65 : +p[5], [r, g, b] = bvColor(bv);
   fcol[i] = `rgb(${r},${g},${b})`;
+  fkey[i] = `${r >> 3 << 3},${g >> 3 << 3},${b >> 3 << 3}`;   // colour, rounded, for the glow sprite
+  fcolW[i] = `rgb(${r + (255 - r) * 0.22 | 0},${g + (255 - g) * 0.22 | 0},${b + (255 - b) * 0.22 | 0})`;   // the tiniest stars: a touch whiter, like an unresolved point
   const M = fabs[i] === 99 ? 5 : fabs[i];
   fr[i] = Math.max(0.55, Math.min(2.6, 0.75 + (6 - M) * 0.17));
   fa[i] = Math.max(0.28, Math.min(1, 0.45 + (5 - M) * 0.07));
@@ -1844,8 +1848,41 @@ const viewSpan = () => Math.min(Wd, Ht) / view.s;
 // depth lines help most at in-between tilts; side-on the height is already plain to see, so they fade out
 // depth lines: fade side-on, and keep them faint when the camera's own perspective already shows the depth
 const stalkFade = () => { const e = edgeAng(); return Math.max(0, Math.min(1, (e - 4 * DEG) / (8 * DEG), (80 * DEG - e) / (18 * DEG))) * (1 - 0.75 * PT / TAN20); };
+// ---------- star sprites and twinkle ----------
+// Each catalogue star is drawn as a photograph shows one: a bright, near-white core, with the star's colour in the soft glow round it.
+const STARSPR = {};
+function starSprite(key) {
+  const k = key + '|' + dpr; if (STARSPR[k]) return STARSPR[k];
+  const S = Math.ceil(36 * dpr), c = document.createElement('canvas'); c.width = c.height = S;
+  const g = c.getContext('2d'), [r, gg, b] = key.split(',').map(Number), mix = (t, a) => `rgba(${r + (255 - r) * t | 0},${gg + (255 - gg) * t | 0},${b + (255 - b) * t | 0},${a})`;
+  const gr = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  gr.addColorStop(0, mix(0.65, 1)); gr.addColorStop(0.11, mix(0.3, 1)); gr.addColorStop(0.24, mix(0, 0.5)); gr.addColorStop(0.5, mix(0, 0.1)); gr.addColorStop(1, mix(0, 0));
+  g.fillStyle = gr; g.fillRect(0, 0, S, S);
+  return STARSPR[k] = c;
+}
+// Twinkle (desktop): a third of the brighter stars flicker gently on a separate layer, so the map itself needn't redraw for it.
+// (Out in space stars hold steady — twinkling is Earth's air — so this is a light touch, for the feel of coloured points of light.)
+const TW = { cv: document.getElementById('tw'), pts: [], raf: 0, on: !LITE && !matchMedia('(prefers-reduced-motion: reduce)').matches,
+  kick() { if (this.on && !this.raf) this.raf = requestAnimationFrame(t => this.tick(t)); },
+  tick(t) {
+    this.raf = 0; const c = this.cv, w = Math.round(Wd * dpr), h = Math.round(Ht * dpr);
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    const g = c.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h);
+    if (!this.pts.length || document.hidden) return;
+    if (t - (this.lt || 0) < 33) { this.kick(); return; }   // ~30 times a second is plenty for a flicker
+    this.lt = t; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalCompositeOperation = 'lighter';
+    const P = this.pts, s = t / 1000;
+    for (let j = 0; j < P.length; j += 5) {
+      const i = P[j + 4], ph = (i * 0.6180339887) % 1 * 6.283, f1 = 1.3 + (i % 7) * 0.31, f2 = 3.1 + (i % 5) * 0.43;
+      const v = 0.5 + 0.32 * Math.sin(s * f1 + ph) + 0.18 * Math.sin(s * f2 + 2.1 * ph), fl = v * v * v;   // mostly calm, now and then a brief brightening
+      if (fl < 0.06) continue;
+      const R = P[j + 2] * 4.2 * (1 + 0.25 * fl);
+      g.globalAlpha = Math.min(1, 0.55 * fl * P[j + 3]); g.drawImage(starSprite(fkey[i]), P[j] - R, P[j + 1] - R, 2 * R, 2 * R);
+    }
+    this.kick();
+  } };
 function drawField() {
-  fieldPts = [];
+  fieldPts = []; TW.pts.length = 0; TW.kick();
   const span = viewSpan();
   if (!opts.stars || span > 14000) return;
   if (Math.hypot(view.x - SUNW.x, view.y - SUNW.y, view.z - SUNW.z) > 3e5) return;   // far from home: the catalogue stars are all back there
@@ -1857,6 +1894,7 @@ function drawField() {
   const sAlpha = 0.16 * g * Math.min(1, (600 - span) / 200) * stalkFade(), near2 = (span * 0.6) ** 2, maxLen = Ht * 0.4;
   // stars too faint for the eye are only complete out to 50 ly, so show them only when zoomed in — otherwise they fake a crowd around the Sun
   const faint = Math.max(0, Math.min(1, (350 - span) / 200)), batch = LITE ? new Map() : null, thin = LITE ? Math.max(1, Math.round(span / 60)) : 1;
+  if (!batch) ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < NF; i++) {
     if (LITE && !fprop[i] && (fmag[i] > 4 || (thin > 1 && i % thin)) && (fx[i] - SUNW.x) ** 2 + (fy[i] - SUNW.y) ** 2 + (fz[i] - SUNW.z) ** 2 > 400) continue;   // phones: only the stars that matter — named ones, the brightest, and every star within 20 ly
     const dx = fx[i] - view.x, dy = fy[i] - view.y, ry = dx * SY + dy * CY, dz = fz[i] - view.z;
@@ -1879,15 +1917,17 @@ function drawField() {
     if (batch) {   // phones: gather into one path per colour and brightness step
       const key = fcol[i] + '|' + Math.min(8, Math.round(al * 8)); let P = batch.get(key); if (!P) batch.set(key, P = new Path2D());
       if (r < 1.2) P.rect(X - r, Y - r, 2 * r, 2 * r); else { P.moveTo(X + r, Y); P.arc(X, Y, r, 0, 7); }
-    } else {
-      ctx.globalAlpha = al; ctx.fillStyle = fcol[i];
-      if (r < 1.2) ctx.fillRect(X - r, Y - r, 2 * r, 2 * r);
-      else { ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill(); }
+    } else {   // a point of light: a near-white core with its colour in the glow round it, added like light
+      ctx.globalAlpha = al;
+      if (r < 0.9) { ctx.fillStyle = fcolW[i]; ctx.fillRect(X - r, Y - r, 2 * r, 2 * r); }
+      else { const R = r * 4.2; ctx.drawImage(starSprite(fkey[i]), X - R, Y - R, 2 * R, 2 * R); }
+      if (r >= 1 && TW.on && (i * 2654435761 >>> 0) % 3 === 0 && TW.pts.length < 1200) TW.pts.push(X, Y, r, al, i);   // a third of the brighter stars twinkle
     }
     fieldPts.push(i, X, Y);
   }
   if (batch) for (const [key, P] of batch) { const j = key.lastIndexOf('|'); ctx.globalAlpha = +key.slice(j + 1) / 8; ctx.fillStyle = key.slice(0, j); ctx.fill(P); }
   ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
   for (const o of [hover, selected]) {
     if (!o || o.type !== 'field') continue;
     const [X, Y] = proj(o.x, o.y, o.z);
@@ -3569,7 +3609,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=a8f37ca4" data-place="info" defer></script>
+<script src="../music/music.js?v=8bc0cdc5" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

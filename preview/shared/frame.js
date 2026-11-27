@@ -27,11 +27,11 @@
     return F.helioToWorld(d * cb * Math.cos(l * DEG), d * cb * Math.sin(l * DEG), d * Math.sin(b * DEG)); };
   F.eqToGal = v => F.EQ2GAL.map(r => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
   // Star colours, shared by both views. A star's colour index B−V gives its surface temperature (Ballesteros 2012, EPL 97, 34001);
-  // the temperature gives the colour. Real star colours are pale (a blackbody's sRGB tint); these are pushed a little further
-  // so you can tell at a glance: blue-white for hot O/B stars, white A, yellow-white F/G, orange K, orange-red M.
+  // the temperature gives the colour: a blackbody's sRGB tint (M. Charity's table, D65 white), its saturation raised 1.4× so the tints
+  // read as they do in a good photograph — pale blue-white O/B, white A, warm-white F/G, peach K, orange M — rather than as paint.
   F.bvToT = bv => 4600 * (1 / (0.92 * bv + 1.7) + 1 / (0.92 * bv + 0.62));
-  const TC = [[2400, 255, 92, 44], [3000, 255, 120, 60], [3500, 255, 148, 80], [4000, 255, 176, 108], [4600, 255, 204, 145], [5300, 255, 227, 186],
-    [5800, 255, 240, 216], [6500, 250, 246, 244], [7500, 222, 230, 255], [10000, 182, 202, 255], [15000, 152, 177, 255], [30000, 126, 156, 255]];
+  const TC = [[2400, 255, 128, 48], [3000, 255, 165, 80], [3500, 255, 190, 110], [4000, 255, 206, 142], [4600, 255, 219, 176], [5300, 255, 231, 207],
+    [5800, 255, 239, 228], [6500, 255, 248, 254], [7500, 230, 236, 255], [10000, 198, 219, 255], [15000, 172, 206, 255], [30000, 147, 192, 255]];
   F.starRGB = T => {   // → [r, g, b], 0–255
     if (T <= TC[0][0]) return TC[0].slice(1);
     for (let i = 1; i < TC.length; i++) if (T <= TC[i][0]) {
