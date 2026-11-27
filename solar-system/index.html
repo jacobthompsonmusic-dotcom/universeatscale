@@ -349,12 +349,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=9b44b14e"></script>
-<script src="../shared/clock.js?v=9b44b14e"></script>
-<script src="../shared/fold.js?v=9b44b14e"></script>
-<script src="baked/manifest.js?v=9b44b14e"></script>
-<script src="../shared/perf.js?v=9b44b14e"></script>
-<script src="../shared/galaxy-volume.js?v=9b44b14e"></script>
+<script src="../shared/frame.js?v=37ee2f1a"></script>
+<script src="../shared/clock.js?v=37ee2f1a"></script>
+<script src="../shared/fold.js?v=37ee2f1a"></script>
+<script src="baked/manifest.js?v=37ee2f1a"></script>
+<script src="../shared/perf.js?v=37ee2f1a"></script>
+<script src="../shared/galaxy-volume.js?v=37ee2f1a"></script>
 <script>
 (() => {
 'use strict';
@@ -2337,6 +2337,36 @@ function buildFields() {
     const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lMat); ln.frustumCulled = false; loops.add(ln);
   }
   FIELDS.sun = { g: sun, spiral, loops };
+  // Ganymede, the only moon with a magnetic field of its own (Galileo, Kivelson et al. 1996, 2002): a dipole of about 720 nT at the
+  // equator, pointing nearly opposite to its spin axis, sitting inside Jupiter's much bigger field. The result is a mini-magnetosphere:
+  // closed lines out to about two Ganymede radii, and above about 45° latitude open lines that join Jupiter's field and are swept
+  // downstream by Jupiter's faster-turning plasma into two "Alfvén wings" (Jia et al. 2008). Line shapes simplified; sizes as measured.
+  const G = MOONS.find(o => o.name === 'Ganymede');
+  if (G && G.mesh) {
+    const R = G.mesh.geometry.parameters.radius, gan = new THREE.Group(); gan.visible = false; G.mesh.add(gan);
+    const gMat = new THREE.LineBasicMaterial({ color: 0xa48cff, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
+    const P = (r, lat, phi) => new THREE.Vector3(r * Math.cos(lat) * Math.cos(phi), r * Math.sin(lat), r * Math.cos(lat) * Math.sin(phi));
+    for (const L of [1.15, 1.4, 1.7, 2.0]) for (let j = 0; j < 12; j++) {   // closed: r = L·cos²λ, squeezed on the upstream (trailing) side, +x
+      const phi = j / 12 * TAU, sq = 1 - 0.18 * Math.max(0, Math.cos(phi)), lmax = Math.acos(Math.sqrt(1 / L)), pts = [];
+      for (let i = 0; i <= 60; i++) { const lat = -lmax + 2 * lmax * i / 60, r = (1 + (L * Math.cos(lat) ** 2 - 1) * sq) * R; pts.push(P(r, lat, phi)); }
+      const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gMat); ln.frustumCulled = false; gan.add(ln);
+    }
+    const wMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }), wc = new THREE.Color(0xa48cff);
+    for (const hs of [1, -1]) for (const lat0 of [50, 62, 75]) for (let j = 0; j < 8; j++) {   // open: out of the polar caps, then along Jupiter's field, bent ~27° downstream (−x)
+      const phi = (j + 0.5) / 8 * TAU, L = 1 / Math.cos(lat0 * DEG) ** 2, pts = [], col = [];
+      for (let i = 0; i <= 24; i++) { const lat = hs * (lat0 - (lat0 - 25) * i / 24) * DEG, r = L * Math.cos(lat) ** 2 * R; if (r > 1.9 * R) break; pts.push(P(r, lat, phi)); }
+      const last = pts[pts.length - 1], w = new THREE.Vector3(-0.5, hs, 0).normalize();
+      for (let i = 1; i <= 30; i++) pts.push(last.clone().addScaledVector(w, R * 0.25 * i));
+      for (let i = 0; i < pts.length; i++) { const f = 1 - Math.max(0, (i - (pts.length - 30)) / 30); col.push(wc.r * f, wc.g * f, wc.b * f); }
+      const g = new THREE.BufferGeometry().setFromPoints(pts); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+      const ln = new THREE.Line(g, wMat); ln.frustumCulled = false; gan.add(ln);
+    }
+    for (const hs of [1, -1]) {   // the auroral ovals, where closed lines give way to open ones (seen by Hubble in ultraviolet)
+      const pts = []; for (let i = 0; i <= 96; i++) pts.push(P(R * 1.01, hs * 45 * DEG, i / 96 * TAU));
+      const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x9fffd0, transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending })); ln.frustumCulled = false; gan.add(ln);
+    }
+    FIELDS.gan = gan;
+  }
 }
 const _YF = new THREE.Vector3(0, 1, 0);
 function updateFields() {
@@ -2346,6 +2376,7 @@ function updateFields() {
     F.shells.quaternion.setFromUnitVectors(_YF, F.b.sunDir);   // nose into the solar wind
     if (F.spin) F.spin.rotation.y = F.b.kind === 'giant' ? F.b.planet.rotation.y : F.b.mesh.rotation.y;
   }
+  if (FIELDS.gan) FIELDS.gan.visible = on;
   if (FIELDS.sun) { FIELDS.sun.g.visible = on; if (on) FIELDS.sun.spiral.rotation.y = (simMs / 86400000 / 25.38 % 1) * TAU; }   // the pattern turns with the Sun
 }
 const ALLBODIES = () => [SUN, ...PLANETS, ...MOONS];
@@ -2445,6 +2476,7 @@ function select(o) {
     const F = o.kind === 'giant' ? o.cf.mag : o.kind === 'planet' ? FIELD[o.key] : null;
     if (F) f.push(['Magnetic field', F.field]); else if (o.isSun) f.push(['Magnetic field', 'Carried out by the solar wind and wound into a spiral by the Sun’s 25-day spin; it flips every 11 years or so']);
     if (F && F.note && o.kind === 'planet') f.push(['Magnetosphere', F.note]);
+    if (o.name === 'Ganymede') f.push(['Magnetic field', 'Its own, the only moon’s: about 0.007 gauss at the equator (Galileo, 1996)'], ['Magnetosphere', 'A small one, about two Ganymede radii out, nested inside Jupiter’s; the lines from its polar caps join Jupiter’s field, and its auroral ovals glow at about 45° latitude']);
   }
   document.getElementById('info-facts').innerHTML = f.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
   document.getElementById('info-blurb').textContent = o.blurb;
@@ -3975,7 +4007,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=9b44b14e" data-place="info" defer></script>
+<script src="../music/music.js?v=37ee2f1a" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
