@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=1f071b9e"></script>
-<script src="../shared/clock.js?v=1f071b9e"></script>
-<script src="../shared/fold.js?v=1f071b9e"></script>
-<script src="baked/manifest.js?v=1f071b9e"></script>
-<script src="../shared/perf.js?v=1f071b9e"></script>
-<script src="../shared/galaxy-volume.js?v=1f071b9e"></script>
+<script src="../shared/frame.js?v=b06904d1"></script>
+<script src="../shared/clock.js?v=b06904d1"></script>
+<script src="../shared/fold.js?v=b06904d1"></script>
+<script src="baked/manifest.js?v=b06904d1"></script>
+<script src="../shared/perf.js?v=b06904d1"></script>
+<script src="../shared/galaxy-volume.js?v=b06904d1"></script>
 <script>
 (() => {
 'use strict';
@@ -2436,8 +2436,56 @@ function photoLoad(item) {
     item.state = 2; item.tex = t;
     if (item.b.see && item.b.origMap !== undefined) { item.b.origMap = t; item.b.origColor = P.tint; }   // Venus/Titan-style "see the surface" keeps its own map until turned off
     else { m.map = t; m.color.setHex(P.tint); m.needsUpdate = true; }
+    if (item.b.key === 'jupiter' && !LITE) junoPoles(item.mesh.material);
     bumpIdle(); photoNext();
   }, undefined, () => { item.state = 3; photoNext(); });
+}
+// Juno over Jupiter's poles. Cassini (2000) saw the poles only obliquely through haze; Juno's polar orbit looks straight down on them.
+// Two JunoCam composites are laid over the Cassini map near each pole, blending in across a few degrees:
+//   north — PIA24237, the eight circumpolar cyclones round the central one (PJ25–28, 2020; polar azimuthal equidistant, planetocentric,
+//           42.1 px per degree from the pole at (1073, 1160) px, System III 0° to the right; its yellow labels are painted out on load)
+//   south — PIA21641, the south polar cyclones (2017; stereographic, the disc's rim ~37° from the pole, centre (1322, 1457) px, radius 1409 px)
+// Both were released colour-enhanced; they're toned toward Jupiter's natural colours here.
+function junoPoles(mat) {
+  const ld = new THREE.TextureLoader().setCrossOrigin('anonymous'), U = { uJN: { value: null }, uJS: { value: null } };
+  const N = new Image(); N.crossOrigin = 'anonymous';
+  N.onload = () => {   // paint out the annotations: yellow numbers and arrows, the red pole mark, and the title strip
+    const c = document.createElement('canvas'); c.width = N.width; c.height = N.height; const g = c.getContext('2d'); g.drawImage(N, 0, 0);
+    const im = g.getImageData(0, 0, c.width, c.height), d = im.data, W = c.width, H = c.height, mask = new Uint8Array(W * H);
+    for (let i = 0, o = 0; i < W * H; i++, o += 4) { const r = d[o], gg = d[o + 1], b = d[o + 2]; if ((r > 150 && gg > 130 && b < 0.6 * gg) || (r > 170 && gg < 80 && b < 80)) mask[i] = 1; }
+    const grow = new Uint8Array(mask); for (let y = 3; y < H - 3; y++) for (let x = 3; x < W - 3; x++) if (mask[y * W + x]) for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) grow[(y + dy) * W + x + dx] = 1;
+    const bl = document.createElement('canvas'); bl.width = W >> 3; bl.height = H >> 3; const bg = bl.getContext('2d'); bg.imageSmoothingQuality = 'high'; bg.drawImage(c, 0, 0, bl.width, bl.height);
+    const bd = bg.getImageData(0, 0, bl.width, bl.height).data;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x; if (!grow[i]) continue; const q = 4 * (Math.min(bl.height - 1, y >> 3) * bl.width + Math.min(bl.width - 1, x >> 3)), o = 4 * i; d[o] = bd[q]; d[o + 1] = bd[q + 1]; d[o + 2] = bd[q + 2]; }
+    g.putImageData(im, 0, 0);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; U.uJN.value = t; ready();
+  };
+  N.src = 'https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia24/pia24237/PIA24237.jpg';
+  ld.load(CM + 'b/b0/PIA21641-Jupiter-SouthernStorms-JunoCam-20170525.jpg', t => { t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; U.uJS.value = t; ready(); });
+  function ready() {
+    if (!U.uJN.value || !U.uJS.value) return;
+    mat.onBeforeCompile = sh => {
+      Object.assign(sh.uniforms, U);
+      sh.fragmentShader = 'uniform sampler2D uJN; uniform sampler2D uJS;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+      { float lat = (vUv.y - 0.5) * PI, lon = vUv.x * PI2;
+        float cN = degrees(PI * 0.5 - lat), cS = degrees(PI * 0.5 + lat);
+        vec3 tone = vec3(1.0, 0.95, 0.88);                                    // toward Jupiter's natural creams and browns
+        if (cN < 21.0) {
+          vec2 p = vec2(1073.0, 1160.0) + 42.1 * cN * vec2(cos(lon), -sin(lon));
+          vec3 c = sRGBToLinear(texture2D(uJN, vec2(p.x / 2133.0, 1.0 - p.y / 2127.0))).rgb;
+          c = mix(c, vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))) * tone, 0.55) * 1.15;
+          diffuseColor.rgb = mix(diffuseColor.rgb, c, 1.0 - smoothstep(16.0, 20.5, cN));
+        }
+        if (cS < 29.0) {
+          float r = 1409.0 * tan(radians(cS) * 0.5) / tan(radians(37.0) * 0.5);
+          vec2 p = vec2(1322.0, 1457.0) + r * vec2(cos(lon), sin(lon));
+          vec3 c = sRGBToLinear(texture2D(uJS, vec2(p.x / 2646.0, 1.0 - p.y / 2915.0))).rgb;
+          c = mix(c, vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))) * tone, 0.5);
+          diffuseColor.rgb = mix(diffuseColor.rgb, c, 1.0 - smoothstep(22.0, 28.0, cS));
+        } }`);
+    };
+    mat.needsUpdate = true; bumpIdle();
+  }
 }
 function photoNext() { if (LITE) return; const it = photoQ.find(x => !x.state); if (it) setTimeout(() => photoLoad(it), 600); }
 for (const b of PLANETS) if (PHOTO[b.key]) photoQ.push({ b, mesh: b.planet || b.mesh });
@@ -3545,7 +3593,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=1f071b9e" data-place="info" defer></script>
+<script src="../music/music.js?v=b06904d1" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
