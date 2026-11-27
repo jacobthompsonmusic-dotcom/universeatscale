@@ -346,12 +346,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=0a21888d"></script>
-<script src="../shared/clock.js?v=0a21888d"></script>
-<script src="../shared/fold.js?v=0a21888d"></script>
-<script src="baked/manifest.js?v=0a21888d"></script>
-<script src="../shared/perf.js?v=0a21888d"></script>
-<script src="../shared/galaxy-volume.js?v=0a21888d"></script>
+<script src="../shared/frame.js?v=0fe77292"></script>
+<script src="../shared/clock.js?v=0fe77292"></script>
+<script src="../shared/fold.js?v=0fe77292"></script>
+<script src="baked/manifest.js?v=0fe77292"></script>
+<script src="../shared/perf.js?v=0fe77292"></script>
+<script src="../shared/galaxy-volume.js?v=0fe77292"></script>
 <script>
 (() => {
 'use strict';
@@ -3787,11 +3787,11 @@ function addPlumes() {
         float k = fract(uTime * (0.05 + 0.04 * seed.w) + seed.z);                 // each grain's moment in its climb
         float lat = -1.5708 + 0.26 * sqrt(seed.x), lon = 6.2832 * seed.y;          // from within ~15° of the south pole, where the stripes are
         vec3 n = vec3(cos(lat) * cos(lon), sin(lat), cos(lat) * sin(lon));
-        vec3 jet = normalize(n + 0.35 * vec3(sin(lon * 7.0 + seed.w * 6.0), 0.0, cos(lon * 5.0 + seed.w * 4.0)));
+        vec3 jet = normalize(n + 0.22 * vec3(sin(lon * 7.0 + seed.w * 6.0), 0.0, cos(lon * 5.0 + seed.w * 4.0)));
         float h = uR * (0.3 + 2.4 * seed.w) * (1.0 - (1.0 - k) * (1.0 - k));        // rising and slowing, most falling back well below the top
         vec3 p = n * uR + jet * h;
         vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv;
-        gl_PointSize = clamp(uPx * 0.012 * (0.6 + seed.z), 1.0, 3.0);
+        gl_PointSize = clamp(uPx * 0.016 * (0.6 + seed.z), 1.2, 4.0);
         vA = (1.0 - k) * (0.35 + 0.65 * (1.0 - seed.w)) * smoothstep(0.0, 0.08, k);
         #include <logdepthbuf_vertex>
       }`,
@@ -3800,7 +3800,7 @@ function addPlumes() {
       #include <logdepthbuf_pars_fragment>
       void main() {
         #include <logdepthbuf_fragment>
-        vec2 q = gl_PointCoord - 0.5; float f = smoothstep(0.5, 0.0, length(q)); gl_FragColor = vec4(vec3(0.82, 0.9, 1.0) * f * vA * 0.55, 1.0); }` });
+        vec2 q = gl_PointCoord - 0.5; float f = smoothstep(0.5, 0.0, length(q)); gl_FragColor = vec4(vec3(0.82, 0.9, 1.0) * f * vA * 1.3, 1.0); }` });
   const pts = new THREE.Points(geo, m); pts.frustumCulled = false; E.mesh.add(pts); PLUME.mesh = pts; PLUME.E = E;
 }
 function plumeTick() {   // keep the fountain moving while Enceladus is big enough on screen to see it
@@ -3841,7 +3841,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=0a21888d" data-place="info" defer></script>
+<script src="../music/music.js?v=0fe77292" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
