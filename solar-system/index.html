@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=e38c4f06"></script>
-<script src="../shared/clock.js?v=e38c4f06"></script>
-<script src="../shared/fold.js?v=e38c4f06"></script>
-<script src="baked/manifest.js?v=e38c4f06"></script>
-<script src="../shared/perf.js?v=e38c4f06"></script>
-<script src="../shared/galaxy-volume.js?v=e38c4f06"></script>
+<script src="../shared/frame.js?v=36bbaf0a"></script>
+<script src="../shared/clock.js?v=36bbaf0a"></script>
+<script src="../shared/fold.js?v=36bbaf0a"></script>
+<script src="baked/manifest.js?v=36bbaf0a"></script>
+<script src="../shared/perf.js?v=36bbaf0a"></script>
+<script src="../shared/galaxy-volume.js?v=36bbaf0a"></script>
 <script>
 (() => {
 'use strict';
@@ -2499,7 +2499,7 @@ function junoPoles(mat) {
 // Both maps run 0–360° E, so they're rolled half a turn to meet the photo maps (centred on 0°); slopes are exaggerated ×X so the
 // relief reads at planetary scale. Pluto has no global elevation model (New Horizons mapped heights on the encounter side only).
 const RELIEF = {
-  mercury: { u: CMT('d/d9/Mercury_Messenger_DEM_Global_665m_v2_max.png', LITE ? 1280 : 2560), R: 2439.4, X: 4, kind: 'grey', lo: -5.38, hi: 4.48 },
+  mercury: { u: CMT('d/d9/Mercury_Messenger_DEM_Global_665m_v2_max.png', LITE ? 1920 : 3840), R: 2439.4, X: 4, kind: 'grey', lo: -5.38, hi: 4.48 },
   mars: { u: LITE ? CMT('8/89/Mars_topography_%28MOLA_dataset%29.png', 1280) : CM + '8/89/Mars_topography_%28MOLA_dataset%29.png', R: 3389.5, X: 5, kind: 'ramp',
     eq: 641 / 1300, k: 7.1 / 1300 },   // this map's rows aren't quite a degree apart: equator at row 641, 7.1 rows a degree (fitted to Olympus, Ascraeus, Pavonis, Arsia and Elysium Mons)
 };
@@ -3659,7 +3659,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=e38c4f06" data-place="info" defer></script>
+<script src="../music/music.js?v=36bbaf0a" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
