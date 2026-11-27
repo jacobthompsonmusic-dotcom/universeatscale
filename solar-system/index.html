@@ -349,12 +349,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=b5fbc29c"></script>
-<script src="../shared/clock.js?v=b5fbc29c"></script>
-<script src="../shared/fold.js?v=b5fbc29c"></script>
-<script src="baked/manifest.js?v=b5fbc29c"></script>
-<script src="../shared/perf.js?v=b5fbc29c"></script>
-<script src="../shared/galaxy-volume.js?v=b5fbc29c"></script>
+<script src="../shared/frame.js?v=52eae579"></script>
+<script src="../shared/clock.js?v=52eae579"></script>
+<script src="../shared/fold.js?v=52eae579"></script>
+<script src="baked/manifest.js?v=52eae579"></script>
+<script src="../shared/perf.js?v=52eae579"></script>
+<script src="../shared/galaxy-volume.js?v=52eae579"></script>
 <script>
 (() => {
 'use strict';
@@ -2222,6 +2222,11 @@ function flyTo(o, dist, dir, dur) {
       let side = new THREE.Vector3().crossVectors(sd, Y); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize();
       dir = sd.clone().multiplyScalar(Math.cos(A)).addScaledVector(side, Math.sin(A)).addScaledVector(Y, 0.25).normalize();
       if (o.key === 'haumea') { const pl = o.pole.clone(); if (pl.y < 0) pl.negate(); dir.addScaledVector(pl, 0.4).normalize(); } // look down on the ring a little
+      if (o.key === 'pluto') {   // face the side New Horizons photographed close up — the heart, Sputnik Planitia, always turned away from Charon —
+        const C = MOONS.find(m => m.name === 'Charon');   // with Charon peeking out from behind; unless that side is in night just now
+        if (C && C.mesh) { const pc = C.mesh.getWorldPosition(new THREE.Vector3()).sub(o.mesh.getWorldPosition(new THREE.Vector3())).normalize().negate();
+          if (pc.dot(sd) > -0.25) dir = pc.multiplyScalar(0.85).addScaledVector(side, 0.4).addScaledVector(sd, 0.35).addScaledVector(Y, 0.12).normalize(); }
+      }
     }
   }
   const travel = controls.target.length(), D1 = dist || defaultDist(o);
@@ -2358,13 +2363,13 @@ const outward = f => { if (EMBED || f <= 1 || leaving || camera.position.distanc
 const dolly = f => { if (outward(f)) return; fly = null; HX.tw = null; const off = camera.position.clone().sub(controls.target); const minD = controls.target.length() < 1e-6 ? radiusOf(focus) * 1.3 : 0.0005; camera.position.copy(controls.target).add(off.setLength(THREE.MathUtils.clamp(off.length() * f, minD, MAXD))); keepOutside(); };
 // zooming in with something selected heads for it: glide over and centre on it
 function approach(o) { const P = relOf(o), L = camera.position.distanceTo(P), dir = camera.position.clone().sub(P).normalize(); flyTo(o, Math.max(L * 0.45, radiusOf(o) * 3), dir, L > 5e5 ? 2000 : 900); }
-const aimAt = () => selected && !selected.in && selected !== focus && !(fly && fly.o === selected) ? selected : null;
+const aimAt = () => selected && !selected.in && selected.kind !== 'site' && selected !== focus && !(fly && fly.o === selected) ? selected : null;
 document.getElementById('zin').onclick = () => { if (SKY.on) { skyZoom(0.7); return; } const a = aimAt(); if (a) approach(a); else dolly(0.6); };
 document.getElementById('zout').onclick = () => { if (SKY.on) { skyZoom(1 / 0.7); return; } dolly(1.7); };
 document.getElementById('p-all').onclick = () => flyTo(SUN, 1.35e7, new THREE.Vector3(0.45, 0.62, 0.64));
 document.getElementById('p-home').onclick = () => { if (SKY.on) { SKY.track = null; SKY.az = SKY.hemi === 's' ? 0 : 180; SKY.alt = 22; SKY.fov = 75; return; }   /* in the sky: back to the opening look */ const e = byKey('earth'); flyTo(e); select(e); };   // HOME: back to Earth from anywhere in the Solar System
 document.getElementById('p-back').onclick = () => { // a giant gets a closer framing so its crescent fills the view
-  const o = focus.isSun ? (selected && !selected.in && !selected.isSun ? selected : null) : focus; if (!o) return;
+  const o = focus.isSun ? (selected && !selected.in && !selected.isSun && selected.kind !== 'site' ? selected : null) : focus; if (!o) return;
   const D = o.kind === 'giant' ? o.R * (o.key === 'saturn' ? 7.5 : 6) : Math.min(camera.position.distanceTo(controls.target), defaultDist(o));
   if (o === focus) preset(backlitDir(o, D), D); else flyTo(o, D, backlitDir(o, D));
 };
@@ -2398,6 +2403,7 @@ function select(o) {
   else if (o.kind === 'planet') { type = 'Rocky planet'; dot = o.color; }
   else if (o.kind === 'dwarf') { type = 'Dwarf planet'; dot = o.color; }
   else if (o.kind === 'probe') { type = 'Spacecraft'; dot = o.color; }
+  else if (o.kind === 'site') { type = `Landing site · ${o.body.name}`; dot = o.color; }
   else { type = o.parent.sys ? `${o.parent.name} · ${o.parent.sys.groups[o.group].label}` : `Moon of ${o.parent.name}`; dot = o.color; }
   document.getElementById('info-dot').style.background = dot;
   document.getElementById('info-type').textContent = type;
@@ -2421,6 +2427,9 @@ function select(o) {
     const ekm = q ? Math.hypot(q[0] * AUS - EARTH.abs.x, q[2] * AUS - EARTH.abs.y, -q[1] * AUS - EARTH.abs.z) / U : 0;
     if (q) f.push(['From the Sun now', fmtAU(km)], ['A radio signal from Earth takes', lightTime(ekm)]);
     f.push(['Speed', `${probeKms(o).toFixed(1)} km/s from the Sun · ${(probeKms(o) * 86400 * 365.25 / AU).toFixed(1)} AU a year`], ...o.facts, ['Positions', 'NASA/JPL Horizons']);
+  } else if (o.kind === 'site') {
+    const [date, who, where] = o.info, ll = `${Math.abs(o.lat).toFixed(1)}° ${o.lat >= 0 ? 'N' : 'S'}, ${Math.abs(o.lon).toFixed(1)}° ${o.lon >= 0 ? 'E' : 'W'}`;
+    f.push(['Landed', date]); if (who) f.push(['By', who]); if (where) f.push(['Where', where]); f.push(['Coordinates', ll]);
   } else if (isRing) {
     f.push([`From ${o.planet.name}'s centre`, `${fmtKm(o.in)} – ${fmtKm(o.out)}`], ['Width', fmtKm(o.out - o.in)], [o.gap ? 'Why' : 'Made of', o.made]);
   } else {
@@ -2439,7 +2448,7 @@ function select(o) {
   }
   document.getElementById('info-facts').innerHTML = f.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
   document.getElementById('info-blurb').textContent = o.blurb;
-  const go = document.getElementById('info-go'); go.style.display = isRing || (o.kind === 'probe' && !o.au) ? 'none' : 'inline-block'; showSee(o);
+  const go = document.getElementById('info-go'); go.style.display = isRing || o.kind === 'site' || (o.kind === 'probe' && !o.au) ? 'none' : 'inline-block'; showSee(o);
   go.textContent = focus === o ? 'Centred here' : 'Fly here'; go.classList.toggle('on', focus === o);
   info.style.display = 'block';
   if (typeof infoFold !== 'undefined' && infoFold) { if (o !== prevSel) { infoFold.set(false); document.getElementById('info').scrollTop = 0; } else infoFold.relabel(); }   // a new pick opens its card, at the top
@@ -2473,7 +2482,7 @@ const PHOTO = {
   saturn: { u: CM + (LITE ? 'e/ea/Solarsystemscope_texture_2k_saturn.jpg' : '1/1e/Solarsystemscope_texture_8k_saturn.jpg'), tint: 0xffffff, off: 0 },   // Solar System Scope, from Cassini imagery
   uranus: { u: CM + '9/95/Solarsystemscope_texture_2k_uranus.jpg', tint: 0xffffff, off: 0 },                                                  // Solar System Scope, from Voyager 2 imagery
   neptune: { u: CM + '1/1e/Solarsystemscope_texture_2k_neptune.jpg', tint: 0xffffff, off: 0 },                                                // Solar System Scope, from Voyager 2 imagery
-  pluto: { u: CMT('a/ad/Pluto_color_mapmosaic.jpg', LITE ? 1920 : 3840), tint: 0xffffff, off: -0.25 },                                        // New Horizons colour mosaic (centred on Sputnik Planitia, 180° E, the side away from Charon)
+  pluto: { u: LITE ? CMT('a/ad/Pluto_color_mapmosaic.jpg', 1920) : CM + 'a/ad/Pluto_color_mapmosaic.jpg', tint: 0xffffff, off: -0.25 },                                        // New Horizons colour mosaic (centred on Sputnik Planitia, 180° E, the side away from Charon)
 };
 // The moons, the same way. They keep one face toward their planet: lon 0° (the sub-planet point) sits at u = 0.25, so a map centred on
 // lon0 needs offset 0.25 − lon0/360 (each map's centre was checked against known features or a map of known centring). Brightness: each
@@ -2793,6 +2802,46 @@ const SITES = {
   mercury: [['MESSENGER', 54.44, 210.12, 2015, 'Crashed at the end of its mission']],
   Titan: [['Huygens', -10.25, 167.68, 2005, 'The farthest landing ever made']],
 };
+// The write-up for each landing site's card: [date, who, where, story]
+const SITE_INFO = {
+  'Luna 2': ['14 Sep 1959', 'Soviet Union', 'Palus Putredinis, near the crater Autolycus', 'The first human-made object to reach another world: it struck the Moon at about 3 km/s, scattering Soviet pennants. On the way it showed the Moon has no strong magnetic field.'],
+  'Luna 9': ['3 Feb 1966', 'Soviet Union', 'Oceanus Procellarum', 'The first craft to land gently on another world and send back pictures from the ground — which settled a worry of the time: the surface was firm enough to stand on, not deep dust.'],
+  'Surveyor 1': ['2 Jun 1966', 'NASA', 'Oceanus Procellarum', 'America’s first soft landing, a robot scout for Apollo. It sent home more than 11,000 pictures and proved the landing technique the crews would use.'],
+  'Apollo 11': ['20 Jul 1969', 'NASA', 'Mare Tranquillitatis (Tranquility Base)', 'Neil Armstrong and Buzz Aldrin, the first people to walk on another world, spent two and a half hours outside and brought back 21.5 kg of rock while Michael Collins circled overhead. The laser reflector they left is still used to measure the Moon’s distance.'],
+  'Apollo 12': ['19 Nov 1969', 'NASA', 'Oceanus Procellarum', 'Pete Conrad and Alan Bean set down a pinpoint 180 m from the robot Surveyor 3, which had landed two years earlier, and walked over to bring pieces of it home.'],
+  'Apollo 14': ['5 Feb 1971', 'NASA', 'Fra Mauro highlands', 'Alan Shepard and Edgar Mitchell collected 42 kg of rock thrown out by the impact that made the Imbrium basin — and Shepard hit two golf balls.'],
+  'Apollo 15': ['30 Jul 1971', 'NASA', 'Hadley Rille, at the foot of the Apennine mountains', 'David Scott and James Irwin drove the first lunar rover, 28 km in three trips, and found the “Genesis Rock”, a piece of the Moon’s ancient crust.'],
+  'Apollo 16': ['21 Apr 1972', 'NASA', 'Descartes highlands', 'John Young and Charles Duke went to the Moon’s bright highlands expecting volcanic rock and found shattered impact rock instead, changing how the Moon’s surface was understood.'],
+  'Apollo 17': ['11 Dec 1972', 'NASA', 'Taurus–Littrow valley', 'Gene Cernan and the geologist Harrison Schmitt spent three days on the surface, found orange glass from ancient fire fountains and brought back 110 kg of samples. The last people on the Moon, so far.'],
+  'Lunokhod 1': ['17 Nov 1970', 'Soviet Union (Luna 17)', 'Mare Imbrium', 'The first rover on another world, driven from Earth. It covered about 10 km over ten months, and its laser reflector still answers today.'],
+  'Chang’e 3': ['14 Dec 2013', 'China (CNSA)', 'Mare Imbrium', 'China’s first landing, and the first anywhere on the Moon since 1976. Its rover Yutu studied the layers under the mare with radar; the lander’s ultraviolet telescope ran for years.'],
+  'Chang’e 4': ['3 Jan 2019', 'China (CNSA)', 'Von Kármán crater, on the far side', 'The first landing on the far side, which never faces Earth, talking home through a relay satellite parked beyond the Moon. Its rover Yutu-2 drove more than 1.5 km.'],
+  'Chang’e 5': ['1 Dec 2020', 'China (CNSA)', 'Oceanus Procellarum, near Mons Rümker', 'Brought 1.7 kg of rock back to Earth — the first lunar samples since 1976 — from lava only about 2 billion years old, the youngest yet dated on the Moon.'],
+  'Chang’e 6': ['1 Jun 2024', 'China (CNSA)', 'Apollo crater, South Pole–Aitken basin, on the far side', 'The first rock ever brought back from the Moon’s far side: 1.9 kg from inside its oldest and biggest impact basin.'],
+  'Chandrayaan-3': ['23 Aug 2023', 'India (ISRO)', 'Near the south pole', 'India’s first landing, and the closest to the south pole at the time. Its little rover Pragyan confirmed sulphur in the soil there.'],
+  'SLIM': ['19 Jan 2024', 'Japan (JAXA)', 'Near the crater Shioli', 'A “pinpoint” lander that came down within about 10 m of its target — then tipped onto its nose. Japan became the fifth country to land on the Moon.'],
+  'Odysseus (IM-1)': ['22 Feb 2024', 'Intuitive Machines (with NASA instruments)', 'Near Malapert A, close to the south pole', 'The first landing by a private company, and the first American one since 1972. It came down too fast and ended up on its side, but kept working for a week.'],
+  'Blue Ghost 1': ['2 Mar 2025', 'Firefly Aerospace (with NASA instruments)', 'Mare Crisium', 'The first private landing to go fully to plan. Over two weeks it drilled into the ground and photographed an eclipse of the Sun by the Earth, then the lunar sunset.'],
+  'Viking 1': ['20 Jul 1976', 'NASA', 'Chryse Planitia', 'The first long-lived landing on Mars, working for six years. It sent the first clear pictures from the surface and tested the soil for life; the results are still argued about.'],
+  'Viking 2': ['3 Sep 1976', 'NASA', 'Utopia Planitia', 'Viking 1’s twin, far to the north, where it photographed frost on the ground in the Martian winter. It worked until 1980.'],
+  'Pathfinder': ['4 Jul 1997', 'NASA', 'Ares Vallis, an ancient flood channel', 'Bounced to a stop on airbags and let out Sojourner, the first rover on Mars, which explored the rocks around it for nearly three months.'],
+  'Spirit': ['4 Jan 2004', 'NASA', 'Gusev crater', 'A rover planned for 90 days that worked for six years and drove 7.7 km. It found silica deposited by ancient hot springs, before getting stuck in soft sand in 2009.'],
+  'Opportunity': ['25 Jan 2004', 'NASA', 'Meridiani Planum', 'Found the small hematite “blueberries” and layered rock that showed Mars once had water at its surface, and drove 45 km over 14 years until a global dust storm ended it in 2018.'],
+  'Phoenix': ['25 May 2008', 'NASA', 'Vastitas Borealis, the northern plains', 'Dug into the ground near the north pole and found water ice a few centimetres down — it watched chunks of it vaporise. It fell silent when winter came.'],
+  'Curiosity': ['6 Aug 2012', 'NASA', 'Gale crater', 'A car-sized, nuclear-powered rover lowered on cables from a rocket “sky crane”. It found that Gale crater once held a lake that could have supported life, and is still driving: now about 35 km away, high on the slopes of Mount Sharp.'],
+  'InSight': ['26 Nov 2018', 'NASA', 'Elysium Planitia', 'A geophysics station that recorded more than 1,300 marsquakes and used them to measure the size of Mars’s liquid core, until dust covered its solar panels in 2022.'],
+  'Perseverance': ['18 Feb 2021', 'NASA', 'Jezero crater, an old river delta', 'Is sealing rock samples in tubes for a future return to Earth. It brought Ingenuity, the helicopter that made the first powered flight on another planet and 72 flights in all. Still driving: now up on the rim of Jezero crater, some 30 km on.'],
+  'Zhurong': ['14 May 2021', 'China (CNSA, Tianwen-1)', 'Utopia Planitia', 'China’s first Mars rover, making it the second country to drive on Mars. It covered about 1.9 km and went dormant in 2022 as dust settled on its panels.'],
+  'Venera 7': ['15 Dec 1970', 'Soviet Union', 'Venus', 'The first signal ever sent from the surface of another planet: 23 minutes of faint data showing about 475 °C and a pressure some 90 times Earth’s.'],
+  'Venera 9': ['22 Oct 1975', 'Soviet Union', 'Beta Regio', 'Sent the first picture from the surface of another planet — a slope of flat rocks under a sky lit like an overcast day — and survived 53 minutes.'],
+  'Venera 10': ['25 Oct 1975', 'Soviet Union', 'Beta Regio', 'Venera 9’s twin, landing 2,000 km away on smoother ground, which it photographed for 65 minutes before the heat won.'],
+  'Venera 13': ['1 Mar 1982', 'Soviet Union', 'Phoebe Regio', 'The first colour pictures from Venus, and the first soil drilled and analysed there. It lasted 127 minutes, more than twice as long as planned.'],
+  'Venera 14': ['5 Mar 1982', 'Soviet Union', 'East of Phoebe Regio', 'Venera 13’s twin. By bad luck its arm, meant to test how hard the ground was, landed on the camera cover it had just thrown off.'],
+  'Vega 1': ['11 Jun 1985', 'Soviet Union (with France and others)', 'North of Aphrodite Terra', 'Dropped a lander and a balloon that floated two days in Venus’s clouds; the mothership flew on to meet Halley’s Comet.'],
+  'Vega 2': ['15 Jun 1985', 'Soviet Union (with France and others)', 'Aphrodite Terra', 'The last landing on Venus so far: it drilled and analysed the rock while its balloon drifted in the clouds above, then on to Halley’s Comet.'],
+  'MESSENGER': ['30 Apr 2015', 'NASA', 'Near the crater Janáček', 'After four years in orbit, out of fuel, it crashed at about 3.9 km/s, leaving a crater some 16 m wide. It had found water ice hidden in craters at Mercury’s poles.'],
+  'Huygens': ['14 Jan 2005', 'ESA (carried there by NASA’s Cassini)', 'Adiri, Titan', 'The farthest landing ever made. It floated down through Titan’s haze for two and a half hours, photographing river channels, and landed on damp ground strewn with pebbles of water ice.'],
+};
 const _sv = new THREE.Vector3(), _sn = new THREE.Vector3();
 function siteBody(k) { return k === 'Moon' || k === 'Titan' ? MOONS.find(o => o.name === k) : byKey(k); }
 function buildSites() {
@@ -2801,8 +2850,10 @@ function buildSites() {
     for (const [name, lat, lon, yr, note] of SITES[k]) {
       const u = (moonish ? 0.25 : 0.5) + lon / 360, ph = u * TAU, la = lat * DEG;   // the meshes' own longitude convention
       const loc = new THREE.Vector3(-Math.cos(ph) * Math.cos(la), Math.sin(la), Math.sin(ph) * Math.cos(la)).multiplyScalar(R * 1.002);
-      const el = document.createElement('div'); el.className = 'lab site'; el.textContent = `${name} · ${yr}`; el.title = note ? `${name} (${yr}): ${note}` : `${name} (${yr})`; el.style.display = 'none'; labelBox.appendChild(el);
-      SITES.list.push({ b, mesh, R, loc, el }); } }
+      const el = document.createElement('div'); el.className = 'lab site'; el.textContent = `${name} · ${yr}`; el.title = 'Click for its story'; el.style.display = 'none'; labelBox.appendChild(el);
+      const I = SITE_INFO[name] || [String(yr), '', '', note], site = { kind: 'site', name, body: b, color: '#ffcf6e', lat, lon, info: I, blurb: I[3] };
+      el.addEventListener('pointerdown', e => e.stopPropagation()); el.addEventListener('click', e => { e.stopPropagation(); select(site); });   // a click: its write-up in the card
+      SITES.list.push({ b, mesh, R, loc, el, site }); } }
 }
 function updateSites() {
   if (!SITES.list) { if (typeof labelBox === 'undefined' || !MOONS.length) return; buildSites(); }
@@ -3914,7 +3965,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=b5fbc29c" data-place="info" defer></script>
+<script src="../music/music.js?v=52eae579" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
