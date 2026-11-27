@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=51dbfeb6"></script>
-<script src="../shared/clock.js?v=51dbfeb6"></script>
-<script src="../shared/fold.js?v=51dbfeb6"></script>
-<script src="../shared/perf.js?v=51dbfeb6"></script>
-<script src="../shared/galaxy-volume.js?v=51dbfeb6"></script>
+<script src="../shared/frame.js?v=d3f614fa"></script>
+<script src="../shared/clock.js?v=d3f614fa"></script>
+<script src="../shared/fold.js?v=d3f614fa"></script>
+<script src="../shared/perf.js?v=d3f614fa"></script>
+<script src="../shared/galaxy-volume.js?v=d3f614fa"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -2328,7 +2328,7 @@ function sunDive(X, Y, f) {
   if (!EMBED || !ssReady || f <= 1 || viewSpan() > 60) return false;
   setupView();
   const [sx, sy] = proj(SUNW.x, SUNW.y, SUNW.z), M = Math.min(Wd, Ht);
-  if (sx < 0 || sx > Wd || sy < 0 || sy > Ht || (Math.hypot(sx - X, sy - Y) > 130 && !(selected && selected.type === 'sun'))) return false;
+  if (sx < 0 || sx > Wd || sy < 0 || sy > Ht || (Math.hypot(sx - X, sy - Y) > 130 && viewSpan() > 2.5 * DIVE && !(selected && selected.type === 'sun'))) return false;   // close in, the Sun anywhere on screen will do (zooming out and in at a spot off the Sun drifts it away from the cursor)
   // only when you're heading for the Sun: not while zooming in on a neighbouring star or anything else picked or selected
   if (selected && selected.type !== 'sun') return false;
   const under = pick(X, Y); if (under && under.type !== 'sun') return false;
@@ -3764,7 +3764,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=51dbfeb6" data-place="info" defer></script>
+<script src="../music/music.js?v=d3f614fa" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

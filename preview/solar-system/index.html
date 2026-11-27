@@ -80,7 +80,7 @@
   #labels { position:fixed; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
   .lab { position:absolute; left:0; top:0; transform:translate(10px,-50%); white-space:nowrap; font:italic 15px "IM Fell English", Georgia, serif; color:rgba(235,230,222,0.85); text-shadow:0 0 3px rgba(0,0,0,0.55); pointer-events:auto; cursor:pointer; padding:2px 4px; border-radius:5px; }
   .lab.big { font-weight:600; font-size:13px; color:#fff6e6; }
-  .lab.site { font-size:12px; color:rgba(255,226,170,0.92); pointer-events:auto; cursor:default; transform:none; }
+  .lab.site { font-size:12px; color:rgba(255,226,170,0.92); pointer-events:auto; cursor:pointer; transform:none; }
   .lab.site::before { content:''; display:inline-block; width:5px; height:5px; border-radius:50%; background:#ffcf6e; box-shadow:0 0 4px #ffcf6e; margin-right:5px; vertical-align:middle; }
   .lab.dwarf { font-size:12.5px; color:rgba(225,220,210,0.7); }   /* dwarf planets: smaller and quieter than the planets */
   .lab.mark { color:rgba(190,206,236,0.72); font-size:12.5px; letter-spacing:0.09em; text-transform:uppercase; pointer-events:none; cursor:default; }
@@ -349,12 +349,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=51dbfeb6"></script>
-<script src="../shared/clock.js?v=51dbfeb6"></script>
-<script src="../shared/fold.js?v=51dbfeb6"></script>
-<script src="baked/manifest.js?v=51dbfeb6"></script>
-<script src="../shared/perf.js?v=51dbfeb6"></script>
-<script src="../shared/galaxy-volume.js?v=51dbfeb6"></script>
+<script src="../shared/frame.js?v=d3f614fa"></script>
+<script src="../shared/clock.js?v=d3f614fa"></script>
+<script src="../shared/fold.js?v=d3f614fa"></script>
+<script src="baked/manifest.js?v=d3f614fa"></script>
+<script src="../shared/perf.js?v=d3f614fa"></script>
+<script src="../shared/galaxy-volume.js?v=d3f614fa"></script>
 <script>
 (() => {
 'use strict';
@@ -2953,6 +2953,13 @@ function updateLabels() {
     if (o.kind === 'moon') { const par = o.parent; if (Math.hypot(o.ax - par.ax, o.ay - par.ay) < 12 + par.px) o.onScreen = false; }
     else if (o.isPlanet && o !== selected && SUN.dist > 60 * AUS && Math.hypot(o.ax - SUN.ax, o.ay - SUN.ay) < 18) o.onScreen = false; // from far out the planets melt into the Sun
   }
+  // nothing shows through a nearer planet, moon or the Sun: a name or dot behind a body's disc is hidden
+  const discs = LIST.filter(b => b.ndc.z < 1 && b.px > 2 && !b.belowH);
+  for (const o of LIST) {
+    o.occl = o.ndc.z < 1 && discs.some(b => b !== o && b.dist < o.dist && Math.hypot(o.ax - b.ax, o.ay - b.ay) < b.px * 0.98);
+    if (o.occl) o.onScreen = false;
+    if (o.dot && o.dot.material) o.dot.material.visible = !o.occl;
+  }
   const order = LIST.slice().sort((a, b) => (a === selected ? -1 : b === selected ? 1 : a.pr - b.pr));
   for (const o of order) { // pass 2: which names fit?
     if (o.isSun && !o.belowH && !(o.ndc.z < 1 && Math.abs(o.ndc.x) < 0.97 && Math.abs(o.ndc.y) < 0.95)) { // off screen: pin to the edge, pointing the way
@@ -4054,7 +4061,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=51dbfeb6" data-place="info" defer></script>
+<script src="../music/music.js?v=d3f614fa" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
