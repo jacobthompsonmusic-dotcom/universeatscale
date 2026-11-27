@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=9b60f3f1"></script>
-<script src="../shared/clock.js?v=9b60f3f1"></script>
-<script src="../shared/fold.js?v=9b60f3f1"></script>
-<script src="baked/manifest.js?v=9b60f3f1"></script>
-<script src="../shared/perf.js?v=9b60f3f1"></script>
-<script src="../shared/galaxy-volume.js?v=9b60f3f1"></script>
+<script src="../shared/frame.js?v=2280741b"></script>
+<script src="../shared/clock.js?v=2280741b"></script>
+<script src="../shared/fold.js?v=2280741b"></script>
+<script src="baked/manifest.js?v=2280741b"></script>
+<script src="../shared/perf.js?v=2280741b"></script>
+<script src="../shared/galaxy-volume.js?v=2280741b"></script>
 <script>
 (() => {
 'use strict';
@@ -2460,19 +2460,20 @@ function moonPrep(t, P, m) {   // returns the texture to use, after toning; sets
     s += (lin(d[o]) + lin(d[o + 1]) + lin(d[o + 2])) / 3; sr += d[o]; sg += d[o + 1]; sb += d[o + 2]; n++; }
   m.color.setScalar(P.A ? Math.max(0.2, Math.min(2.2, MOON_K * P.A / (s / n))) : 1);
   if (!full) return t;
-  if (P.fill) {   // the part no spacecraft saw lit: plain, fading from the colour at the edge of what was seen into the average
-    const M = [sr / n, sg / n, sb / n], blk = (x, y) => { const o = 4 * (y * w + x); return d[o] + d[o + 1] + d[o + 2] < 30; }, fade = Math.round(h / 12), pad = Math.max(2, Math.round(h / 300));
-    const fillRun = (x, y0, y1, edge, dir) => {   // rows y0..y1 (inclusive) unseen; edge = first seen row beyond them; dir = step toward the edge
-      const e = [0, 0, 0]; let k = 0; for (let j = 0; j < 6; j++) { const yy = edge + (dir > 0 ? pad + j : -pad - j); if (yy < 0 || yy >= h) break; const o = 4 * (yy * w + x); e[0] += d[o]; e[1] += d[o + 1]; e[2] += d[o + 2]; k++; }
-      if (!k) e.splice(0, 3, ...M); else for (let c = 0; c < 3; c++) e[c] /= k;
-      for (let y = y0; y <= y1; y++) { const t = Math.min(1, Math.abs(edge - y) / fade), q = t * t * (3 - 2 * t), o = 4 * (y * w + x); for (let c = 0; c < 3; c++) d[o + c] = e[c] + (M[c] - e[c]) * q; }
-    };
+  if (P.fill) {   // the part no spacecraft saw lit: plain, fading from the (smoothed) colour at the edge of what was seen into the average
+    const M = [sr / n, sg / n, sb / n], blk = (x, y) => { const o = 4 * (y * w + x); return d[o] + d[o + 1] + d[o + 2] < 30; }, fade = Math.round(h / 8), pad = Math.max(2, Math.round(h / 300));
+    const top = new Int32Array(w), bot = new Int32Array(w), eT = new Float32Array(w * 3), eB = new Float32Array(w * 3);
+    const edgeAvg = (x, edge, dir, out) => { let k = 0; for (let j = 0; j < 8; j++) { const yy = edge + dir * (pad + j); if (yy < 0 || yy >= h) break; const o = 4 * (yy * w + x); out[3 * x] += d[o]; out[3 * x + 1] += d[o + 1]; out[3 * x + 2] += d[o + 2]; k++; }
+      for (let c = 0; c < 3; c++) out[3 * x + c] = k ? out[3 * x + c] / k : M[c]; };
+    for (let x = 0; x < w; x++) { let t = 0; while (t < h && blk(x, t)) t++; let b = h - 1; while (b >= 0 && blk(x, b)) b--; top[x] = t; bot[x] = b;
+      if (t < h) { edgeAvg(x, t, 1, eT); edgeAvg(x, b, -1, eB); } else for (let c = 0; c < 3; c++) eT[3 * x + c] = eB[3 * x + c] = M[c]; }
+    const smooth = e => { const r = Math.round(w / 40), o = new Float32Array(e.length); for (let x = 0; x < w; x++) for (let c = 0; c < 3; c++) { let a = 0; for (let k = -r; k <= r; k++) a += e[3 * ((x + k + w) % w) + c]; o[3 * x + c] = a / (2 * r + 1); } return o; };
+    const sT = smooth(eT), sB = smooth(eB);
     for (let x = 0; x < w; x++) {
-      let top = 0; while (top < h && blk(x, top)) top++;          // unseen from the north pole down
-      let bot = h - 1; while (bot >= 0 && blk(x, bot)) bot--;      // and from the south pole up
-      if (top >= h) { for (let y = 0; y < h; y++) { const o = 4 * (y * w + x); d[o] = M[0]; d[o + 1] = M[1]; d[o + 2] = M[2]; } continue; }
-      if (top > 0) fillRun(x, 0, Math.min(h - 1, top + pad - 1), top, 1);
-      if (bot < h - 1) fillRun(x, Math.max(0, bot - pad + 1), h - 1, bot, -1);
+      const t = top[x], b = bot[x];
+      if (t >= h) { for (let y = 0; y < h; y++) { const o = 4 * (y * w + x); d[o] = M[0]; d[o + 1] = M[1]; d[o + 2] = M[2]; } continue; }
+      for (let y = 0; y < Math.min(h, t + pad); y++) if (t > 0) { const u = Math.min(1, (t + pad - y) / fade), q = u * u * (3 - 2 * u), o = 4 * (y * w + x); for (let c = 0; c < 3; c++) d[o + c] = sT[3 * x + c] + (M[c] - sT[3 * x + c]) * q; }
+      for (let y = Math.max(0, b - pad + 1); y < h; y++) if (b < h - 1) { const u = Math.min(1, (y - b + pad) / fade), q = u * u * (3 - 2 * u), o = 4 * (y * w + x); for (let c = 0; c < 3; c++) d[o + c] = sB[3 * x + c] + (M[c] - sB[3 * x + c]) * q; }
     }
   }
   if (P.desat) for (let i = 0; i < w * h; i++) { const o = 4 * i, y = 0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2]; d[o] += (y - d[o]) * P.desat; d[o + 1] += (y - d[o + 1]) * P.desat; d[o + 2] += (y - d[o + 2]) * P.desat; }
@@ -3715,7 +3716,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=9b60f3f1" data-place="info" defer></script>
+<script src="../music/music.js?v=2280741b" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
