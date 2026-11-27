@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=0d2b07e5"></script>
-<script src="../shared/clock.js?v=0d2b07e5"></script>
-<script src="../shared/fold.js?v=0d2b07e5"></script>
-<script src="baked/manifest.js?v=0d2b07e5"></script>
-<script src="../shared/perf.js?v=0d2b07e5"></script>
-<script src="../shared/galaxy-volume.js?v=0d2b07e5"></script>
+<script src="../shared/frame.js?v=e38c4f06"></script>
+<script src="../shared/clock.js?v=e38c4f06"></script>
+<script src="../shared/fold.js?v=e38c4f06"></script>
+<script src="baked/manifest.js?v=e38c4f06"></script>
+<script src="../shared/perf.js?v=e38c4f06"></script>
+<script src="../shared/galaxy-volume.js?v=e38c4f06"></script>
 <script>
 (() => {
 'use strict';
@@ -2437,6 +2437,7 @@ function photoLoad(item) {
     if (item.b.see && item.b.origMap !== undefined) { item.b.origMap = t; item.b.origColor = P.tint; }   // Venus/Titan-style "see the surface" keeps its own map until turned off
     else { m.map = t; m.color.setHex(P.tint); m.needsUpdate = true; }
     if (item.b.key === 'jupiter' && !LITE) junoPoles(item.mesh.material);
+    if (RELIEF[item.b.key]) reliefLoad(item.b.key, m);
     bumpIdle(); photoNext();
   }, undefined, () => { item.state = 3; photoNext(); });
 }
@@ -2489,6 +2490,67 @@ function junoPoles(mat) {
     };
     mat.needsUpdate = true; bumpIdle();
   }
+}
+// ---- relief: the slopes that catch the light along the terminator, worked out from measured elevation models (as the Moon's are
+// from LOLA). The heights are turned into a normal map in a worker, so the page doesn't stall.
+//   Mercury — MESSENGER's global DEM (USGS, 665 m/px, v2 2016; grey levels span −5.38 to +4.48 km). Public domain.
+//   Mars    — MOLA (Mars Global Surveyor) topography, NASA GSFC's colour-coded global map: the colour ramp is read back into
+//             heights along its blue → cyan → green → yellow → red → white sequence (approximate levels, a few hundred metres).
+// Both maps run 0–360° E, so they're rolled half a turn to meet the photo maps (centred on 0°); slopes are exaggerated ×X so the
+// relief reads at planetary scale. Pluto has no global elevation model (New Horizons mapped heights on the encounter side only).
+const RELIEF = {
+  mercury: { u: CMT('d/d9/Mercury_Messenger_DEM_Global_665m_v2_max.png', LITE ? 1280 : 2560), R: 2439.4, X: 4, kind: 'grey', lo: -5.38, hi: 4.48 },
+  mars: { u: LITE ? CMT('8/89/Mars_topography_%28MOLA_dataset%29.png', 1280) : CM + '8/89/Mars_topography_%28MOLA_dataset%29.png', R: 3389.5, X: 5, kind: 'ramp',
+    eq: 641 / 1300, k: 7.1 / 1300 },   // this map's rows aren't quite a degree apart: equator at row 641, 7.1 rows a degree (fitted to Olympus, Ascraeus, Pavonis, Arsia and Elysium Mons)
+};
+const RELIEF_WORKER = `onmessage = e => {
+  const { d, w, h, P } = e.data, W = P.W, H = W / 2, src = new Float32Array(w * h);
+  if (P.kind === 'grey') for (let i = 0; i < w * h; i++) src[i] = P.lo + (P.hi - P.lo) * d[4 * i] / 255;
+  else {   // project each colour onto the ramp's polyline and read off the height
+    const R = [[0,0,55,-8],[0,32,112,-6.5],[16,96,176,-5],[41,211,211,-3.5],[41,211,41,-1.5],[211,211,41,0.5],[211,106,41,2],[211,41,41,3.5],[150,110,90,7],[204,204,204,12]];
+    const lut = new Float32Array(32768);
+    for (let q = 0; q < 32768; q++) { const r = (q >> 10) * 8 + 4, g = ((q >> 5) & 31) * 8 + 4, b = (q & 31) * 8 + 4; let best = 1e9, v = 0;
+      for (let s = 0; s < R.length - 1; s++) { const A = R[s], B = R[s + 1], ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], L2 = ux * ux + uy * uy + uz * uz;
+        const t = Math.max(0, Math.min(1, ((r - A[0]) * ux + (g - A[1]) * uy + (b - A[2]) * uz) / L2)), dx = A[0] + t * ux - r, dy = A[1] + t * uy - g, dz = A[2] + t * uz - b, dd = dx * dx + dy * dy + dz * dz;
+        if (dd < best) { best = dd; v = A[3] + t * (B[3] - A[3]); } }
+      lut[q] = v; }
+    for (let i = 0; i < w * h; i++) src[i] = lut[((d[4 * i] >> 3) << 10) | ((d[4 * i + 1] >> 3) << 5) | (d[4 * i + 2] >> 3)];
+  }
+  let hgt = new Float32Array(W * H);   // resample to a 2:1 grid, rolled half a turn (0° E to the middle)
+  for (let j = 0; j < H; j++) { const lat = 90 - (j + 0.5) * 180 / H, sy = Math.max(0, Math.min(h - 1.001, (P.kind === 'ramp' ? (P.eq - P.k * lat) * h : (j + 0.5) / H * h - 0.5))), y0 = sy | 0, fy = sy - y0;
+    for (let x = 0; x < W; x++) { const sx = (((x + W / 2) % W) + 0.5) / W * w - 0.5, xx = (sx + w) % w, x0 = xx | 0, x1 = (x0 + 1) % w, fx = xx - x0;
+      const a = src[y0 * w + x0] * (1 - fx) + src[y0 * w + x1] * fx, b = src[(y0 + 1) * w + x0] * (1 - fx) + src[(y0 + 1) * w + x1] * fx;
+      hgt[j * W + x] = a * (1 - fy) + b * fy; } }
+  const tmp = new Float32Array(W * H);   // soften the 8-bit steps: two passes of a 3-px box blur
+  for (let p = 0; p < 2; p++) {
+    for (let j = 0; j < H; j++) for (let x = 0; x < W; x++) tmp[j * W + x] = (hgt[j * W + (x + W - 1) % W] + hgt[j * W + x] + hgt[j * W + (x + 1) % W]) / 3;
+    for (let j = 0; j < H; j++) for (let x = 0; x < W; x++) hgt[j * W + x] = (tmp[Math.max(0, j - 1) * W + x] + tmp[j * W + x] + tmp[Math.min(H - 1, j + 1) * W + x]) / 3;
+  }
+  const out = new Uint8ClampedArray(W * H * 4), dy = Math.PI * P.R / H;
+  for (let j = 0; j < H; j++) { const lat = (90 - (j + 0.5) * 180 / H) * Math.PI / 180, dx = 2 * Math.PI * P.R * Math.max(0.02, Math.cos(lat)) / W;
+    for (let x = 0; x < W; x++) { const i = j * W + x;
+      const gx = (hgt[j * W + (x + 1) % W] - hgt[j * W + (x + W - 1) % W]) / (2 * dx), gy = (hgt[Math.max(0, j - 1) * W + x] - hgt[Math.min(H - 1, j + 1) * W + x]) / (2 * dy);
+      let nx = -P.X * gx, ny = -P.X * gy; const n = 1 / Math.sqrt(nx * nx + ny * ny + 1);
+      out[4 * i] = 127.5 + 127.5 * nx * n; out[4 * i + 1] = 127.5 + 127.5 * ny * n; out[4 * i + 2] = 127.5 + 127.5 * n; out[4 * i + 3] = 255; } }
+  postMessage({ out, W, H }, [out.buffer]);
+};`;
+function reliefLoad(key, mat) {
+  const P = RELIEF[key]; if (!P || P.state) return; P.state = 1;
+  const img = new Image(); img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    const wk = new Worker(URL.createObjectURL(new Blob([RELIEF_WORKER], { type: 'text/javascript' })));
+    wk.onmessage = e => {
+      const { out, W, H } = e.data, n = document.createElement('canvas'); n.width = W; n.height = H;
+      n.getContext('2d').putImageData(new ImageData(out, W, H), 0, 0);
+      const t = new THREE.CanvasTexture(n); t.wrapS = THREE.RepeatWrapping; t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      mat.normalMap = t; mat.normalScale.set(1, 1); mat.needsUpdate = true; P.tex = t; P.state = 2; wk.terminate(); bumpIdle();
+    };
+    wk.postMessage({ d, w: c.width, h: c.height, P: { kind: P.kind, lo: P.lo, hi: P.hi, eq: P.eq, k: P.k, R: P.R, X: P.X, W: LITE ? 1280 : (key === 'mars' ? 2880 : 2560) } }, [d.buffer]);
+  };
+  img.onerror = () => { P.state = 3; };
+  img.src = P.u;
 }
 function photoSync() { for (const b of PLANETS) if (PHOTO[b.key] && !photoQ.some(x => x.b === b)) photoQ.push({ b, mesh: b.planet || b.mesh }); }   // the giants are built later on
 function photoNext() { photoSync(); if (LITE) return; const it = photoQ.find(x => !x.state); if (it) setTimeout(() => photoLoad(it), 600); }
@@ -3587,7 +3649,7 @@ function init() {
   canvas.addEventListener('webglcontextrestored', () => setTimeout(() => { precompile(); MWV.key = ''; IDLE.dirty++; }, 0));
   requestAnimationFrame(frame);
   setTimeout(earthHiRes, 400);
-  if (/[?&]debug=1/.test(location.search)) window.__ss = { renderer, IDLE, SKY, ECL, SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
+  if (/[?&]debug=1/.test(location.search)) window.__ss = { renderer, IDLE, RELIEF, reliefLoad, SKY, ECL, SSQ, MWV, moonGeo, moonAt, helioDwarf, MOONS, PLANETS, gmst, skyLon, SKY_LAT, T_of, helio, CK: UAS_CLOCK, camera, controls, deep, flyTo, goFar, enterFrom, byKey, preset, STARPOS, ZODIAC, scene, SUN, EARTH, relOf, galToScene, MW_AZ, Q_GAL, MW_Y, MW_Z, LY, AUS, screenOfGal(x, y, z) { const c = camera.clone(), fk = Math.tan(deep.fov * DEG / 2) / TAN20; if (deep.p > 0) c.position.sub(controls.target).multiplyScalar(1 / fk).add(controls.target); c.fov = deep.fov; c.far = 1e15; c.updateProjectionMatrix(); c.updateMatrixWorld(); const v = galToScene(x, y, z).multiplyScalar(LY).applyQuaternion(scene.quaternion).add(relOf(SUN)).project(c); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; }, get focus() { return focus; }, get simMs() { return simMs; } };
   if (EMBED) { parent.postMessage({ src: 'uas-ss', ready: true }, '*'); document.querySelectorAll('a.homelink').forEach(a => a.target = '_top'); document.querySelector('a.homelink').addEventListener('click', e => { try { if (top.UAS_WELCOME) { e.preventDefault(); top.UAS_WELCOME(); } } catch (_) {} });   /* on the home page: just bring the welcome sign back */ document.body.classList.add('embed'); }
   // lift the black loading screen once the opening view has actually been drawn, Milky Way included (or after 2.5 s at most)
   const t0 = performance.now(), lift = () => { if (!LITE && !MWV.ready && performance.now() - t0 < 2500) return setTimeout(lift, 100);
@@ -3597,7 +3659,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=0d2b07e5" data-place="info" defer></script>
+<script src="../music/music.js?v=e38c4f06" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
