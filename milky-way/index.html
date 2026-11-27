@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=257749ae"></script>
-<script src="../shared/clock.js?v=257749ae"></script>
-<script src="../shared/fold.js?v=257749ae"></script>
-<script src="../shared/perf.js?v=257749ae"></script>
-<script src="../shared/galaxy-volume.js?v=257749ae"></script>
+<script src="../shared/frame.js?v=4169a8e8"></script>
+<script src="../shared/clock.js?v=4169a8e8"></script>
+<script src="../shared/fold.js?v=4169a8e8"></script>
+<script src="../shared/perf.js?v=4169a8e8"></script>
+<script src="../shared/galaxy-volume.js?v=4169a8e8"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1077,7 +1077,7 @@ function webBuild() {
   const RU = 4.35e10, R0 = 3.5e8, N = LITE ? 700 : 1400, nodes = [];
   while (nodes.length < N) { const r = RU * Math.cbrt(rnd()); if (r < R0) continue; const ct = 2 * rnd() - 1, st = Math.sqrt(1 - ct * ct), ph = 6.2831853 * rnd();
     nodes.push({ x: SUNW.x + r * st * Math.cos(ph), y: SUNW.y + r * st * Math.sin(ph), z: SUNW.z + r * ct, m: 0.3 + Math.pow(rnd(), 3) * 1.7, k: 0 }); }
-  const pts = [], per = LITE ? 14 : 30;
+  const pts = [], per = LITE ? 6 : 13;
   for (let i = 0; i < N; i++) {   // each knot joined to its three nearest
     const a = nodes[i], near = [];
     for (let j = 0; j < N; j++) if (j !== i) { const b = nodes[j], d = (a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2; if (near.length < 3 || d < near[2][0]) { near.push([d, j]); near.sort((p, q) => p[0] - q[0]); if (near.length > 3) near.pop(); } }
@@ -1099,7 +1099,7 @@ function drawWeb() {
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   const sz = Math.max(0.7, Math.min(1.8, 2.2e9 * view.s / 40));
   for (const [cool, col] of [[true, '#8e94ff'], [false, '#c7a8ff']]) {   // filaments: blue-violet galaxies, some cooler, some warmer
-    ctx.fillStyle = col; ctx.globalAlpha = 0.5 * a; ctx.beginPath();
+    ctx.fillStyle = col; ctx.globalAlpha = 0.65 * a; ctx.beginPath();
     for (const q of WEB.pts) { if (q.c !== cool) continue; const [X, Y] = proj(q.x, q.y, q.z); if (!(X > -2 && X < Wd + 2 && Y > -2 && Y < Ht + 2)) continue; const r = sz * (0.5 + q.b); ctx.rect(X - r / 2, Y - r / 2, r, r); }
     ctx.fill(); }
   for (const n of WEB.nodes) {   // the knots: clusters of galaxies, glowing where the filaments meet
@@ -3692,7 +3692,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=257749ae" data-place="info" defer></script>
+<script src="../music/music.js?v=4169a8e8" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
