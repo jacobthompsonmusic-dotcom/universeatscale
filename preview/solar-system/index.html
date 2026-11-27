@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=cb441583"></script>
-<script src="../shared/clock.js?v=cb441583"></script>
-<script src="../shared/fold.js?v=cb441583"></script>
-<script src="baked/manifest.js?v=cb441583"></script>
-<script src="../shared/perf.js?v=cb441583"></script>
-<script src="../shared/galaxy-volume.js?v=cb441583"></script>
+<script src="../shared/frame.js?v=54984842"></script>
+<script src="../shared/clock.js?v=54984842"></script>
+<script src="../shared/fold.js?v=54984842"></script>
+<script src="baked/manifest.js?v=54984842"></script>
+<script src="../shared/perf.js?v=54984842"></script>
+<script src="../shared/galaxy-volume.js?v=54984842"></script>
 <script>
 (() => {
 'use strict';
@@ -2023,7 +2023,7 @@ function placeMoons(g) {
 // ===================================================================
 //  time
 // ===================================================================
-const MAXLOG = Math.log10(10 * 31557600), TMIN = Date.UTC(1800, 0, 1), TMAX = Date.UTC(2050, 11, 31);
+const MAXLOG = Math.log10(2 * 31557600), SKY_MAXLOG = Math.log10(2629800), TMIN = Date.UTC(1800, 0, 1), TMAX = Date.UTC(2050, 11, 31);
 const CK = window.UAS_CLOCK;   // shared/clock.js: the one clock both views read
 let simMs = CK.now(), playing = CK.playing, lastT = 0, logTarget = Math.log10(3600), logCur = logTarget; // opens at 1 hour per second
 function speedLabel(sp) { if (sp < 1.5) return 'Real time'; for (const [u, n] of [[31557600, 'yr'], [2629800, 'mo'], [604800, 'wk'], [86400, 'day'], [3600, 'hr'], [60, 'min'], [1, 'sec']]) if (sp >= u * 0.95) { const v = sp / u; return `${v < 10 ? +v.toFixed(1) : Math.round(v)} ${n}/s`; } }
@@ -2867,11 +2867,12 @@ document.querySelectorAll('.tg').forEach(b => b.onclick = () => { opts[b.dataset
 const playBtn = document.getElementById('play'), speedIn = document.getElementById('speed');
 playBtn.textContent = playing ? '❚❚' : '▶\ufe0e';   // the planets start still: press play to set them moving
 let playTouched = false;   // the play button glows until it's first pressed, and again whenever time is paused
-playBtn.onclick = () => { playTouched = true; playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶\ufe0e'; };
+playBtn.onclick = () => { playTouched = true; playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶\ufe0e';
+  if (playing && simMs >= TMAX - 86400000) { CK.set(Date.now()); simMs = CK.now(); } };   // stopped at the end of 2050: play starts again from now
 speedIn.oninput = () => { logTarget = +speedIn.value / 1000 * MAXLOG; };
 // − and +: step the clock's rate along a ladder of round speeds (real time, a minute, ten minutes, an hour, six hours, a day, a week,
-// a month, a year, ten years a second) — for tapping on a phone instead of sliding. + also starts a paused clock.
-{ const RUNGS = [1, 60, 600, 3600, 21600, 86400, 604800, 2629800, 31557600, 315576000].map(v => Math.log10(v));
+// a month, a year, two years a second) — for tapping on a phone instead of sliding. + also starts a paused clock.
+{ const RUNGS = [1, 60, 600, 3600, 21600, 86400, 604800, 2629800, 31557600, 63115200].map(v => Math.log10(v));
   const stepRate = dir => {
     const cur = logTarget; let i = dir > 0 ? RUNGS.findIndex(v => v > cur + 1e-3) : RUNGS.length - 1 - [...RUNGS].reverse().findIndex(v => v < cur - 1e-3);
     if (i < 0 || i >= RUNGS.length) i = dir > 0 ? RUNGS.length - 1 : 0;
@@ -3584,6 +3585,7 @@ function frame(t) {
   frame.lr = t;
   SSQ.g.frame(t);
   const dt = lastT ? Math.min(t - lastT, 100) : 0; lastT = t;
+  if (SKY.on && logTarget > SKY_MAXLOG) { logTarget = SKY_MAXLOG; speedIn.value = Math.round(logTarget / MAXLOG * 1000); }   // from the ground, a month a second at most: faster, the sky just flickers
   logCur += (logTarget - logCur) * Math.min(1, dt / 220);
   if (!CK.boosted) { CK.setPlaying(playing); if (playing) CK.setRate(Math.pow(10, logCur)); }   // the galaxy map may be running time fast for the S-stars
   else if (!playing) { playing = true; playBtn.textContent = '❚❚'; }
@@ -3764,7 +3766,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=cb441583" data-place="info" defer></script>
+<script src="../music/music.js?v=54984842" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
