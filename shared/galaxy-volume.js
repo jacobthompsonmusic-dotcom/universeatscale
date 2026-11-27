@@ -22,13 +22,16 @@ uniform float uTanH, uOrtho, uHalfH, uExpo, uAlpha, uGam;
 // left). Each page passes uSkyMix: 1 from the Solar System out to a few hundred light-years (where the view from Earth still holds),
 // fading to the model by ~3,000 ly. While it's 1 the ray march is skipped altogether.
 uniform sampler2D uSky;
-uniform float uSkyMix;
+uniform float uSkyMix, uSkyGain;
+// From inside the disc the model's warm light would read as an orange haze; uDesat turns it toward the photograph's silver
+// (1 = fully silver; each page eases it to 0 for the whole-galaxy view, which keeps the painted picture's colours).
+uniform float uDesat;
 vec3 skyPhoto(vec3 d) {
   float yh = -d.x, xg = -d.y, zg = d.z;                                       // map world → heliocentric galactic (undo the Sun's 20.8 pc tilt)
   float xh = xg * 0.99999684 - zg * 0.0025136, zh = xg * 0.0025136 + zg * 0.99999684;
   float l = atan(yh, xh), b = asin(clamp(zh, -1.0, 1.0));
   vec3 c = texture2D(uSky, vec2(fract(0.5 - l / 6.2831853), 0.5 + b / 3.14159265)).rgb;
-  return pow(max(c - 0.05, 0.0) / 0.95, vec3(1.3)) * 0.9;                    // a truly dark sky between the stars, a little quieter than from the ground so the map reads on top
+  return pow(max(c - 0.065, 0.0) / 0.935, vec3(1.35)) * uSkyGain;          // a truly dark sky between the stars, quieter than from the ground so the map reads on top
 }
 const float GW = 62000.0, ZM = 9000.0, RSUN = 26989.0;
 const float HY = 330.0, H1 = 978.0, H2 = 2935.0, HB = 1630.0, HD = 437.0, RD = 7557.0, K0 = 1.7e-4;
@@ -88,6 +91,7 @@ void main() {
   vec3 col = pow(clamp(1.0 - exp(-I * uExpo), 0.0, 1.0), vec3(uGam));   // a deep black point: faint light off the band falls to near-black, the band itself keeps most of its glow
   // phones' GPUs can slip a hair below zero or to NaN here (pow of a negative), which the view's blur then spreads into coloured specks
   if (!(col.r >= 0.0 && col.g >= 0.0 && col.b >= 0.0 && col.r <= 1.0 && col.g <= 1.0 && col.b <= 1.0)) col = vec3(0.0);
+  col = mix(col, dot(col, vec3(0.2126, 0.7152, 0.0722)) * vec3(0.94, 0.97, 1.04), uDesat);
   col = mix(col, photo, sm);
   gl_FragColor = vec4(col * uAlpha, max(col.r, max(col.g, col.b)) * uAlpha);
 }

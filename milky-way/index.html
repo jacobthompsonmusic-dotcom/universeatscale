@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=e73e9ab0"></script>
-<script src="../shared/clock.js?v=e73e9ab0"></script>
-<script src="../shared/fold.js?v=e73e9ab0"></script>
-<script src="../shared/perf.js?v=e73e9ab0"></script>
-<script src="../shared/galaxy-volume.js?v=e73e9ab0"></script>
+<script src="../shared/frame.js?v=91bdfd68"></script>
+<script src="../shared/clock.js?v=91bdfd68"></script>
+<script src="../shared/fold.js?v=91bdfd68"></script>
+<script src="../shared/perf.js?v=91bdfd68"></script>
+<script src="../shared/galaxy-volume.js?v=91bdfd68"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1299,7 +1299,7 @@ function gxInit() {
   gl.useProgram(pr); const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
   const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  for (const n of ['uGal', 'uCam', 'uRight', 'uUp', 'uFwd', 'uRes', 'uTanH', 'uOrtho', 'uHalfH', 'uExpo', 'uAlpha', 'uGam', 'uSky', 'uSkyMix']) GX.u[n] = gl.getUniformLocation(pr, n);
+  for (const n of ['uGal', 'uCam', 'uRight', 'uUp', 'uFwd', 'uRes', 'uTanH', 'uOrtho', 'uHalfH', 'uExpo', 'uAlpha', 'uGam', 'uSky', 'uSkyMix', 'uSkyGain', 'uDesat']) GX.u[n] = gl.getUniformLocation(pr, n);
   // the face-on picture of the disc, on black (so its colours are premultiplied), 2048² so it can be mipmapped
   const c = document.createElement('canvas'); c.width = c.height = 2048; const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, 2048, 2048); g.filter = 'blur(1.6px)'; g.drawImage(gal, 0, 0, 2048, 2048); g.filter = 'none';
   const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, c); gl.generateMipmap(gl.TEXTURE_2D);
@@ -1350,6 +1350,9 @@ function drawGalaxy3D() {
     { // the photograph near home, by how far the eye is from the Sun (300 → 3,000 ly); the same as the Solar System view's at the hand-over
       const eye = PD === Infinity ? null : [view.x + F[0] * PD, view.y + F[1] * PD, view.z + F[2] * PD], dS = eye ? Math.hypot(eye[0] - SUNW.x, eye[1] - SUNW.y, eye[2] - SUNW.z) : Infinity;
       gl.uniform1f(U.uSkyMix, GX.sky && eye ? 1 - sstep(Math.log(Math.max(dS, 1)), Math.log(300), Math.log(3000)) : 0); }
+    // softer behind the nearest stars (full strength at the hand-over, ~45% by a 100-ly view), and the model silver from inside
+    gl.uniform1f(U.uSkyGain, 0.8 * (1 - 0.45 * sstep(Math.log(viewSpan()), Math.log(10), Math.log(100))));
+    gl.uniform1f(U.uDesat, PD === Infinity ? 0 : 0.85 * (1 - sstep(Math.log(Math.max(Ht / view.s, 1)), Math.log(3000), Math.log(40000))));
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); if (PROF) gl.finish();
     GX.key = key;
     // drawn coarser to keep up with movement? once you stop, draw it again at full quality
@@ -3619,7 +3622,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=e73e9ab0" data-place="info" defer></script>
+<script src="../music/music.js?v=91bdfd68" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
