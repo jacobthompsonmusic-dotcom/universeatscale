@@ -57,10 +57,10 @@ void main() {
     float foot = max(dt * length(rd.xy), 0.0) / 60.5;                    // how many texels this step sweeps across: blur to match
     // the face-on light, split in two: the smooth glow of old stars (thick layers) and the arms' detail on top of it (a thin layer)
     vec2 uv = (m.xy + GW) / (2.0 * GW);
-    vec3 smo = GTEX(uv, 7.0).rgb, full = GTEX(uv, clamp(log2(max(foot, 1.0)), 1.0, 6.0)).rgb, arm = max(full - smo, 0.0);
+    vec3 smo = GTEX(uv, 4.5).rgb, full = GTEX(uv, clamp(log2(max(foot, 1.0)), 1.0, 6.0)).rgb, arm = max(full - smo, 0.0);
     float wb = exp(-R * R / (5000.0 * 5000.0));
     float vOld = mix(0.84 * exp(-az / H1) / (2.0 * H1) + 0.16 * exp(-az / H2) / (2.0 * H2), exp(-az / HB) / (2.0 * HB), wb);
-    vec3 sig = smo * vOld + arm * mix(exp(-az / HY) / (2.0 * HY), vOld, wb);
+    vec3 sig = smo * vOld + 0.75 * arm * mix(exp(-az / HY) / (2.0 * HY), vOld, wb);
     float vert = 1.0;
     float k = K0 * exp(-(R - RSUN) / RD) * exp(-az / HD) * smoothstep(1500.0, 4000.0, R) + K0 * 6.0 * exp(-R / 600.0) * exp(-az / 150.0);
     vec3 kap = k * vec3(0.75, 1.0, 1.32);
