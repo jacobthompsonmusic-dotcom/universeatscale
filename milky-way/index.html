@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=b8b30d74"></script>
-<script src="../shared/clock.js?v=b8b30d74"></script>
-<script src="../shared/fold.js?v=b8b30d74"></script>
-<script src="../shared/perf.js?v=b8b30d74"></script>
-<script src="../shared/galaxy-volume.js?v=b8b30d74"></script>
+<script src="../shared/frame.js?v=12784c71"></script>
+<script src="../shared/clock.js?v=12784c71"></script>
+<script src="../shared/fold.js?v=12784c71"></script>
+<script src="../shared/perf.js?v=12784c71"></script>
+<script src="../shared/galaxy-volume.js?v=12784c71"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1153,7 +1153,7 @@ function drawLaniakea() {
   LANI.a = a; if (a < 0.01) return;
   if (!LANI.lines) laniBuild();
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  for (const [lw, al] of [[9, 0.022], [3, 0.055], [1, 0.14]]) {   // a broad soft glow, then the thread: silvery and faint, like the Milky Way, so it doesn't crowd the objects
+  for (const [lw, al] of [[9, 0.012], [3, 0.03], [1, 0.08]]) {   // a broad soft glow, then the thread: silvery and faint, like the Milky Way, so it doesn't crowd the objects
     ctx.lineWidth = lw; ctx.strokeStyle = `rgba(206,212,240,${(al * a).toFixed(3)})`; ctx.beginPath();
     for (const L of LANI.lines) { let first = true; for (const q of L.pts) { const [X, Y] = proj(q.x, q.y, q.z); if (!isFinite(X)) { first = true; continue; } if (first) ctx.moveTo(X, Y); else ctx.lineTo(X, Y); first = false; } }
     ctx.stroke(); }
@@ -1176,7 +1176,7 @@ function drawVoids() {
       v.shp = { f: 0.5 + 0.4 * rr(), h: [1, 2, 3, 4].map(k => [0.16 / k * (0.4 + rr()), rr() * 6.2832]) }; }
     const ry = R * Math.sqrt(CT * CT + v.shp.f * v.shp.f * ST * ST), rad = th => 1 + v.shp.h.reduce((acc, [amp, ph], k) => acc + amp * Math.sin((k + 2) * th + ph), 0);
     ctx.save(); ctx.translate(X, Y); ctx.scale(1, ry / R);
-    ctx.globalAlpha = v.disputed ? 0.45 : 1; ctx.drawImage(SPR.void, -R, -R, 2 * R, 2 * R); ctx.globalAlpha = 1;
+    ctx.globalAlpha = (v.disputed ? 0.3 : 0.7) * (sel ? 1.3 : 1); ctx.drawImage(SPR.void, -R, -R, 2 * R, 2 * R); ctx.globalAlpha = 1;
     ctx.beginPath(); for (let i = 0; i <= 72; i++) { const th = i / 72 * 6.2832, q = R * rad(th); i ? ctx.lineTo(q * Math.cos(th), q * Math.sin(th)) : ctx.moveTo(q * Math.cos(th), q * Math.sin(th)); }
     ctx.restore();
     ctx.strokeStyle = `rgba(150,158,255,${sel ? 0.75 : 0.1})`; ctx.lineWidth = sel ? 1.5 : 1;   // the galaxies make the edge; the line only when picked
@@ -1241,6 +1241,8 @@ function zoomLimit(x, y, z) {
   if (typeof QSO !== 'undefined' && QSO) for (const q of QSO.list) { const d = Math.hypot(x - q.x, y - q.y, z - q.z); if (d < 1e6) lim = Math.min(lim, Math.max(2.2 * q.Rs, d * 1.2)); }   // all the way down a quasar
   if (ACEN && ACEN.pos.A) { const S = ACEN.sys; if (Math.hypot(x - S.x, y - S.y, z - S.z) < 1) { let dm = Infinity;   // down to Alpha Centauri's stars and planets
     for (const k of ['A', 'B', 'P']) { const q = ACEN.pos[k]; dm = Math.min(dm, Math.hypot(x - q[0], y - q[1], z - q[2])); } lim = Math.min(lim, Math.max(6e-8, dm * 1.5)); } }
+  if (typeof NSUN !== 'undefined' && NSUN) for (const st of NSUN.list) { const o = st.o, d = Math.hypot(x - o.x, y - o.y, z - o.z); if (d < 0.05) lim = Math.min(lim, Math.max(st.R * NSUN.RS * 5, d * 1.2));   // right down to the nearest stars' discs
+    if (st.comp && d < 0.05) { const c = NSUN.compAt(st, CK.year()), dc = Math.hypot(x - o.x - c[0], y - o.y - c[1], z - o.z - c[2]); lim = Math.min(lim, Math.max(st.comp.R * NSUN.RS * 5, dc * 1.2)); } }
   if (typeof NEB !== 'undefined') for (const o of OBJ) { const e = NEB[o.name]; if (!e || !e.w || e.w > 6) continue; const d = Math.hypot(x - o.x, y - o.y, z - o.z); if (d < 2 * e.w) lim = Math.min(lim, Math.max(e.w * 0.8, d * 1.2)); }
   return Math.max(6e-11, lim);   // the floor: a neutron star (each place above sets its own limit)
 }
@@ -1370,6 +1372,7 @@ function render(t) {
   if (SYSIN > 0.002) { ctx.fillStyle = `rgba(0,0,0,${(0.82 * SYSIN).toFixed(3)})`; ctx.fillRect(0, 0, Wd, Ht); }
   pf('scan');
   drawField();
+  drawNearSuns();
   pf('field');
   const qbh = qsoDraw();
   psrDraw();
@@ -1394,7 +1397,7 @@ function render(t) {
       if (bhCv.style.display === 'block' && bhCv.width) g.drawImage(bhCv, 0, 0, c.width, c.height);
       url = c.toDataURL('image/jpeg', 0.92); } catch (e) {}
     parent.postMessage({ src: 'uas-mw', snap: url, id: SNAP.id }, '*'); SNAP.id = null; draw(); }
-  if ((s2a > 0 || nb > 0 || bhOn || t1a > 0 || aca > 0 || qOn || QSO.IN > 0.05 || PSR.list.some(p => p.vis > 0)) && !anim) draw();   // keep S2 and the flow moving
+  if ((s2a > 0 || nb > 0 || bhOn || t1a > 0 || aca > 0 || NSUN.anim || qOn || QSO.IN > 0.05 || PSR.list.some(p => p.vis > 0)) && !anim) draw();   // keep S2 and the flow moving
   updateScale();
   updateGC();
   const tb = document.getElementById('go3d'), lab = Math.abs(view.tilt) > 0.05 ? '3D' : 'TOP';
@@ -1458,7 +1461,7 @@ function drawGalaxy3D() {
     gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform3f(U.uRight, CY, -SY, 0); gl.uniform3f(U.uUp, -SY * CT, -CY * CT, ST); gl.uniform3f(U.uFwd, -F[0], -F[1], -F[2]);
     // inside the bulge the light piles up and would clip to a flat white disc: lower the exposure there so its shape still shows
-    const dGx = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), expo = 1.35 * (0.28 + 0.72 * sstep(Math.log(Math.max(dGx, Ht / view.s * 0.5, 1)), Math.log(3000), Math.log(60000)));
+    const dGx = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z), expo = 1.2 * (0.28 + 0.72 * sstep(Math.log(Math.max(dGx, Ht / view.s * 0.5, 1)), Math.log(3000), Math.log(60000)));
     gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uExpo, expo); gl.uniform1f(U.uAlpha, 1);
     // from inside the disc the sky between the band is near-black: a deep black point, easing back to the softer curve as you
     // pull out to see the whole galaxy (it matches the Solar System view's curve at the hand-over)
@@ -2068,6 +2071,7 @@ function drawField() {
     const fv = fmag[i] > 6.5 ? (LITE ? 0 : faint) : 1;   // phones: only stars you could see by eye
     if (fv <= 0) continue;
     if (ACEN.show > 0 && (i === ACEN.ST.B.fi || i === ACEN.ST.P.fi)) continue;   // drawn with their system
+    if (NSUN.big.size && NSUN.big.has(fieldCache.get(i))) { fieldPts.push(i, X, Y); continue; }   // drawn as a sun
     if (stalks && dx * dx + dy * dy + (fz[i] - view.z) ** 2 < near2) {
       let ff = 1; if (PD !== Infinity) ff = PD / Math.max(PD * 0.01, PD - (ry * ST + zf * CT));
       const Xf = Wd / 2 + (dx * CY - dy * SY) * s * ff, Yf = Ht / 2 + (ry * CT - zf * ST) * s * ff;
@@ -2200,6 +2204,7 @@ function drawObjects() {
   for (const p of vis) {
     const { o, X, Y } = p;
     screenPts.push(p);
+    if (NSUN.big.has(o)) continue;   // drawn as a sun, at its true size
     ctx.globalAlpha = dimO;
     const c = o.col && o.type === 'star' ? o.col : TYPES[o.type].color, isSel = o === selected, isHov = o === hover;
     if (stalks && !o.mw && o.type !== 'sun') {
@@ -2608,6 +2613,144 @@ var ACEN = (() => {   // var: zoomLimit() may look before this line has run
   ST.P.fi = fname.indexOf('Proxima Centauri'); ST.B.fi = fname.indexOf('Toliman');
   return { sys, AB, PX, PL, HZ, ST, relB, proxRel, proxAtE, qA, abPl, pos: {}, yr: 0, IN: 0, R: 12950 * AU, show: 0 };
 })();
+// ---------- the nearest named stars, drawn as suns: true size and true colour once you're close enough to see their discs ----------
+// Width: measured (interferometry, or a white dwarf's spectrum) where the card says so, otherwise estimated from the star's type and
+// brightness (most faint red dwarfs). Colour: the eye's colour for the surface temperature — the same table as everywhere else, with
+// the photographic boost taken back out, so it's what you'd see: white for the hot stars, peach-orange for the red dwarfs. The
+// surfaces shimmer slowly and the flare stars brighten now and then (illustrative); the companions' orbits are measured where noted.
+var NSUN = (() => {
+  const RS = 695700 / FRM.LY_KM, AU = 1 / AU_PER_LY;
+  const B12 = 'interferometry (Boyajian et al. 2012)', EST = 'estimated from its type and brightness';
+  const frameAt = (raD, deD) => { const ra = raD * DEG, de = deD * DEG, sk = { away: [Math.cos(de) * Math.cos(ra), Math.cos(de) * Math.sin(ra), Math.sin(de)], east: [-Math.sin(ra), Math.cos(ra), 0], north: [-Math.sin(de) * Math.cos(ra), -Math.sin(de) * Math.sin(ra), Math.cos(de)] };
+    const W = {}; for (const k in sk) W[k] = galDirToWorld(eqToGal(sk[k])); return ([n, e, z]) => [0, 1, 2].map(k => n * W.north[k] + e * W.east[k] + z * W.away[k]); };
+  // [name, width (× Sun), surface K (null: from its catalogued colour), how the width is known, extras]
+  const L = [
+    ['Sirius', 1.711, 9940, 'interferometry (Davis et al. 2011)', { ra: 101.2872, de: -16.7161, comp: { name: 'Sirius B', R: 0.0081, T: 25000, src: 'Hubble spectroscopy (Joyce et al. 2018)', what: 'a white dwarf the size of Earth',
+      orb: { P: 50.1284, tp: 1994.5715, e: 0.59142, a: 7.4957 * 2.637, i: 136.336, Om: 45.4, w: 149.161, src: 'Bond et al. 2017' } } }],
+    ['Procyon', 2.048, 6530, 'interferometry (Kervella et al. 2004)', { ra: 114.8255, de: 5.225, comp: { name: 'Procyon B', R: 0.01234, T: 7740, src: 'Hubble (Provencal et al. 2002)', what: 'a white dwarf a little bigger than Earth',
+      orb: { P: 40.84, tp: 1967.97, e: 0.4, a: 4.3075 * 3.51, i: 31.1, Om: 97.3, w: 89.7, src: 'Bond et al. 2015' } } }],
+    ["Barnard's Star", 0.187, 3220, B12],
+    ['Wolf 359', 0.144, 2800, EST, { flare: true }],
+    ['Lalande 21185', 0.392, 3460, B12],
+    ['Epsilon Eridani', 0.735, 5084, 'interferometry (Baines & Armstrong 2012)'],
+    ['61 Cygni', 0.665, 4400, 'interferometry (Kervella et al. 2008)', { ra: 316.725, de: 38.749, comp: { name: '61 Cygni B', R: 0.595, T: 4040, src: 'interferometry (Kervella et al. 2008)', what: 'an orange dwarf, its twin', sep: 84, per: 680 } }],
+    ['Epsilon Indi', 0.732, 4630, 'interferometry (Demory et al. 2009)'],
+    ['Tau Ceti', 0.793, 5344, 'interferometry (Teixeira et al. 2009)'],
+    ['Altair', 2.029, 7550, 'interferometry (Monnier et al. 2007)', { ra: 297.6958, de: 8.8683, Rp: 1.636, Tp: 8450, Te: 6860, inc: 57.2, pa: -61.8, spin: 'once every 8.9 hours — so fast it bulges at the equator' }],
+    ['Vega', 2.818, 9600, 'interferometry (Monnier et al. 2012)', { ra: 279.2347, de: 38.7837, Rp: 2.362, Tp: 10070, Te: 8910, inc: 6.2, pa: 8, spin: 'once every 16.5 hours; we see it almost pole-on' }],
+    ['Fomalhaut', 1.842, 8590, 'interferometry (Mamajek 2012)'],
+    ['Ross 154', 0.24, 3250, EST, { flare: true }],
+    ['Ross 248', 0.16, 2800, EST, { flare: true }],
+    ['Lacaille 9352', 0.471, 3690, B12],
+    ['Ross 128', 0.197, 3190, EST],
+    ['EZ Aqr', 0.13, 2900, EST, { flare: true, note: 'three red dwarfs close together; the brightest drawn' }],
+    ['Struve 2398 A', 0.356, 3410, B12],
+    ['Struve 2398 B', 0.323, 3300, B12],
+    ['Groombridge 34', 0.386, 3560, B12],
+    ["Luyten's Star", 0.29, 3380, EST],
+    ["Kapteyn's Star", 0.29, 3570, EST],
+    ['Lacaille 8760', 0.51, 3800, EST, { flare: true }],
+    ['Kruger 60', 0.35, 3400, EST, { note: 'with a smaller red dwarf, B, every 44.6 years' }],
+    ['Ross 614', 0.22, 3000, EST, { note: 'with a tiny red dwarf, B, every 16.6 years' }],
+    ['Wolf 1061', 0.31, 3340, EST],
+    ["Van Maanen's Star", 0.011, 6220, EST + ' (a white dwarf)'],
+    ['Keid', 0.81, 5100, EST, { ra: 63.818, de: -7.653, comp: { name: '40 Eridani B', R: 0.0131, T: 16500, src: 'spectroscopy (Bond et al. 2017)', what: 'a white dwarf (with a red dwarf, C, beside it)', sep: 418, per: 8000 } }],
+    ['Alsafi', 0.778, 5300, 'interferometry (Boyajian et al. 2008)'],
+    ['Achird', 1.04, 5970, B12, { note: 'with an orange dwarf, B, about 70 AU out' }],
+    ['Guniibuu', 0.69, 5100, EST, { note: 'a pair of orange dwarfs, with a third star farther out' }],
+    ['82 G. Eri', 0.92, 5400, EST],
+  ];
+  const trueRGB = T => FRM.starRGB(T).map(c => Math.round(255 - (255 - c) / 1.4));   // the eye's colour: the photographic boost taken out
+  const list = [];
+  for (const [name, R, T, src, x = {}] of L) {
+    let o = OBJ.find(q => q.name === name && q.type !== 'sun'), fi = -1;
+    if (!o) { fi = fname.indexOf(name); if (fi < 0) continue; o = fieldObj(fi); }
+    const st = { name, o, fi, R, T: T || 5000, src, rgb: trueRGB(T || 5000), seed: list.length * 1.618 % 1, ...x };
+    if (x.ra !== undefined) st.sky = frameAt(x.ra, x.de);
+    if (x.Rp) { const pa = x.pa * DEG, i = x.inc * DEG; st.pole = norm3(st.sky([Math.sin(i) * Math.cos(pa), Math.sin(i) * Math.sin(pa), Math.cos(i)])); st.rgbP = trueRGB(x.Tp); st.rgbE = trueRGB(x.Te); }
+    if (x.comp) { x.comp.rgb = trueRGB(x.comp.T); if (!x.comp.orb) { const a = st.seed * 6.2832; x.comp.dir = norm3(st.sky([Math.cos(a), Math.sin(a), 0.3 * Math.sin(3 * a)])); } }
+    o.ns = st; list.push(st);
+  }
+  const kepE = (M, e) => { let E = M + e * Math.sin(M); for (let k = 0; k < 12; k++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E)); return E; };
+  function compAt(st, yr) {   // the companion relative to its star (ly)
+    const c = st.comp; if (!c) return null;
+    if (c.orb) { const b = c.orb, E = kepE(2 * Math.PI * ((((yr - b.tp) / b.P) % 1) + 1), b.e), nu = 2 * Math.atan2(Math.sqrt(1 + b.e) * Math.sin(E / 2), Math.sqrt(1 - b.e) * Math.cos(E / 2));
+      return st.sky(skyOffset(b.a * (1 - b.e * Math.cos(E)), b.w * DEG + nu, b.i * DEG, b.Om * DEG)).map(v => v * AU); }
+    return c.dir.map(v => v * c.sep * AU);   // measured separation, direction illustrative
+  }
+  return { list, RS, compAt, big: new Set(), anim: false };
+})();
+// one sun on the canvas: a limb-darkened disc (dimmer and warmer at the edge), a slow shimmer across it, a soft glow, and — for the
+// spinning-top stars — the measured flattening and their hotter, brighter poles
+const NSMOT = (() => { const N = 256, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d'), r = mulberry32(7);
+  for (let k = 0; k < 420; k++) { const x = r() * N, y = r() * N, s = 4 + r() * 14, q = g.createRadialGradient(x, y, 0, x, y, s); q.addColorStop(0, `rgba(255,255,255,${0.25 + 0.4 * r()})`); q.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = q; g.fillRect(x - s, y - s, 2 * s, 2 * s); }
+  return c; })();
+function sunDisc(x, y, rs, rgb, A, t, seed, ob) {
+  const col = rgb.join(','), hot = rgb.map(c => Math.round(c + (255 - c) * 0.35)).join(','), limb = [rgb[0] * 0.62, rgb[1] * 0.5, rgb[2] * 0.4].map(Math.round).join(',');
+  const gr = rs * 2.6 + 7, h = ctx.createRadialGradient(x, y, rs * 0.6, x, y, gr);
+  h.addColorStop(0, `rgba(${col},${0.5 * A})`); h.addColorStop(0.3, `rgba(${col},${0.14 * A})`); h.addColorStop(1, `rgba(${col},0)`);
+  ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = h; ctx.beginPath(); ctx.arc(x, y, gr, 0, 7); ctx.fill(); ctx.globalCompositeOperation = 'source-over';
+  ctx.save(); ctx.translate(x, y); if (ob) { ctx.rotate(ob.ang); ctx.scale(1, ob.q); }
+  const d = ctx.createRadialGradient(0, 0, 0, 0, 0, rs);
+  d.addColorStop(0, `rgba(${hot},${A})`); d.addColorStop(0.55, `rgba(${col},${A})`); d.addColorStop(0.9, `rgba(${col},${A})`); d.addColorStop(1, `rgba(${limb},${A})`);
+  ctx.fillStyle = d; ctx.beginPath(); ctx.arc(0, 0, rs, 0, 7); ctx.fill();
+  if (ob && ob.pole) {   // gravity darkening: the poles hotter and brighter than the bulging equator
+    const lg = ctx.createLinearGradient(0, -rs, 0, rs); lg.addColorStop(0, `rgba(${ob.pole},${0.35 * ob.pv * A})`); lg.addColorStop(0.5, `rgba(${ob.eq},${0.25 * A})`); lg.addColorStop(1, `rgba(${ob.pole},${0.35 * ob.pv * A})`);
+    ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(0, 0, rs, 0, 7); ctx.fill();
+  }
+  if (rs > 10) {   // the surface boils slowly
+    ctx.beginPath(); ctx.arc(0, 0, rs * 0.97, 0, 7); ctx.clip(); ctx.globalCompositeOperation = 'lighter';
+    for (const [sp, al] of [[0.03, 0.09], [-0.021, 0.07]]) { ctx.save(); ctx.rotate(t * sp + seed * 6.28); ctx.globalAlpha = al * A; ctx.drawImage(NSMOT, -rs * 1.3, -rs * 1.3, rs * 2.6, rs * 2.6); ctx.restore(); }
+  }
+  ctx.restore(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+}
+function drawNearSuns() {
+  NSUN.big.clear(); NSUN.anim = false;
+  if (viewSpan() > 0.5) return;   // the discs only show far, far closer in than this
+  const t = performance.now() / 1000, yr = CK.year();
+  for (const st of NSUN.list) {
+    const o = st.o, [x, y, , f] = proj(o.x, o.y, o.z); if (!isFinite(x)) continue;
+    const Sx = view.s * f, rs = st.R * NSUN.RS * Sx, cr = st.comp ? NSUN.compAt(st, yr) : null;
+    let ok = x > -rs - 50 && x < Wd + rs + 50 && y > -rs - 50 && y < Ht + rs + 50;
+    if (cr) { const [cx, cy] = proj(o.x + cr[0], o.y + cr[1], o.z + cr[2]); if (isFinite(cx) && cx > -50 && cx < Wd + 50 && cy > -50 && cy < Ht + 50) ok = true; }
+    if (!ok || (rs < 0.7 && !cr)) continue;
+    const A = sstep(rs, 0.7, 3);
+    if (rs >= 0.7) {
+      let ob = null;
+      if (st.pole) {   // how flattened it looks from here: the pole's tilt toward or away from us
+        const [px, py, pz, pf] = proj(o.x + st.pole[0] * 1e-6, o.y + st.pole[1] * 1e-6, o.z + st.pole[2] * 1e-6), sx = px - x, sy = py - y, L = 1e-6 * Sx, sinP = Math.min(1, Math.hypot(sx, sy) / Math.max(L, 1e-30));
+        const q = Math.sqrt((1 - sinP * sinP) + (st.Rp / st.R) ** 2 * sinP * sinP);
+        ob = { ang: Math.atan2(sy, sx) - Math.PI / 2, q, pole: st.rgbP.join(','), eq: st.rgbE.join(','), pv: sinP };
+      }
+      let bright = A;
+      if (st.flare) { const k = (t / 41 + st.seed * 7) % 1; bright = A * (1 + 0.8 * Math.exp(-(((k - 0.05) / 0.012) ** 2)) + 0.35 * Math.exp(-(k - 0.05) / 0.06) * (k > 0.05)); }
+      sunDisc(x, y, rs, st.rgb, Math.min(1, bright), t, st.seed, ob);
+      if (bright > A * 1.05) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, (bright - A) * 0.6); ctx.drawImage(glowSprite('#ffe8d0'), x - rs * 3 - 8, y - rs * 3 - 8, rs * 6 + 16, rs * 6 + 16); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
+      if (rs > 1.5) NSUN.big.add(o);
+      if (rs > 4) NSUN.anim = true;
+    }
+    if (cr) {
+      const c = st.comp, [cx, cy, , cf] = proj(o.x + cr[0], o.y + cr[1], o.z + cr[2]); if (!isFinite(cx)) continue;
+      const sep = Math.hypot(cx - x, cy - y); if (sep < 4) continue;
+      const crs = c.R * NSUN.RS * view.s * cf, ca = sstep(sep, 4, 20);
+      if (crs >= 0.7) sunDisc(cx, cy, crs, c.rgb, ca, t, st.seed + 0.5, null);
+      else { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = ca; ctx.drawImage(glowSprite(FRM.starHex(c.T)), cx - 9, cy - 9, 18, 18); ctx.fillStyle = `rgb(${c.rgb.join(',')})`; ctx.beginPath(); ctx.arc(cx, cy, 1.6, 0, 7); ctx.fill(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
+      if (opts.labels && sep > 26) { ctx.font = 'italic 14px "IM Fell English", Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = `rgba(230,234,245,${0.8 * ca})`; ctx.fillText(c.name, cx + Math.max(crs, 3) + 6, cy + 5); }
+    }
+  }
+}
+function nsFacts(o) {
+  const st = o.ns, f = [];
+  const w = st.R >= 0.1 ? st.R.toFixed(2) : st.R >= 0.01 ? st.R.toFixed(3) : st.R.toFixed(4);
+  f.push(['Width', `${w} × the Sun${st.Rp ? ` at the equator, ${st.Rp.toFixed(2)} pole to pole` : ''} <span class="src">(${st.src})</span>`]);
+  f.push(['Surface', st.Tp ? `${st.Tp.toLocaleString('en-CA')} K at the poles, ${st.Te.toLocaleString('en-CA')} K at the equator` : `${st.T.toLocaleString('en-CA')} K`]);
+  if (st.spin) f.push(['Spins', st.spin]);
+  if (st.comp) { const c = st.comp; f.push(['Companion', `${c.name}: ${c.what}, ${c.R < 0.1 ? c.R.toFixed(4) : c.R.toFixed(2)} × the Sun, ${c.T.toLocaleString('en-CA')} K <span class="src">(${c.src})</span>`],
+    ['Their orbit', c.orb ? `every ${c.orb.P.toFixed(1)} years <span class="src">(${c.orb.src})</span>` : `~${c.sep} AU apart, ~${c.per.toLocaleString('en-CA')} years <span class="src">(direction drawn illustrative)</span>`]); }
+  if (st.flare) f.push(['Flares', 'a flare star: brightens suddenly now and then']);
+  if (st.note) f.push(['Also', st.note]);
+  return f;
+}
 // where everything is now (world ly, double precision)
 function acenUpdate(yr) {
   const S = ACEN.sys, rb = ACEN.relB(yr), rp = ACEN.proxRel(yr), q = ACEN.qA, P = ACEN.pos;
@@ -3442,6 +3585,7 @@ const OBJ_SIZE = { 'Orion Nebula': 24, 'Carina Nebula': 230, 'Eagle Nebula': 70,
   'Ring Nebula': 1.3, 'Helix Nebula': 2.9, "Kepler's Supernova": 14, "Tycho's Supernova": 19, 'Vela Supernova Remnant': 130, "Cat's Eye Nebula": 0.3, 'Hyades': 20, "Horsehead Nebula": 3.5, "Trifid Nebula": 40, "North America Nebula": 100, "Dumbbell Nebula": 2.5, "Butterfly Nebula": 2, "Boomerang Nebula": 0.6, "Owl Nebula": 2, "Heart Nebula": 200, "Christmas Tree Cluster": 30, "Tarantula Nebula": 650, "Rho Ophiuchi Cloud": 50, 'Cygnus X-1': 0 };
 function spanFor(o) {
   if (o.span) return o.span;   // set for Alpha Centauri's stars
+  if (o.ns) return o.ns.comp ? Math.max(o.ns.R * NSUN.RS * 12, 2.6 * (o.ns.comp.orb ? o.ns.comp.orb.a : o.ns.comp.sep) / AU_PER_LY) : o.ns.R * NSUN.RS * 7;   // a near star: its disc (and companion) fills the view
   if (o.psr) return o.psr.torus ? o.psr.torus.r * 3 : o.psr.bin ? o.psr.bin.a * 3 * PSR.KM : 0.5;   // its wind nebula, its orbit, or just its neighbourhood
   if (o.name === 'Alpha Centauri') return 3.3 * ACEN.R;   // the whole triple: A and B with Proxima's orbit
   if (o.type === 'region' || o.type === 'void') return o.r * 2.6;
@@ -3530,6 +3674,7 @@ function select(o, fly) {
     facts.push(['From Sun', fmtLy(o.d)], ['From centre', fmtLy(Math.hypot(o.x, o.y, o.z))]);
     if (fsp[i]) facts.push(['Spectral type', fsp[i]]);
     if (o.acen) facts.push(...acenFacts(o.acen).filter(f => f[0] !== 'Surface'));
+    if (o.ns) facts.push(...nsFacts(o));
     if (ds.lum) facts.push(['Brightness', ds.lum.replace('about ', '~').replace(' as bright as the Sun', ' the Sun')]);
     facts.push(['Apparent magnitude', fmag[i].toFixed(2)], ['Height', height(o.z)],
       ['Direction', dirName(o.l)], ['Galactic l / b', `${o.l.toFixed(1)}° / ${signed(o.b)}°`],
@@ -3543,6 +3688,7 @@ function select(o, fly) {
     if (o.qso) { const q = o.qso; facts.push(['Black hole', `${q.Mtxt} <span class="src">(${q.Msrc})</span>`]); if (q.L) facts.push(['Shines like', q.L]); facts.push(['Seen as it was', `when the universe was ${(13.8 - q.lt).toFixed(1)} billion years old`]); }
     if (o.acen) facts.push(...acenFacts(o.acen));
     else if (MULT[o.name]) facts.push(['Star system', MULT[o.name]]);
+    if (o.ns) facts.push(...nsFacts(o));
     facts.push(['From Sun', fmtLy(o.d)]);
     if (o !== GCO) facts.push([o.gal ? 'From our centre' : 'From centre', fmtLy(gc)]);
     if (o.name !== 'Sagittarius A*' && !o.qso && o.d < 1e8) facts.push(['Height', height(o.z)]);
@@ -3782,7 +3928,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=b8b30d74" data-place="info" defer></script>
+<script src="../music/music.js?v=12784c71" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
