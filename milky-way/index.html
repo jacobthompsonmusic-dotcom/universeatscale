@@ -191,11 +191,11 @@
 <canvas id="map"></canvas>
 <canvas id="bh"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=35a63ef0"></script>
-<script src="../shared/clock.js?v=35a63ef0"></script>
-<script src="../shared/fold.js?v=35a63ef0"></script>
-<script src="../shared/perf.js?v=35a63ef0"></script>
-<script src="../shared/galaxy-volume.js?v=35a63ef0"></script>
+<script src="../shared/frame.js?v=cde9fe70"></script>
+<script src="../shared/clock.js?v=cde9fe70"></script>
+<script src="../shared/fold.js?v=cde9fe70"></script>
+<script src="../shared/perf.js?v=cde9fe70"></script>
+<script src="../shared/galaxy-volume.js?v=cde9fe70"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -783,7 +783,7 @@ else (function renderGalaxy() {
   const g = gal.getContext('2d');
   const k = S / (2 * W), px = x => (x + W) * k;
   const R2 = mulberry32(20261126);
-  const H = 1700, kh = H / (2 * W), hx = x => (x + W) * kh;
+  const H = 1400, kh = H / (2 * W), hx = x => (x + W) * kh, A = 700, ka = A / H;   // smooth light and dust at H px, the blurred arm maps at A px
   const mk = n => { const c = document.createElement('canvas'); c.width = c.height = n; return c; };
   const soften = (c, n) => {   // blur: halve step by step down to n px, then double back up (close to a Gaussian, no hard ramps)
     let cur = c;
@@ -805,7 +805,7 @@ else (function renderGalaxy() {
   ng.globalAlpha = 1;
   // the arms as density maps: a broad glow, a brighter core, and a thin dust lane offset toward the inner edge
   const strokeArms = (wLy, inward, minorMul) => {
-    const c = mk(H), cg = c.getContext('2d'); cg.lineCap = 'round'; cg.globalCompositeOperation = 'lighten';
+    const c = mk(A), cg = c.getContext('2d'); cg.lineCap = 'round'; cg.globalCompositeOperation = 'lighten'; cg.scale(ka, ka);
     for (const a of ARMS) {
       const am = a.minor ? minorMul : 1; if (!am) continue;
       for (let b = a.min; b < a.max; b += 0.5) {
@@ -822,9 +822,14 @@ else (function renderGalaxy() {
     }
     return c;
   };
-  const read = c => c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, H, H).data;
+  const read = c => c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, A, A).data;
   const nd = ng.getImageData(0, 0, H, H).data, bd = read(soften(strokeArms(2200, 0, 0.7), H / 24)),
     cd = read(soften(strokeArms(900, 0, 0.8), H / 8)), ld = read(soften(strokeArms(650, 950, 0.5), H / 6));
+  const at = (d, i, j) => {   // bilinear read of an A-px arm map at H-px pixel (i, j)
+    const u = Math.max(0, (i + 0.5) * ka - 0.5), v = Math.max(0, (j + 0.5) * ka - 0.5), i0 = Math.min(A - 2, u | 0), j0 = Math.min(A - 2, v | 0), fu = Math.min(1, u - i0), fv = Math.min(1, v - j0);
+    const o = 4 * (j0 * A + i0) + 3;
+    return ((d[o] * (1 - fu) + d[o + 4] * fu) * (1 - fv) + (d[o + 4 * A] * (1 - fu) + d[o + 4 * A + 4] * fu) * fv) / 255;
+  };
   const lightC = mk(H), dustC = mk(H), li = new ImageData(H, H), du = new ImageData(H, H), L = li.data, D = du.data;
   const ba = 27 * DEG, ux = -Math.sin(ba), uy = Math.cos(ba), vx = uy, vy = -ux;
   const nz = v => Math.min(1, Math.max(0, (v / 255 - 0.5) * 3 + 0.5));
@@ -838,11 +843,11 @@ else (function renderGalaxy() {
       const disc = Math.exp(-R / 8200) * (R > 44000 ? Math.exp(-(R - 44000) / 5000) : 1);
       const s = x * ux + y * uy, w = x * vx + y * vy;
       const bar = Math.exp(-(s * s) / (9800 * 9800) - (w * w) / (2500 * 2500)), bulge = Math.exp(-R * R / (3200 * 3200));
-      const arm = 0.6 * (bd[o + 3] / 255) * (0.5 + 0.9 * n2) + cd[o + 3] / 255, cl = sm(0.36, 0.8, n1);   // ragged edges
+      const arm = 0.6 * at(bd, i, j) * (0.5 + 0.9 * n2) + at(cd, i, j), cl = sm(0.36, 0.8, n1);   // ragged edges
       const clouds = arm * (0.12 + 0.3 * n2 + 1.05 * cl * Math.sqrt(cl));   // star clouds: brighter knots and dimmer gaps along the arms
       const mot = 0.6 + 0.8 * n2;                                         // the old disc's light, gently mottled
       const ridge = 1 - Math.abs(2 * n3 - 1), r3 = ridge * ridge * ridge;
-      const tau = (ld[o + 3] / 255) * (0.25 + 1.9 * r3 + 0.6 * n1) * 1.1                    // arm dust lanes, broken into filaments
+      const tau = at(ld, i, j) * (0.25 + 1.9 * r3 + 0.6 * n1) * 1.1                    // arm dust lanes, broken into filaments
         + 0.4 * Math.exp(-R / 15000) * r3 * r3 * sm(0.35, 0.75, n2) * sm(4500, 10000, R)    // a few wisps between the arms
         + 0.6 * Math.exp(-Math.pow((Math.abs(w) - 1700) / 600, 2) - (s * s) / (8200 * 8200)) * (0.4 + r3) * sm(1200, 3500, R);   // the bar's dust lanes
       const bt = sm(0.5, 0.88, n2) * 0.5;                                  // some star clouds bluer (young), most cream
@@ -860,19 +865,24 @@ else (function renderGalaxy() {
   g.globalCompositeOperation = 'lighter';
   // fine grain at full size: old cream disc stars, the bulge and bar, and the arms' young stars, thicker where the clouds are
   const cloudAt = (x, y) => { const i = hx(x) | 0, j = hx(y) | 0; if (i < 0 || j < 0 || i >= H || j >= H) return 0; return sm(0.38, 0.82, nz(nd[4 * (j * H + i)])); };
-  const dot = (x, y, s, c) => { g.fillStyle = c; g.fillRect(px(x), px(y), s, s); };
+  const buckets = new Map();   // dots grouped by (rounded) colour and drawn one path per colour: far faster than a fill per dot
+  const dot = (x, y, s, r, gg, b, a) => {
+    const key = ((r >> 4) << 16 | (gg >> 4) << 12 | (b >> 4) << 8 | Math.min(63, a * 100 | 0) << 1 | (s > 1)) >>> 0;
+    let e = buckets.get(key); if (!e) buckets.set(key, e = { c: `rgba(${(r >> 4) * 16 + 8},${(gg >> 4) * 16 + 8},${(b >> 4) * 16 + 8},${Math.min(63, a * 100 | 0) / 100 + 0.005})`, p: new Path2D() });
+    e.p.rect(px(x), px(y), s, s);
+  };
   for (let i = 0; i < 60000; i++) {
     const R = -8500 * Math.log(R2() * R2() + 1e-9), t = R2() * 2 * Math.PI;
     if (R > 58000) continue;
-    dot(R * Math.cos(t), R * Math.sin(t), R2() < 0.1 ? 2 : 1, `rgba(${240 + R2() * 15 | 0},${222 + R2() * 22 | 0},${192 + R2() * 30 | 0},${0.04 + R2() * 0.1})`);
+    dot(R * Math.cos(t), R * Math.sin(t), R2() < 0.1 ? 2 : 1, 240 + R2() * 15 | 0, 222 + R2() * 22 | 0, 192 + R2() * 30 | 0, 0.04 + R2() * 0.1);
   }
   for (let i = 0; i < 26000; i++) {
     const r = Math.abs(gauss()) * 4000, t = R2() * 2 * Math.PI;
-    dot(r * Math.cos(t), r * Math.sin(t) * 0.92, R2() < 0.15 ? 2 : 1, `rgba(255,${200 + R2() * 40 | 0},${140 + R2() * 50 | 0},${0.08 + R2() * 0.14})`);
+    dot(r * Math.cos(t), r * Math.sin(t) * 0.92, R2() < 0.15 ? 2 : 1, 255, 200 + R2() * 40 | 0, 140 + R2() * 50 | 0, 0.08 + R2() * 0.14);
   }
   for (let i = 0; i < 22000; i++) {
     const s = (R2() * 2 - 1) * 16000 * (0.6 + 0.4 * R2()), w = gauss() * 2600 * (1 - Math.abs(s) / 22000);
-    dot(ux * s + vx * w, uy * s + vy * w, R2() < 0.15 ? 2 : 1, `rgba(255,${190 + R2() * 40 | 0},${130 + R2() * 40 | 0},${0.07 + R2() * 0.12})`);
+    dot(ux * s + vx * w, uy * s + vy * w, R2() < 0.15 ? 2 : 1, 255, 190 + R2() * 40 | 0, 130 + R2() * 40 | 0, 0.07 + R2() * 0.12);
   }
   const hii = [];
   for (const a of ARMS) {
@@ -888,12 +898,13 @@ else (function renderGalaxy() {
       for (let i = 0; i < n; i++) {
         const along = R2() * seg, off = gauss() * sig;
         const x = p.x + tx * along + nx * off, y = p.y + ty * along + ny * off, c = cloudAt(x, y);
-        const col = R2() < 0.45 ? `rgba(${150 + R2() * 40 | 0},${185 + R2() * 35 | 0},255,` : `rgba(255,${236 + R2() * 19 | 0},${214 + R2() * 30 | 0},`;   // blue-white young stars, cream ones
-        dot(x, y, R2() < 0.07 ? 2 : 1, col + (0.06 + R2() * 0.22) * fade * (0.3 + 1.3 * c) + ')');
+        const blue = R2() < 0.45, a8 = (0.06 + R2() * 0.22) * fade * (0.3 + 1.3 * c), sz = R2() < 0.07 ? 2 : 1;   // blue-white young stars, cream ones
+        if (blue) dot(x, y, sz, 150 + R2() * 40 | 0, 185 + R2() * 35 | 0, 255, a8); else dot(x, y, sz, 255, 236 + R2() * 19 | 0, 214 + R2() * 30 | 0, a8);
         if (R2() < 0.004 * fade * (0.2 + 1.6 * c)) hii.push([x, y]);
       }
     }
   }
+  for (const e of buckets.values()) { g.fillStyle = e.c; g.fill(e.p); }
   g.drawImage(lightC, 0, 0, S, S);                     // the smooth light of disc, bulge, bar and star clouds
   g.globalCompositeOperation = 'multiply';
   g.drawImage(dustC, 0, 0, S, S);                      // dust in front of all of it
@@ -1277,7 +1288,7 @@ function gxInit() {
   const gl = GX.cv.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false, preserveDrawingBuffer: true });
   if (!gl) { GX.failed = true; return; }
   const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(o)); return null; } return o; };
-  const v = sh(gl.VERTEX_SHADER, 'attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }'), f = sh(gl.FRAGMENT_SHADER, 'precision highp float;\n#define MAX_STEPS ' + (window.UAS_PERF.tier > 0 ? 160 : 360) + '\n' + window.UAS_GALAXY_FS);
+  const v = sh(gl.VERTEX_SHADER, 'attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }'), f = sh(gl.FRAGMENT_SHADER, (gl.getExtension('EXT_shader_texture_lod') ? '#extension GL_EXT_shader_texture_lod : enable\n#define UAS_LOD 1\n' : '') + 'precision highp float;\n#define MAX_STEPS ' + (window.UAS_PERF.tier > 0 ? 160 : 360) + '\n' + window.UAS_GALAXY_FS);
   if (!v || !f) { GX.failed = true; return; }
   const pr = gl.createProgram(); gl.attachShader(pr, v); gl.attachShader(pr, f); gl.linkProgram(pr);
   if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { GX.failed = true; return; }
@@ -3558,7 +3569,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=35a63ef0" data-place="info" defer></script>
+<script src="../music/music.js?v=cde9fe70" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

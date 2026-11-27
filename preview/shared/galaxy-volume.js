@@ -8,6 +8,13 @@ window.UAS_GALAXY_FS = `// The Milky Way as a volume, ray-marched per pixel. Wor
 //   dust: scale height 134 pc, scale length 0.28 R0 (Drimmel & Spergel 2001); 1 magnitude of V-band extinction per kpc at the Sun,
 //   reddening with the standard extinction curve (A_B : A_V : A_R ≈ 1.32 : 1 : 0.75)
 uniform sampler2D uGal;
+// The disc picture is read at an explicit detail level where the GPU allows it: a ray-marched pixel's neighbours stop at different
+// depths, so the GPU's own level guess (from screen-space differences) jumps from one 2×2 block of pixels to the next and shows as a fine grid.
+#ifdef UAS_LOD
+#define GTEX(uv, l) texture2DLodEXT(uGal, uv, l)
+#else
+#define GTEX(uv, l) texture2D(uGal, uv, l)
+#endif
 uniform vec3 uCam, uRight, uUp, uFwd;
 uniform vec2 uRes;
 uniform float uTanH, uOrtho, uHalfH, uExpo, uAlpha, uGam;
@@ -50,7 +57,7 @@ void main() {
     float foot = max(dt * length(rd.xy), 0.0) / 60.5;                    // how many texels this step sweeps across: blur to match
     // the face-on light, split in two: the smooth glow of old stars (thick layers) and the arms' detail on top of it (a thin layer)
     vec2 uv = (m.xy + GW) / (2.0 * GW);
-    vec3 smo = texture2D(uGal, uv, 6.0).rgb, full = texture2D(uGal, uv, clamp(log2(max(foot, 1.0)), 1.5, 6.0)).rgb, arm = max(full - smo, 0.0);
+    vec3 smo = GTEX(uv, 7.0).rgb, full = GTEX(uv, clamp(log2(max(foot, 1.0)), 1.0, 6.0)).rgb, arm = max(full - smo, 0.0);
     float wb = exp(-R * R / (5000.0 * 5000.0));
     float vOld = mix(0.84 * exp(-az / H1) / (2.0 * H1) + 0.16 * exp(-az / H2) / (2.0 * H2), exp(-az / HB) / (2.0 * HB), wb);
     vec3 sig = smo * vOld + arm * mix(exp(-az / HY) / (2.0 * HY), vOld, wb);

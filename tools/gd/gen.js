@@ -28,7 +28,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.jpg': 'image/j
         const k = bands.findIndex((v, n) => n > 0 && R < v) - 1; if (k < 0) continue;
         const o = 4 * (j * N + i); acc[k][0] += d[o]; acc[k][1] += d[o + 1]; acc[k][2] += d[o + 2]; acc[k][3]++;
       }
-      return acc.map((a, k) => `${bands[k]}–${bands[k + 1]} ly: ` + [0, 1, 2].map(n => (a[n] / a[3]).toFixed(1)).join(' ')).join('\n') + `\npaint ${window.__galMs | 0} ms`;
+      return acc.map((a, k) => `${bands[k]}–${bands[k + 1]} ly: ` + [0, 1, 2].map(n => (a[n] / a[3]).toFixed(1)).join(' ')).join('\n') + `\npaint ${window.__galMs | 0} ms ${JSON.stringify(window.__galT)}`;
     }));
   } else {
     const W = mode === 'jpg' ? 2048 : 1600;
