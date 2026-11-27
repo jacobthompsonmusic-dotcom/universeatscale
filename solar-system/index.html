@@ -80,6 +80,8 @@
   #labels { position:fixed; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
   .lab { position:absolute; left:0; top:0; transform:translate(10px,-50%); white-space:nowrap; font:italic 15px "IM Fell English", Georgia, serif; color:rgba(235,230,222,0.85); text-shadow:0 0 3px rgba(0,0,0,0.55); pointer-events:auto; cursor:pointer; padding:2px 4px; border-radius:5px; }
   .lab.big { font-weight:600; font-size:13px; color:#fff6e6; }
+  .lab.site { font-size:12px; color:rgba(255,226,170,0.92); pointer-events:auto; cursor:default; transform:none; }
+  .lab.site::before { content:''; display:inline-block; width:5px; height:5px; border-radius:50%; background:#ffcf6e; box-shadow:0 0 4px #ffcf6e; margin-right:5px; vertical-align:middle; }
   .lab.dwarf { font-size:12.5px; color:rgba(225,220,210,0.7); }   /* dwarf planets: smaller and quieter than the planets */
   .lab.mark { color:rgba(190,206,236,0.72); font-size:12.5px; letter-spacing:0.09em; text-transform:uppercase; pointer-events:none; cursor:default; }
   .lab.mark::before { display:none; }
@@ -346,12 +348,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=364faf6a"></script>
-<script src="../shared/clock.js?v=364faf6a"></script>
-<script src="../shared/fold.js?v=364faf6a"></script>
-<script src="baked/manifest.js?v=364faf6a"></script>
-<script src="../shared/perf.js?v=364faf6a"></script>
-<script src="../shared/galaxy-volume.js?v=364faf6a"></script>
+<script src="../shared/frame.js?v=9fac87ee"></script>
+<script src="../shared/clock.js?v=9fac87ee"></script>
+<script src="../shared/fold.js?v=9fac87ee"></script>
+<script src="baked/manifest.js?v=9fac87ee"></script>
+<script src="../shared/perf.js?v=9fac87ee"></script>
+<script src="../shared/galaxy-volume.js?v=9fac87ee"></script>
 <script>
 (() => {
 'use strict';
@@ -2771,6 +2773,49 @@ function updateMarks(camD) {   // distance rings and the names of the outskirts,
   }
 }
 function hiddenBy(p, c, R) { const d = p.clone().sub(camera.position), L = d.length(); d.normalize(); const oc = camera.position.clone().sub(c), b = oc.dot(d), cc = oc.lengthSq() - R * R, disc = b * b - cc; if (disc < 0) return false; const t = -b - Math.sqrt(disc); return t > 0 && t < L - R * 0.01; }
+// ---------- where we've landed: every spacecraft that has touched down (or come down) on another world ----------
+// [name, latitude °, longitude ° east, year, note]. Landing coordinates from the missions (NASA NSSDCA, LROC, the mission teams).
+// The two working Mars rovers have driven on from where they landed; their marks show the landing sites, and the cards say how far.
+const SITES = {
+  Moon: [['Luna 2', 29.1, 0.0, 1959, 'First craft to reach another world (impact)'], ['Luna 9', 7.08, -64.37, 1966, 'First soft landing'], ['Surveyor 1', -2.47, -43.34, 1966, 'First US soft landing'],
+    ['Apollo 11', 0.674, 23.473, 1969, 'Armstrong and Aldrin, the first people on another world'], ['Apollo 12', -3.012, -23.422, 1969, 'Landed beside Surveyor 3'], ['Apollo 14', -3.645, -17.471, 1971, 'Fra Mauro highlands'],
+    ['Apollo 15', 26.132, 3.634, 1971, 'First lunar rover drive'], ['Apollo 16', -8.973, 15.5, 1972, 'Descartes highlands'], ['Apollo 17', 20.191, 30.772, 1972, 'The last people on the Moon, so far'],
+    ['Lunokhod 1', 38.24, -35.0, 1970, 'First rover on another world'], ['Chang’e 3', 44.12, -19.51, 2013, 'Yutu rover'], ['Chang’e 4', -45.44, 177.6, 2019, 'First landing on the far side'],
+    ['Chang’e 5', 43.06, -51.92, 2020, 'Brought rock back to Earth'], ['Chang’e 6', -41.64, -153.99, 2024, 'First rock brought back from the far side'], ['Chandrayaan-3', -69.37, 32.32, 2023, 'Nearest to the south pole at the time'],
+    ['SLIM', -13.31, 25.25, 2024, 'Japan’s pinpoint lander'], ['Odysseus (IM-1)', -80.13, 1.44, 2024, 'First commercial landing'], ['Blue Ghost 1', 18.56, 61.81, 2025, 'Mare Crisium']],
+  mars: [['Viking 1', 22.27, -47.95, 1976, 'First working landing on Mars'], ['Viking 2', 47.64, 134.29, 1976, 'Utopia Planitia'], ['Pathfinder', 19.13, -33.22, 1997, 'With Sojourner, the first Mars rover'],
+    ['Spirit', -14.57, 175.47, 2004, 'Rover, drove 7.7 km'], ['Opportunity', -1.95, -5.53, 2004, 'Rover, drove 45 km over 14 years'], ['Phoenix', 68.22, -125.75, 2008, 'Found water ice just under the soil'],
+    ['Curiosity', -4.59, 137.44, 2012, 'Rover, still driving: now about 35 km away, high on the slopes of Mount Sharp'], ['InSight', 4.5, 135.62, 2018, 'Listened for marsquakes'],
+    ['Perseverance', 18.44, 77.45, 2021, 'Rover, still driving: now up on the rim of Jezero crater, some 30 km on; Ingenuity flew here'], ['Zhurong', 25.07, 109.93, 2021, 'China’s first Mars rover']],
+  venus: [['Venera 7', -5, 351, 1970, 'First signal from the surface of another planet'], ['Venera 9', 31.01, 291.64, 1975, 'First pictures from the surface'], ['Venera 10', 15.42, 291.51, 1975, ''],
+    ['Venera 13', -7.5, 303, 1982, 'Colour pictures; lasted 127 minutes'], ['Venera 14', -13.25, 310, 1982, ''], ['Vega 1', 8.1, 176.7, 1985, 'Also dropped a balloon'], ['Vega 2', -7.2, 179.4, 1985, '']],
+  mercury: [['MESSENGER', 54.44, 210.12, 2015, 'Crashed at the end of its mission']],
+  Titan: [['Huygens', -10.25, 167.68, 2005, 'The farthest landing ever made']],
+};
+const _sv = new THREE.Vector3(), _sn = new THREE.Vector3();
+function siteBody(k) { return k === 'Moon' || k === 'Titan' ? MOONS.find(o => o.name === k) : byKey(k); }
+function buildSites() {
+  SITES.list = [];
+  for (const k in SITES) { if (k === 'list') continue; const b = siteBody(k); if (!b) continue; const mesh = b.mesh, R = mesh.geometry.parameters.radius, moonish = k === 'Moon' || k === 'Titan';
+    for (const [name, lat, lon, yr, note] of SITES[k]) {
+      const u = (moonish ? 0.25 : 0.5) + lon / 360, ph = u * TAU, la = lat * DEG;   // the meshes' own longitude convention
+      const loc = new THREE.Vector3(-Math.cos(ph) * Math.cos(la), Math.sin(la), Math.sin(ph) * Math.cos(la)).multiplyScalar(R * 1.002);
+      const el = document.createElement('div'); el.className = 'lab site'; el.textContent = `${name} · ${yr}`; el.title = note ? `${name} (${yr}): ${note}` : `${name} (${yr})`; el.style.display = 'none'; labelBox.appendChild(el);
+      SITES.list.push({ b, mesh, R, loc, el }); } }
+}
+function updateSites() {
+  if (!SITES.list) { if (typeof labelBox === 'undefined' || !MOONS.length) return; buildSites(); }
+  const W = innerWidth, H = innerHeight, pxs = H / 2 / Math.tan(camera.fov * DEG / 2), show = opts.labels !== false && !SKY.on;
+  for (const s of SITES.list) {
+    let on = false;
+    if (show && s.mesh.visible) { s.mesh.localToWorld(_sv.copy(s.loc)); const d = _sv.distanceTo(camera.position), px = s.R / d * pxs;
+      if (px > 90) { s.mesh.getWorldPosition(_sn); _sn.subVectors(_sv, _sn).normalize(); const face = _sn.dot(_sv.clone().sub(camera.position).normalize());
+        if (face < -0.15) { const v = _sv.project(camera); if (v.z < 1 && Math.abs(v.x) < 1 && Math.abs(v.y) < 1) {
+          on = true; const a = Math.min(1, (px - 90) / 80) * Math.min(1, (-face - 0.15) / 0.25); s.el.style.opacity = a.toFixed(2);
+          s.el.style.transform = `translate(${((v.x + 1) / 2 * W - 5).toFixed(1)}px, ${((1 - v.y) / 2 * H - 5).toFixed(1)}px)`; } } } }
+    if (on !== (s.el.style.display !== 'none')) s.el.style.display = on ? 'block' : 'none';
+  }
+}
 function updateLabels() {
   const W = innerWidth, H = innerHeight, boxes = [], pxs = H / 2 / Math.tan(camera.fov * DEG / 2);
   const fg = giantOf(focus), occ = fg ? relOf(fg) : null, p = new THREE.Vector3();
@@ -3721,7 +3766,7 @@ function frame(t) {
   renderer.clearDepth();
   updateProbes(camD);
   cullTiny(); renderer.render(scene, camera);
-  updateLabels(); updateMarks(camD); updateGC(); updateNear();
+  updateLabels(); updateMarks(camD); updateGC(); updateNear(); updateSites();
   if (SNAP.id !== null) snapNow();   // the camera button (same task as the render, so the picture is still there to copy)
   }
   camera.position.copy(camNom); camera.fov = 40; camera.updateProjectionMatrix();
@@ -3843,7 +3888,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=364faf6a" data-place="info" defer></script>
+<script src="../music/music.js?v=9fac87ee" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
