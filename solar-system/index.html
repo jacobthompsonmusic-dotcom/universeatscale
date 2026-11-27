@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=2280741b"></script>
-<script src="../shared/clock.js?v=2280741b"></script>
-<script src="../shared/fold.js?v=2280741b"></script>
-<script src="baked/manifest.js?v=2280741b"></script>
-<script src="../shared/perf.js?v=2280741b"></script>
-<script src="../shared/galaxy-volume.js?v=2280741b"></script>
+<script src="../shared/frame.js?v=8ffda6e7"></script>
+<script src="../shared/clock.js?v=8ffda6e7"></script>
+<script src="../shared/fold.js?v=8ffda6e7"></script>
+<script src="baked/manifest.js?v=8ffda6e7"></script>
+<script src="../shared/perf.js?v=8ffda6e7"></script>
+<script src="../shared/galaxy-volume.js?v=8ffda6e7"></script>
 <script>
 (() => {
 'use strict';
@@ -1602,6 +1602,12 @@ MOONTEX.Moon = (g, W, H, r) => { // the near side (the maria) faces Earth
   craters(g, W, H, r, 260, 'rgba(222,220,214,0.45)');
   g.fillStyle = 'rgba(248,248,244,0.85)'; g.beginPath(); g.arc(0.24 * W, 0.74 * H, 4, 0, TAU); g.fill(); // Tycho
 };
+// a synchronously rotating moon: its prime meridian (mesh +z, u = 0.25) toward the planet at the origin, its north along the planet's pole
+const _fz = new THREE.Vector3(), _fy = new THREE.Vector3(), _fx = new THREE.Vector3(), _fm = new THREE.Matrix4();
+function faceParent(mesh, pole) {
+  _fz.copy(mesh.position).negate().normalize(); _fy.copy(pole).addScaledVector(_fz, -pole.dot(_fz)).normalize(); _fx.crossVectors(_fy, _fz);
+  mesh.quaternion.setFromRotationMatrix(_fm.makeBasis(_fx, _fy, _fz));
+}
 function rockyMoon(parent, name, a, P, r, color, disc, blurb, extra = {}) {
   const o = { name, group: 'moon', a, P, r, e: 0, color, disc, blurb, kind: 'moon', parent, pr: 2, baseOpacity: 0.35, th0: extra.th0 || 0, incl: extra.incl || 0, ...extra };
   o.mesh = new THREE.Mesh(SPH(Math.max(r * U, 0.0008), r > 100 ? 64 : 24, r > 100 ? 32 : 12), new THREE.MeshStandardMaterial({ map: moonTexture(o, name.length * 7), roughness: 1 }));
@@ -1744,7 +1750,7 @@ function moonLine(o, name = o.name) {
   MARS.place = () => {
     const days = simMs / 86400000;
     for (const o of MARS.moons) {
-      if (o.live) { const p = moonAt(o.name, simMs, o.mesh.position); o.mesh.rotation.set(0, Math.atan2(-p.x, -p.z), 0); moonLine(o); continue; }
+      if (o.live) { moonAt(o.name, simMs, o.mesh.position); faceParent(o.mesh, MARS.pole); moonLine(o); continue; }
       const t = (o.th0 + 360 * days / o.P) * DEG, A = o.a * U; o.mesh.position.set(A * Math.sin(t), 0, A * Math.cos(t)); o.mesh.rotation.set(0, t + Math.PI, 0); }
   };
 }
@@ -1872,7 +1878,7 @@ for (const d of DWARFS) {
   b.place = () => { // Pluto's moons are where they really are; the others circle in the equator, where each sits along its orbit illustrative
     const days = simMs / 86400000;
     for (const o of b.moons) {
-      if (o.live) { const p = moonAt(o.name, simMs, o.mesh.position); o.mesh.rotation.set(0, Math.atan2(-p.x, -p.z), 0); moonLine(o);
+      if (o.live) { const p = moonAt(o.name, simMs, o.mesh.position); faceParent(o.mesh, b.pole); moonLine(o);
         _mv.copy(p).applyQuaternion(_qi.copy(b.tilt.quaternion).invert()); o.th = Math.atan2(_mv.x, _mv.z); continue; }
       const t = (o.th0 + 360 * days / o.P) * DEG, A = o.a * U; o.mesh.position.set(A * Math.sin(t), 0, A * Math.cos(t)); o.mesh.rotation.set(0, t + Math.PI, 0); o.th = t; }
     if (d.locked) { const m = b.moons.find(x => x.name === d.locked); b.mesh.rotation.y = m.th; } // tidally locked: always the same face toward its big moon
@@ -1974,7 +1980,7 @@ function placeMoons(g) {
   }
   for (const o of g.moons) if (o.liveLead) { const h = g.moons.find(m => m.name === o.lead); o.mesh.position.copy(h.mesh.position).applyAxisAngle(g.pole, o.off * DEG * (h.P < 0 ? -1 : 1)); }
   for (const o of g.moons) if (o.lead && !o.liveLead) { const h = g.moons.find(m => m.name === o.lead); const t = h.th + o.off * DEG, A = o.a * U; o.mesh.position.set(A * Math.sin(t), 0, A * Math.cos(t)); }
-  for (const o of g.moons) { const p = o.mesh.position; o.mesh.rotation.set(0, Math.atan2(-p.x, -p.z), 0); } // one face always toward the planet
+  for (const o of g.moons) { const p = o.mesh.position; if (o.live || o.liveLead) faceParent(o.mesh, g.pole); else o.mesh.rotation.set(0, Math.atan2(-p.x, -p.z), 0); } // one face always toward the planet (live moons sit in the unrotated frame: use the pole)
 }
 
 // ===================================================================
@@ -3716,7 +3722,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=2280741b" data-place="info" defer></script>
+<script src="../music/music.js?v=8ffda6e7" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
