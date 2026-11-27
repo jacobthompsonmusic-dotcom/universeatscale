@@ -349,12 +349,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=e5926ff7"></script>
-<script src="../shared/clock.js?v=e5926ff7"></script>
-<script src="../shared/fold.js?v=e5926ff7"></script>
-<script src="baked/manifest.js?v=e5926ff7"></script>
-<script src="../shared/perf.js?v=e5926ff7"></script>
-<script src="../shared/galaxy-volume.js?v=e5926ff7"></script>
+<script src="../shared/frame.js?v=4adf15bd"></script>
+<script src="../shared/clock.js?v=4adf15bd"></script>
+<script src="../shared/fold.js?v=4adf15bd"></script>
+<script src="baked/manifest.js?v=4adf15bd"></script>
+<script src="../shared/perf.js?v=4adf15bd"></script>
+<script src="../shared/galaxy-volume.js?v=4adf15bd"></script>
 <script>
 (() => {
 'use strict';
@@ -2439,7 +2439,13 @@ function approach(o) { const P = relOf(o), L = camera.position.distanceTo(P), di
 const aimAt = () => selected && !selected.in && selected.kind !== 'site' && selected !== focus && !(fly && fly.o === selected) ? selected : null;
 document.getElementById('zin').onclick = () => { if (SKY.on) { skyZoom(0.7); return; } const a = aimAt(); if (a) approach(a); else dolly(0.6); };
 document.getElementById('zout').onclick = () => { if (SKY.on) { skyZoom(1 / 0.7); return; } dolly(1.7); };
-document.getElementById('p-all').onclick = () => flyTo(SUN, 1.35e7, new THREE.Vector3(0.45, 0.62, 0.64));
+// the opening view (and ALL): the whole Solar System, with the bright heart of the Milky Way — Sagittarius, its dust lanes and star
+// clouds — rising behind it on the right. The camera looks 12° to the left of the galactic centre and 14° down onto the planets' plane.
+function openDir() {
+  const Y = new THREE.Vector3(0, 1, 0), h = galToScene(1, 0, 0, new THREE.Vector3()); h.y = 0; h.normalize().applyAxisAngle(Y, 12 * DEG);
+  return h.multiplyScalar(Math.cos(14 * DEG)).addScaledVector(Y, -Math.sin(14 * DEG)).negate().normalize();   // from the Sun out to the camera
+}
+document.getElementById('p-all').onclick = () => flyTo(SUN, 1.1e7, openDir());
 document.getElementById('p-home').onclick = () => { if (SKY.on) { SKY.track = null; SKY.az = SKY.hemi === 's' ? 0 : 180; SKY.alt = 22; SKY.fov = 75; return; }   /* in the sky: back to the opening look */ const e = byKey('earth'); flyTo(e); select(e); };   // HOME: back to Earth from anywhere in the Solar System
 document.getElementById('p-back').onclick = () => { // a giant gets a closer framing so its crescent fills the view
   const o = focus.isSun ? (selected && !selected.in && !selected.isSun && selected.kind !== 'site' ? selected : null) : focus; if (!o) return;
@@ -4039,7 +4045,7 @@ function init() {
   buildFields();
   makeLabels();
   for (const g of GIANTS) g.faint.visible = opts.faint;
-  const d = new THREE.Vector3(0.45, 0.62, 0.64).normalize().multiplyScalar(1.35e7);
+  const d = openDir().multiplyScalar(1.1e7);
   camera.position.copy(d); controls.target.set(0, 0, 0); controls.update();
   updateWorld();
   const h = location.hash.slice(1); if (byKey(h) && byKey(h).isPlanet) setTimeout(() => flyTo(byKey(h)), 400);
@@ -4061,7 +4067,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=e5926ff7" data-place="info" defer></script>
+<script src="../music/music.js?v=4adf15bd" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

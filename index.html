@@ -132,7 +132,7 @@
 </head>
 <body>
 <!-- the universe, loading from the moment the page opens -->
-<iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=e5926ff7" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
+<iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=4adf15bd" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
 
 <div id="howto" role="dialog" aria-modal="true" aria-labelledby="howto-h" hidden>
   <div class="card">
@@ -244,7 +244,7 @@
     try { window.gtag && gtag('event', 'enter_universe', { ready }); } catch (e) {}
     const done = () => { wel.hidden = true; wel.classList.remove('leaving'); try { uni.focus(); } catch (e) {}
       let seen = false; try { seen = localStorage.getItem('uas-howto') === '1'; } catch (e) {}
-      if (animate && !seen) showHowto();   // first time in: how to get around
+      if (!seen) showHowto();   // first time in (this browser remembers): how to get around; the ? button brings it back
       try { const w = uni.contentWindow; w.UAS_MUSIC_ARRIVE ? w.UAS_MUSIC_ARRIVE() : w.addEventListener('load', () => w.UAS_MUSIC_ARRIVE && w.UAS_MUSIC_ARRIVE()); } catch (e) {} };   // the soundtrack note pulses as the map comes into view
     if (animate) { wel.classList.add('leaving'); setTimeout(done, 800); } else done();
     if (location.hash !== '#universe') history.pushState(null, '', '#universe');   // Back brings the sign back; a reload goes straight in
@@ -253,6 +253,7 @@
   function showHowto() { howto.hidden = false; document.getElementById('howto-go').focus({ preventScroll: true }); howto.querySelector('.card').scrollTop = 0; }
   function hideHowto() { howto.hidden = true; try { localStorage.setItem('uas-howto', '1'); } catch (e) {} try { uni.focus(); } catch (e) {} }
   document.getElementById('howto-go').onclick = hideHowto;
+  window.UAS_HOWTO = showHowto;   // the ? button by the map's tools brings it back any time
   howto.addEventListener('click', e => { if (e.target === howto) hideHowto(); });
   addEventListener('keydown', e => { if (!howto.hidden && e.key === 'Escape') hideHowto(); });
   document.getElementById('howto-open').onclick = () => { try { localStorage.removeItem('uas-howto'); } catch (e) {} document.getElementById('enter').click(); };
