@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=573b200c"></script>
-<script src="../shared/clock.js?v=573b200c"></script>
-<script src="../shared/fold.js?v=573b200c"></script>
-<script src="../shared/perf.js?v=573b200c"></script>
-<script src="../shared/galaxy-volume.js?v=573b200c"></script>
+<script src="../shared/frame.js?v=c8d157a3"></script>
+<script src="../shared/clock.js?v=c8d157a3"></script>
+<script src="../shared/fold.js?v=c8d157a3"></script>
+<script src="../shared/perf.js?v=c8d157a3"></script>
+<script src="../shared/galaxy-volume.js?v=c8d157a3"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1040,20 +1040,35 @@ const SPR = {};
     g.fillStyle = gg; g.beginPath(); g.arc(x, y, sz, 0, 7); g.fill();
   }
   SPR.cl = c;
-  // a void: dark interior, walls speckled with galaxies
-  c = mk(); g = c.getContext('2d');
-  gr = g.createRadialGradient(N / 2, N / 2, 0, N / 2, N / 2, N / 2);
-  gr.addColorStop(0, 'rgba(2,2,8,0.62)'); gr.addColorStop(0.78, 'rgba(4,4,14,0.5)'); gr.addColorStop(0.93, 'rgba(70,70,150,0.16)'); gr.addColorStop(1, 'rgba(60,60,140,0)');
-  g.fillStyle = gr; g.beginPath(); g.arc(N / 2, N / 2, N / 2, 0, 7); g.fill();
-  g.globalCompositeOperation = 'lighter';
-  for (let i = 0; i < 2600; i++) {
-    const a = r() * 2 * Math.PI, rr = N / 2 * (0.86 + Math.abs(ga()) * 0.05);
-    g.fillStyle = r() < 0.7 ? `rgba(200,190,255,${0.15 + r() * 0.35})` : `rgba(255,225,200,${0.2 + r() * 0.4})`;
-    g.fillRect(N / 2 + Math.cos(a) * rr, N / 2 + Math.sin(a) * rr, 1.6, 1.6);
-  }
-  for (let i = 0; i < 60; i++) {   // a few stray galaxies inside
-    const a = r() * 2 * Math.PI, rr = N / 2 * Math.sqrt(r()) * 0.75;
-    g.fillStyle = 'rgba(210,205,255,0.45)'; g.fillRect(N / 2 + Math.cos(a) * rr, N / 2 + Math.sin(a) * rr, 1.5, 1.5);
+  // a void: an emptier, darker interior, its walls a patchwork of galaxies like a Hubble or Webb deep field: little glowing
+  // ellipticals (warm cream), spirals (blue-white with bright cores, some edge-on streaks) and faint, far reddened ones, gathered into
+  // groups along the walls. Illustrative: these are not the void's catalogued galaxies, just their look and where they lie.
+  { const NV = 1024; c = document.createElement('canvas'); c.width = c.height = NV; g = c.getContext('2d'); const h = NV / 2;
+    gr = g.createRadialGradient(h, h, 0, h, h, h);
+    gr.addColorStop(0, 'rgba(2,2,8,0.6)'); gr.addColorStop(0.8, 'rgba(3,3,10,0.45)'); gr.addColorStop(0.95, 'rgba(30,30,60,0.06)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(h, h, h, 0, 7); g.fill();
+    g.globalCompositeOperation = 'lighter';
+    const gal = (x, y, sz, kind) => {   // one galaxy: a soft, tilted ellipse with a brighter core
+      const ang = r() * Math.PI, flat = kind === 1 && r() < 0.3 ? 0.18 + r() * 0.12 : 0.45 + r() * 0.5;
+      const col = kind === 0 ? [255, 228, 188] : kind === 1 ? [196, 214, 255] : [255, 168, 128], a0 = kind === 2 ? 0.35 : 0.55 + r() * 0.35;
+      g.save(); g.translate(x, y); g.rotate(ang); g.scale(1, flat);
+      const q = g.createRadialGradient(0, 0, 0, 0, 0, sz);
+      q.addColorStop(0, `rgba(255,250,240,${a0})`); q.addColorStop(0.18, `rgba(${col},${a0 * 0.75})`); q.addColorStop(0.55, `rgba(${col},${a0 * 0.22})`); q.addColorStop(1, `rgba(${col},0)`);
+      g.fillStyle = q; g.beginPath(); g.arc(0, 0, sz, 0, 7); g.fill();
+      if (kind === 1 && sz > 5 && flat > 0.4) {   // a hint of spiral arms on the bigger face-on ones
+        g.strokeStyle = `rgba(${col},${a0 * 0.25})`; g.lineWidth = sz * 0.12;
+        for (const s0 of [0, Math.PI]) { g.beginPath(); for (let t = 0; t <= 1; t += 0.1) { const th = s0 + t * 3.4, rr = sz * (0.15 + 0.7 * t); g.lineTo(rr * Math.cos(th), rr * Math.sin(th)); } g.stroke(); }
+      }
+      g.restore();
+    };
+    const pick = () => { const u = r(); return u < 0.4 ? 0 : u < 0.8 ? 1 : 2; };
+    for (let k = 0; k < 150; k++) {   // groups strung round the wall
+      const a = r() * 2 * Math.PI, rc = h * (0.86 + 0.045 * ga()), n = 3 + Math.floor(r() * r() * 18), spread = h * (0.012 + 0.03 * r());
+      for (let i = 0; i < n; i++) { const x = h + Math.cos(a) * rc + spread * ga(), y = h + Math.sin(a) * rc + spread * ga(), kind = pick();
+        gal(x, y, (kind === 2 ? 1.2 : 1.6) + 7 * Math.pow(r(), 4), kind); }
+    }
+    for (let i = 0; i < 900; i++) { const a = r() * 2 * Math.PI, rr = h * (0.84 + 0.06 * ga()), kind = pick(); gal(h + Math.cos(a) * rr, h + Math.sin(a) * rr, 1 + 2.2 * r(), kind); }   // the faint field between
+    for (let i = 0; i < 40; i++) { const a = r() * 2 * Math.PI, rr = h * Math.sqrt(r()) * 0.72; gal(h + Math.cos(a) * rr, h + Math.sin(a) * rr, 1 + 1.6 * r(), r() < 0.5 ? 1 : 2); }   // a few lonely dwarfs inside
   }
   SPR.void = c;
 })();
@@ -1163,7 +1178,7 @@ function drawVoids() {
     ctx.globalAlpha = v.disputed ? 0.45 : 1; ctx.drawImage(SPR.void, -R, -R, 2 * R, 2 * R); ctx.globalAlpha = 1;
     ctx.beginPath(); for (let i = 0; i <= 72; i++) { const th = i / 72 * 6.2832, q = R * rad(th); i ? ctx.lineTo(q * Math.cos(th), q * Math.sin(th)) : ctx.moveTo(q * Math.cos(th), q * Math.sin(th)); }
     ctx.restore();
-    ctx.strokeStyle = `rgba(150,158,255,${sel ? 0.85 : 0.35})`; ctx.lineWidth = sel ? 2 : 1;
+    ctx.strokeStyle = `rgba(150,158,255,${sel ? 0.75 : 0.1})`; ctx.lineWidth = sel ? 1.5 : 1;   // the galaxies make the edge; the line only when picked
     ctx.setLineDash(v.disputed ? [8, 8] : []); ctx.stroke(); ctx.setLineDash([]);
     if (opts.labels && R > 22) {
       const f = 'italic 14px "IM Fell English", Georgia, serif', t = v.name.toUpperCase().split('').join('\u200A'), w = lblW(f, t);
@@ -2331,7 +2346,9 @@ function sunDive(X, Y, f) {
   if (sx < 0 || sx > Wd || sy < 0 || sy > Ht || (Math.hypot(sx - X, sy - Y) > 130 && viewSpan() > 2.5 * DIVE && !(selected && selected.type === 'sun'))) return false;   // close in, the Sun anywhere on screen will do (zooming out and in at a spot off the Sun drifts it away from the cursor)
   // only when you're heading for the Sun: not while zooming in on a neighbouring star or anything else picked or selected
   if (selected && selected.type !== 'sun') return false;
-  const under = pick(X, Y); if (under && under.type !== 'sun') return false;
+  // a star under the cursor wins (zoom in on it), unless the Sun is right there too, or the view can't zoom any closer here anyway
+  const atFloor = view.s * f > maxScale() * 1.001, dSun = Math.hypot(sx - X, sy - Y);
+  const under = !atFloor && dSun > 24 && pick(X, Y); if (under && under.type !== 'sun') return false;
   const sNew = view.s * f, spanNew = M / sNew;
   if (spanNew <= DIVE) { handOver(Math.min(sNew, M / 3.4)); return true; }
   const k = Math.min(1, Math.log(spanNew / DIVE) / Math.log(60 / DIVE));
@@ -3764,7 +3781,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=573b200c" data-place="info" defer></script>
+<script src="../music/music.js?v=c8d157a3" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
