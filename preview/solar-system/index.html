@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=dedf5e77"></script>
-<script src="../shared/clock.js?v=dedf5e77"></script>
-<script src="../shared/fold.js?v=dedf5e77"></script>
-<script src="baked/manifest.js?v=dedf5e77"></script>
-<script src="../shared/perf.js?v=dedf5e77"></script>
-<script src="../shared/galaxy-volume.js?v=dedf5e77"></script>
+<script src="../shared/frame.js?v=c0887c17"></script>
+<script src="../shared/clock.js?v=c0887c17"></script>
+<script src="../shared/fold.js?v=c0887c17"></script>
+<script src="baked/manifest.js?v=c0887c17"></script>
+<script src="../shared/perf.js?v=c0887c17"></script>
+<script src="../shared/galaxy-volume.js?v=c0887c17"></script>
 <script>
 (() => {
 'use strict';
@@ -2429,7 +2429,7 @@ const PHOTO = {
 };
 // The moons, the same way. They keep one face toward their planet: lon 0° (the sub-planet point) sits at u = 0.25, so a map centred on
 // lon0 needs offset 0.25 − lon0/360 (each map's centre was checked against known features or a map of known centring). Brightness: each
-// map is scaled so its average matches the moon's measured albedo on the same scale as our Moon's map (capped at the photo's own level),
+// map is scaled so its average follows the moon's measured albedo,
 // so dark Phobos stays dark beside icy Enceladus. Cassini's maps were released in enhanced colour (into the UV and IR): toned back here.
 const MW = LITE ? 960 : 1920;
 const MOONPHOTO = {
@@ -2445,19 +2445,24 @@ const MOONPHOTO = {
   Iapetus: { u: CMT('5/53/Iapetus_Color_Map.jpg', MW), A: 0, lon0: 180, desat: 0.6 },                  // two-faced: its own map sets the contrast
   Phobos: { u: CMT('3/30/Phobos_map_by_Askaniy.png', 960), A: 0.071, lon0: 0 },
   Deimos: { u: CMT('7/72/Deimos_map_by_Askaniy.png', 960), A: 0.068, lon0: 0 },
-  Titania: { u: CM + '8/85/Titania_map_JPL_USGS.jpg', A: 0.35, lon0: 0 },                              // Voyager 2 (only the southern half was lit in 1986)
-  Umbriel: { u: CM + '4/42/Umbriel_map_JPL_USGS.jpg', A: 0.26, lon0: 0 },
-  Oberon: { u: CM + '1/1d/Oberon_map_JPL_USGS.jpg', A: 0.31, lon0: 0 },
+  Triton: { fill: 1, u: CMT('6/61/Triton_map_no_grid.jpg', MW), A: 0.76, lon0: 0, desat: 0.3 },     // Voyager 2, 1989 (LPI/Paul Schenk); the north was in darkness. Centred on 0°: the 34° N plains (Tuonela) fall where the map reaches furthest north
+  Charon: { fill: 1, u: CMT('3/39/Charon_map_iau1803c.jpg', MW), A: 0.41, lon0: 0 },                 // New Horizons, 2015 (NASA/JHU APL/SwRI); the south was in polar night. Centred on the Pluto-facing side it flew past
+  Titania: { fill: 1, u: CM + '8/85/Titania_map_JPL_USGS.jpg', A: 0.35, lon0: 0 },                              // Voyager 2 (only the southern half was lit in 1986)
+  Umbriel: { fill: 1, u: CM + '4/42/Umbriel_map_JPL_USGS.jpg', A: 0.26, lon0: 0 },
+  Oberon: { fill: 1, u: CM + '1/1d/Oberon_map_JPL_USGS.jpg', A: 0.31, lon0: 0 },
 };
-const MOON_K = 2.6;   // our Moon's map averages 0.315 (linear) for an albedo of 0.12
+const MOON_K = 0.9;   // map average (linear) = 0.9 × albedo (gain kept within 0.2–2.2), so Callisto (0.22) shows a third as bright as Europa (0.67); our Moon's own map is left as it is
 function moonPrep(t, P, m) {   // returns the texture to use, after toning; sets the brightness
-  const img = t.image, c = document.createElement('canvas'), w = P.desat ? img.width : 64, h = P.desat ? img.height : 32; c.width = w; c.height = h;
+  const img = t.image, full = P.desat || P.fill, c = document.createElement('canvas'), w = full ? img.width : 64, h = full ? img.height : 32; c.width = w; c.height = h;
   const g = c.getContext('2d'); g.drawImage(img, 0, 0, w, h); const im = g.getImageData(0, 0, w, h), d = im.data, lin = v => (v /= 255) <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-  let s = 0, n = 0; const step = Math.max(1, Math.floor(w * h / 4096));
-  for (let i = 0; i < w * h; i += step) { s += (lin(d[4 * i]) + lin(d[4 * i + 1]) + lin(d[4 * i + 2])) / 3; n++; }
-  m.color.setScalar(P.A ? Math.min(1, MOON_K * P.A / (s / n)) : 1);
-  if (!P.desat) return t;
-  for (let i = 0; i < w * h; i++) { const o = 4 * i, y = 0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2]; d[o] += (y - d[o]) * P.desat; d[o + 1] += (y - d[o + 1]) * P.desat; d[o + 2] += (y - d[o + 2]) * P.desat; }
+  let s = 0, n = 0, sr = 0, sg = 0, sb = 0; const step = Math.max(1, Math.floor(w * h / 4096));
+  for (let i = 0; i < w * h; i += step) { const o = 4 * i; if (d[o] + d[o + 1] + d[o + 2] < 30) continue;   // black = never photographed
+    s += (lin(d[o]) + lin(d[o + 1]) + lin(d[o + 2])) / 3; sr += d[o]; sg += d[o + 1]; sb += d[o + 2]; n++; }
+  m.color.setScalar(P.A ? Math.max(0.2, Math.min(2.2, MOON_K * P.A / (s / n))) : 1);
+  if (!full) return t;
+  if (P.fill) { const fr = sr / n, fg = sg / n, fb = sb / n;   // the hemisphere no spacecraft saw lit: plain, at the average of what was seen
+    for (let i = 0; i < w * h; i++) { const o = 4 * i; if (d[o] + d[o + 1] + d[o + 2] < 30) { d[o] = fr; d[o + 1] = fg; d[o + 2] = fb; } } }
+  if (P.desat) for (let i = 0; i < w * h; i++) { const o = 4 * i, y = 0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2]; d[o] += (y - d[o]) * P.desat; d[o + 1] += (y - d[o + 1]) * P.desat; d[o + 2] += (y - d[o + 2]) * P.desat; }
   g.putImageData(im, 0, 0); const ct = new THREE.CanvasTexture(c); ct.encoding = THREE.sRGBEncoding; t.dispose(); return ct;
 }
 const photoQ = [];
@@ -3697,7 +3702,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=dedf5e77" data-place="info" defer></script>
+<script src="../music/music.js?v=c0887c17" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
