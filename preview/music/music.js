@@ -50,6 +50,10 @@
     '.uas-mu-btn.invite.arrive .n{animation:uasarriven 2.2s ease-in-out 4}',
     '@keyframes uasarrive{0%,100%{box-shadow:0 0 6px rgba(255,207,110,.15)}50%{box-shadow:0 0 26px 5px rgba(255,207,110,.7);border-color:rgba(255,207,110,.9)}}',
     '@keyframes uasarriven{50%{text-shadow:0 0 12px rgba(255,207,110,1)}}',
+    '.uas-mu-toast{position:fixed;right:16px;bottom:84px;z-index:60;max-width:300px;padding:12px 14px;border-radius:12px;background:rgba(12,13,20,.94);border:1px solid rgba(255,207,110,.35);color:#d9dce6;font:italic 14px/1.4 "IM Fell English",Georgia,serif;box-shadow:0 8px 30px rgba(0,0,0,.5)}',
+    '.uas-mu-toast p{margin:0 0 9px}.uas-mu-toast b{color:#ffcf6e;font-weight:normal}.uas-mu-toast div{display:flex;gap:8px;align-items:center}',
+    '.uas-mu-toast .go{font:inherit;font-style:italic;color:#14100a;background:#ffcf6e;border:0;border-radius:999px;padding:5px 12px;cursor:pointer;text-decoration:none}',
+    '.uas-mu-toast .no{font:inherit;color:#8d93a8;background:none;border:0;cursor:pointer}',
     '@media (prefers-reduced-motion:reduce){.uas-mu-btn.invite,.uas-mu-btn.invite.arrive{animation:none;box-shadow:0 0 8px rgba(255,207,110,.15)}}',
     '.uas-mu-btn.playing .n{animation:uasmu 1.6s ease-in-out infinite}',
     '@keyframes uasmu{50%{opacity:.35}}',
@@ -168,7 +172,8 @@
       var f = document.createElement('iframe'); f.src = EMBED_SRC; f.title = 'First Time Again by Jacob Thompson on Spotify';
       f.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'; frame.appendChild(f);
     }, 6000);
-    window.onSpotifyIframeApiReady = function (API) {
+    function make(API) {
+      window.__uasAPI = API;
       API.createController(host, { uri: 'spotify:track:' + ORDER[0], width: '100%', height: 80 }, function (ctl) {
         clearTimeout(fallback); window.__uasPlayer = ctl;
         var i = 0, advancing = false, wantPlay = !!autoplay, last = { position: 0, duration: 0, playing: false };
@@ -183,10 +188,30 @@
           // the track has ended: it reached its end, or it stopped right after being near the end
           if (dur > 0 && (pos >= dur - 300 || (d.isPaused && last.playing && last.duration === dur && last.position >= dur - 1500))) next();
           last = { position: pos, duration: dur, playing: !d.isPaused };
+          if (!d.isPaused && dur > 0 && dur <= 31000) preview();   // Spotify plays 30-second clips to anyone not logged in
         });
       });
-    };
+    }
+    if (window.__uasAPI) { make(window.__uasAPI); return; }
+    window.onSpotifyIframeApiReady = make;
     var sc = document.createElement('script'); sc.src = 'https://open.spotify.com/embed/iframe-api/v1'; sc.async = true; document.head.appendChild(sc);
+  }
+  // Not logged in to Spotify: say so once, with a way to log in — whole tracks for the visitor, and every full listen counts as a play.
+  // After logging in (in a new tab) Spotify's player has to start again, which needs a tap here: browsers only allow sound after one.
+  var toast = null, toldPreview = false;
+  function preview() {
+    if (toldPreview) return; toldPreview = true;
+    toast = document.createElement('div'); toast.className = 'uas-mu-toast';
+    toast.innerHTML = '<p>You\'re hearing 30-second previews. <b>Log in to Spotify</b> to hear the whole album — and every listen counts.</p>' +
+      '<div><a class="go" href="https://accounts.spotify.com/login" target="_blank" rel="noopener">Log in to Spotify</a><button class="no" type="button">Not now</button></div>';
+    document.body.appendChild(toast);
+    toast.querySelector('.no').onclick = function () { toast.remove(); };
+    toast.querySelector('.go').addEventListener('click', function () {
+      toast.querySelector('p').innerHTML = 'Logged in? <b>Tap to start the music again</b> with the full tracks.';
+      var d = toast.querySelector('div'); d.innerHTML = '<button class="go" type="button">Start the music again</button><button class="no" type="button">×</button>';
+      d.querySelector('.no').onclick = function () { toast.remove(); };
+      d.querySelector('.go').onclick = function () { toast.remove(); toldPreview = false; var fr = pop.querySelector('.frame'); fr.innerHTML = ''; window.__uasPlayer = null; startPlayer(fr, true); };
+    });
   }
   // the welcome page's 'Enter the universe' click starts the album (that click is the visitor's go-ahead for sound; browsers allow
   // nothing earlier). Signed in to Spotify: whole tracks; otherwise Spotify plays 30-second previews. The ♪ pulses while it plays.
