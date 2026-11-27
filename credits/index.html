@@ -59,10 +59,13 @@
   td:first-child { color:var(--ink); white-space:nowrap; }
   td:nth-child(3) { white-space:nowrap; font-family:var(--mono); font-size:12px; color:var(--dim); }
   footer { margin-top:44px; padding-top:18px; border-top:1px solid var(--rule); color:var(--dim); font-size:13.5px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  #stars { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+  .wrap { position:relative; z-index:1; }
   @media (max-width:640px) { td:first-child { white-space:normal; } .wrap { padding:32px 16px; } }
 </style>
 </head>
 <body>
+<canvas id="stars" aria-hidden="true"></canvas>
 <div class="wrap">
   <a class="back" href="../index.html">← Universe at Scale</a>
   <h1>Credits <em>&amp; sources</em></h1>
@@ -163,6 +166,7 @@
 <tr><td>Trifid Nebula</td><td>Cappellettiariel</td><td>CC BY-SA 4.0</td><td><a href="https://commons.wikimedia.org/wiki/File:Messier_20_Nebulosa_Trifida_en_LRGB.jpg">Commons</a></td></tr>
 <tr><td>North America Nebula</td><td>Luc Viatour</td><td>CC BY-SA 3.0</td><td><a href="https://commons.wikimedia.org/wiki/File:Nord_america.jpg">Commons</a></td></tr>
 <tr><td>Dumbbell Nebula</td><td>Bill Schoening, Nigel Sharp/NOIRLab/NSF/AURA</td><td>CC BY 4.0</td><td><a href="https://commons.wikimedia.org/wiki/File:M27%2C_NGC_6853%2C_Dumbbell_Nebula_%28noao-02184%29.jpg">Commons</a></td></tr>
+<tr><td>Boomerang Nebula</td><td>ESA/NASA (Hubble)</td><td>public domain</td><td><a href="https://commons.wikimedia.org/wiki/File:Boomerang_nebula.jpg">Commons</a></td></tr>
 <tr><td>Butterfly Nebula</td><td>NASA, ESA &amp; the Hubble SM4 ERO Team</td><td>public domain</td><td><a href="https://commons.wikimedia.org/wiki/File:NGC_6302_Hubble_2009.full.jpg">Commons</a></td></tr>
 <tr><td>Owl Nebula</td><td>Karen Kwitter (Williams College), Ron Downes (STScI), You-Hua Chu (Univ. of Illinois)/NOIRLab/NSF/AURA</td><td>CC BY 4.0</td><td><a href="https://commons.wikimedia.org/wiki/File:Owl_Nebula%2C_M97%2C_NGC_3587_%28noao0310a%29.jpg">Commons</a></td></tr>
 <tr><td>Heart Nebula</td><td>Hunter Wilson</td><td>CC BY 3.0</td><td><a href="https://commons.wikimedia.org/wiki/File:Heart_Nebula_IC_1805_NGC_896.jpg">Commons</a></td></tr>
@@ -219,5 +223,15 @@
   <footer><span>Made by Jacob Thompson in Ontario, Canada.</span><a href="https://iamjacob.ca">iamjacob.ca</a></footer>
 </div>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
+<script>
+// a faint sky behind the credits: stars in their real range of colours (cool red dwarfs to hot blue giants), dim so the text stays easy to read
+(() => { const c = document.getElementById('stars'), g = c.getContext('2d'); let seed = 7; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const COL = [[255,190,130],[255,214,170],[255,236,214],[255,248,240],[226,234,255],[200,216,255]];
+  function draw() { const d = Math.min(2, devicePixelRatio || 1), W = innerWidth, H = innerHeight; c.width = W * d; c.height = H * d; g.setTransform(d, 0, 0, d, 0, 0); seed = 7;
+    const n = Math.round(W * H / 2600); for (let i = 0; i < n; i++) { const x = r() * W, y = r() * H, m = Math.pow(r(), 3.2), k = COL[Math.floor(r() * COL.length)];
+      g.fillStyle = `rgba(${k[0]},${k[1]},${k[2]},${(0.12 + 0.5 * m).toFixed(3)})`; g.beginPath(); g.arc(x, y, 0.35 + 0.9 * m, 0, 6.2832); g.fill(); } }
+  draw(); addEventListener('resize', draw);
+})();
+</script>
 </body>
 </html>
