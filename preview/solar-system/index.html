@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=b639ad41"></script>
-<script src="../shared/clock.js?v=b639ad41"></script>
-<script src="../shared/fold.js?v=b639ad41"></script>
-<script src="baked/manifest.js?v=b639ad41"></script>
-<script src="../shared/perf.js?v=b639ad41"></script>
-<script src="../shared/galaxy-volume.js?v=b639ad41"></script>
+<script src="../shared/frame.js?v=65ce5004"></script>
+<script src="../shared/clock.js?v=65ce5004"></script>
+<script src="../shared/fold.js?v=65ce5004"></script>
+<script src="baked/manifest.js?v=65ce5004"></script>
+<script src="../shared/perf.js?v=65ce5004"></script>
+<script src="../shared/galaxy-volume.js?v=65ce5004"></script>
 <script>
 (() => {
 'use strict';
@@ -2452,11 +2452,11 @@ function junoPoles(mat) {
   N.onload = () => {   // paint out the annotations: yellow numbers and arrows, the red pole mark, and the title strip
     const c = document.createElement('canvas'); c.width = N.width; c.height = N.height; const g = c.getContext('2d'); g.drawImage(N, 0, 0);
     const im = g.getImageData(0, 0, c.width, c.height), d = im.data, W = c.width, H = c.height, mask = new Uint8Array(W * H);
-    for (let i = 0, o = 0; i < W * H; i++, o += 4) { const r = d[o], gg = d[o + 1], b = d[o + 2]; if ((r > 150 && gg > 130 && b < 0.6 * gg) || (r > 170 && gg < 80 && b < 80)) mask[i] = 1; }
-    const grow = new Uint8Array(mask); for (let y = 3; y < H - 3; y++) for (let x = 3; x < W - 3; x++) if (mask[y * W + x]) for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) grow[(y + dy) * W + x + dx] = 1;
-    const bl = document.createElement('canvas'); bl.width = W >> 3; bl.height = H >> 3; const bg = bl.getContext('2d'); bg.imageSmoothingQuality = 'high'; bg.drawImage(c, 0, 0, bl.width, bl.height);
+    for (let i = 0, o = 0; i < W * H; i++, o += 4) { const r = d[o], gg = d[o + 1], b = d[o + 2]; if ((r > 80 && gg > 70 && Math.abs(r - gg) < 80 && (r + gg) / 2 - b > 45 && b < 0.62 * gg) || (r > 150 && gg < 90 && b < 90 && r - gg > 70)) mask[i] = 1; }   // yellow labels (and their dim, antialiased edges), the red pole mark
+    const grow = new Uint8Array(mask); for (let y = 5; y < H - 5; y++) for (let x = 5; x < W - 5; x++) if (mask[y * W + x]) for (let dy = -5; dy <= 5; dy++) for (let dx = -5; dx <= 5; dx++) grow[(y + dy) * W + x + dx] = 1;
+    const bl = document.createElement('canvas'); bl.width = W >> 4; bl.height = H >> 4; const bg = bl.getContext('2d'); bg.imageSmoothingQuality = 'high'; bg.drawImage(c, 0, 0, bl.width, bl.height);
     const bd = bg.getImageData(0, 0, bl.width, bl.height).data;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x; if (!grow[i]) continue; const q = 4 * (Math.min(bl.height - 1, y >> 3) * bl.width + Math.min(bl.width - 1, x >> 3)), o = 4 * i; d[o] = bd[q]; d[o + 1] = bd[q + 1]; d[o + 2] = bd[q + 2]; }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x; if (!grow[i]) continue; const q = 4 * (Math.min(bl.height - 1, y >> 4) * bl.width + Math.min(bl.width - 1, x >> 4)), o = 4 * i; d[o] = bd[q]; d[o + 1] = bd[q + 1]; d[o + 2] = bd[q + 2]; }
     g.putImageData(im, 0, 0);
     const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; U.uJN.value = t; ready();
   };
@@ -2473,7 +2473,7 @@ function junoPoles(mat) {
         if (cN < 21.0) {
           vec2 p = vec2(1073.0, 1160.0) + 42.1 * cN * vec2(cos(lon), -sin(lon));
           vec3 c = sRGBToLinear(texture2D(uJN, vec2(p.x / 2133.0, 1.0 - p.y / 2127.0))).rgb;
-          c = mix(c, vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))) * tone, 0.55) * 1.15;
+          c = mix(c, vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))) * tone, 0.55) * 1.45;   // its polar night is darker than Cassini's hazy view: lift it to match
           diffuseColor.rgb = mix(diffuseColor.rgb, c, 1.0 - smoothstep(16.0, 20.5, cN));
         }
         if (cS < 29.0) {
@@ -3594,7 +3594,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=b639ad41" data-place="info" defer></script>
+<script src="../music/music.js?v=65ce5004" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
