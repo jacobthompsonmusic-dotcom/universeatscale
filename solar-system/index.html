@@ -348,12 +348,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=9fac87ee"></script>
-<script src="../shared/clock.js?v=9fac87ee"></script>
-<script src="../shared/fold.js?v=9fac87ee"></script>
-<script src="baked/manifest.js?v=9fac87ee"></script>
-<script src="../shared/perf.js?v=9fac87ee"></script>
-<script src="../shared/galaxy-volume.js?v=9fac87ee"></script>
+<script src="../shared/frame.js?v=8483327f"></script>
+<script src="../shared/clock.js?v=8483327f"></script>
+<script src="../shared/fold.js?v=8483327f"></script>
+<script src="baked/manifest.js?v=8483327f"></script>
+<script src="../shared/perf.js?v=8483327f"></script>
+<script src="../shared/galaxy-volume.js?v=8483327f"></script>
 <script>
 (() => {
 'use strict';
@@ -3445,9 +3445,6 @@ ECL.update = () => {
     if (su) { su.uOn.value = 1; su.uDir.value.copy(mt).normalize(); su.uCos.value = Math.cos(Rm); }
   } else { ECL.obsc = 0; if (su) su.uOn.value = 0; }
 };
-// after the frame's own camera settings: the lens, the ground and sky, day and night
-// the season where you stand, from the date: the north spot (45° N) has an Ontario-like year, snow from December to March;
-// the south spot (34° S) has the same year six months on, but its winters are mild (no snow lies at that latitude near the sea)
 // Weather on the ground (illustrative): on some winter days a light snowfall, on some spring days passing showers — sun showers when
 // the Sun is up. Which days is fixed by the date (the same day always has the same weather), not a forecast or a record.
 const WX = { cv: document.getElementById('wx'), g: null, flakes: [], drops: [], on: false };
@@ -3479,6 +3476,9 @@ function weather(S, sAlt) {
     g.globalAlpha = Math.min(1, rain * 1.4); g.stroke(); g.globalAlpha = 1;
   }
 }
+// after the frame's own camera settings: the lens, the ground and sky, day and night
+// the season where you stand, from the date: the north spot (45° N) has an Ontario-like year, snow from December to March;
+// the south spot (34° S) has the same year six months on, but its winters are mild (no snow lies at that latitude near the sea)
 function skySeason() {
   const y0 = Date.UTC(new Date(simMs).getUTCFullYear(), 0, 1); let d = (simMs - y0) / 864e5;
   if (SKY.hemi === 's') d = (d + 182.6) % 365.25;
@@ -3681,6 +3681,7 @@ function frame(t) {
     if (!fly) { _dq.copy(_qn).multiply(_qp.copy(scene.quaternion).invert()); camera.position.sub(controls.target).applyQuaternion(_dq).add(controls.target); }
     scene.quaternion.copy(_qn); skyRoot.quaternion.copy(scene.quaternion); }
   updateWorld(); updateFields();
+  if (!SKY.on) ECL.update();   // the Earth's shadow on the Moon, seen from anywhere (from the ground skyPaint does it)
   if (SKY.on) skyCamera();
   else { if (fly) stepFly(t);
     if (HX.tw && !fly) { const k = Math.min(1, (performance.now() - HX.tw.t0) / HX.tw.dur), e = k * k * (3 - 2 * k); camera.position.lerpVectors(HX.tw.from, HX.tw.to, e); if (k >= 1) HX.tw = null; }
@@ -3888,7 +3889,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=9fac87ee" data-place="info" defer></script>
+<script src="../music/music.js?v=8483327f" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
