@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=12784c71"></script>
-<script src="../shared/clock.js?v=12784c71"></script>
-<script src="../shared/fold.js?v=12784c71"></script>
-<script src="../shared/perf.js?v=12784c71"></script>
-<script src="../shared/galaxy-volume.js?v=12784c71"></script>
+<script src="../shared/frame.js?v=76fa0374"></script>
+<script src="../shared/clock.js?v=76fa0374"></script>
+<script src="../shared/fold.js?v=76fa0374"></script>
+<script src="../shared/perf.js?v=76fa0374"></script>
+<script src="../shared/galaxy-volume.js?v=76fa0374"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -316,6 +316,7 @@ void main() {
     <button class="tg on" data-k="stars">Star field</button>
     <button class="tg on" data-k="voids">Voids</button>
     <button class="tg on" data-k="web" title="The cosmic web: galaxies strung along filaments round empty voids (illustrative)">Cosmic web</button>
+    <button class="tg" data-k="lani" title="Laniakea's flow: the streams galaxies follow toward the Great Attractor (Tully et al. 2014)">Laniakea flow</button>
     <button class="tg" data-k="cmb" title="The cosmic microwave background: the oldest light there is">CMB</button>
     <button class="tg" data-k="stalks">Depth lines</button>
     <button class="tg" data-k="zodiac">Zodiac</button>
@@ -1075,7 +1076,7 @@ const SPR = {};
 })();
 
 // layer chips appear only at the scales where their layer has something to show (the rest are always there)
-const CHIP_SPAN = { arms: [0, 5e6], stars: [0, 14000], zodiac: [0, 14000], orbit: [0, 3e5], voids: [5e6, Infinity], cmb: [5e9, Infinity], web: [2e8, Infinity] };
+const CHIP_SPAN = { arms: [0, 5e6], stars: [0, 14000], zodiac: [0, 14000], orbit: [0, 3e5], voids: [5e6, Infinity], cmb: [5e9, Infinity], web: [2e8, Infinity], lani: [6e7, 4e9] };
 // near Sgr A* the Sun's 26,000-light-year journey is beside the point: the galactic-motion layer bows out (chip, path, marker, panel)
 function nearGC() { const span = viewSpan(), d = Math.hypot(view.x - GCO.x, view.y - GCO.y, view.z - GCO.z);
   return (1 - sstep(Math.log(Math.max(d, 0.3 * span, 1e-9)), Math.log(900), Math.log(4500))) * (1 - sstep(Math.log(span), Math.log(3000), Math.log(12000))); }
@@ -1150,7 +1151,7 @@ function laniBuild() {
 }
 function drawLaniakea() {
   const span = viewSpan(), a = sstep(Math.log(span), Math.log(6e7), Math.log(2.5e8)) * (1 - sstep(Math.log(span), Math.log(1.2e9), Math.log(4e9))) * (1 - sstep(PT, 0, 1e-3));
-  LANI.a = a; if (a < 0.01) return;
+  LANI.a = opts.lani ? a : 0; if (LANI.a < 0.01) return;   // off by default (busy); the Laniakea flow chip turns it on
   if (!LANI.lines) laniBuild();
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   for (const [lw, al] of [[9, 0.012], [3, 0.03], [1, 0.08]]) {   // a broad soft glow, then the thread: silvery and faint, like the Milky Way, so it doesn't crowd the objects
@@ -1169,19 +1170,20 @@ function drawVoids() {
     if (R < 6 || R > 30 * Math.max(Wd, Ht)) continue;
     if (R > 2.4 * Math.max(Wd, Ht) && v !== selected) continue;   // declutter: a void far bigger than the view is just where you are
     if (X + R < 0 || X - R > Wd || Y + R < 0 || Y - R > Ht) continue;
-    const sel = v === selected || v === hover;
+    const sel = v === selected || v === hover, M = Math.min(Wd, Ht), fit = sel ? 1 : 1 - sstep(R, 0.3 * M, 0.7 * M);   // a void shows once you're far enough out for it to sit well inside the view
+    if (fit < 0.02) continue;
     // voids aren't balls: each is drawn as a lumpy, somewhat flattened bubble (its measured size, an illustrative shape), so one seen
     // edge-on looks shallow. The flattening is about the galactic pole's direction on screen, the wobble fixed per void.
     if (!v.shp) { let sd = 0; for (const ch of v.name) sd = (sd * 31 + ch.charCodeAt(0)) >>> 0; const rr = () => ((sd = (sd * 1664525 + 1013904223) >>> 0) / 4294967296);
       v.shp = { f: 0.5 + 0.4 * rr(), h: [1, 2, 3, 4].map(k => [0.16 / k * (0.4 + rr()), rr() * 6.2832]) }; }
     const ry = R * Math.sqrt(CT * CT + v.shp.f * v.shp.f * ST * ST), rad = th => 1 + v.shp.h.reduce((acc, [amp, ph], k) => acc + amp * Math.sin((k + 2) * th + ph), 0);
     ctx.save(); ctx.translate(X, Y); ctx.scale(1, ry / R);
-    ctx.globalAlpha = (v.disputed ? 0.3 : 0.7) * (sel ? 1.3 : 1); ctx.drawImage(SPR.void, -R, -R, 2 * R, 2 * R); ctx.globalAlpha = 1;
+    ctx.globalAlpha = Math.min(1, (v.disputed ? 0.3 : 0.7) * (sel ? 1.3 : 1) * fit); ctx.drawImage(SPR.void, -R, -R, 2 * R, 2 * R); ctx.globalAlpha = 1;
     ctx.beginPath(); for (let i = 0; i <= 72; i++) { const th = i / 72 * 6.2832, q = R * rad(th); i ? ctx.lineTo(q * Math.cos(th), q * Math.sin(th)) : ctx.moveTo(q * Math.cos(th), q * Math.sin(th)); }
     ctx.restore();
     ctx.strokeStyle = `rgba(150,158,255,${sel ? 0.75 : 0.1})`; ctx.lineWidth = sel ? 1.5 : 1;   // the galaxies make the edge; the line only when picked
     ctx.setLineDash(v.disputed ? [8, 8] : []); ctx.stroke(); ctx.setLineDash([]);
-    if (opts.labels && R > 22) {
+    if (opts.labels && R > 22 && fit > 0.5) {
       const f = 'italic 14px "IM Fell English", Georgia, serif', t = v.name.toUpperCase().split('').join('\u200A'), w = lblW(f, t);
       const ly = v.disputed ? (Y - R - 10 > 14 ? Y - R - 10 : Y + R + 14) : (R > 60 ? Y : Y - R - 10);
       lbl(sel ? -9 : 2.5, [X - w / 2, ly - 7, w, 14], () => { ctx.font = f; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(175,182,255,0.9)'; ctx.fillText(t, X, ly); });
@@ -1194,7 +1196,7 @@ function drawVoids() {
 const cv = document.getElementById('map'), ctx = cv.getContext('2d');
 let Wd = 0, Ht = 0, dpr = 1;
 const view = { x: 0, y: 4000, z: 0, s: 0.01, yaw: 0, tilt: 0 };
-const opts = { arms: false, grid: true, labels: true, stars: true, stalks: false, voids: true, cmb: false, web: true, zodiac: false, orbit: false };   // depth lines and the arm outlines start off, to keep the view clean (Jacob, Nov 2026)
+const opts = { arms: false, grid: true, labels: true, stars: true, stalks: false, voids: true, cmb: false, web: true, lani: false, zodiac: false, orbit: false };   // depth lines and the arm outlines start off, to keep the view clean (Jacob, Nov 2026)
 let sky = null, hover = null, selected = null, anim = null;
 let CY = 1, SY = 0, CT = 1, ST = 0;
 // Close in, the map is drawn through a real camera with a 40° lens (the same as the Solar System view), so you see the Milky Way
@@ -1814,8 +1816,8 @@ function drawShape(rg, Rr) {
   rg.scr = null;
   if (Rr < 10 || Rr > 30 * Math.max(Wd, Ht)) return;
   // only once you've pulled back far enough for it to be out there in the view, not lined up behind the galaxy you're looking at
-  const span = viewSpan(), dv = Math.hypot(view.x - rg.x, view.y - rg.y, view.z - rg.z), far = sstep(Math.log(span), Math.log(0.04 * dv), Math.log(0.12 * dv)) * (1 - sstep(PT, 0, 1e-3));
-  if (far < 0.01) return;
+  const span = viewSpan(), dv = Math.hypot(view.x - rg.x, view.y - rg.y, view.z - rg.z), far = sstep(Math.log(span), Math.log(0.6 * dv), Math.log(1.5 * dv)) * (1 - sstep(PT, 0, 1e-3));   // only once you're well out: the whole structure in view
+  if (far < 0.01 && rg !== selected) return;
   const sel = rg === selected || rg === hover, a = Math.min(1, (Rr - 10) / 25) * far, P = rg.shape.map(q => proj(q.x, q.y, q.z));
   if (P.some(p => !isFinite(p[0]))) return;
   ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -1938,19 +1940,20 @@ function drawGalaxies() {
     ctx.strokeStyle = rg.edge ? 'rgba(255,170,120,0.55)' : rg.cmb ? `rgba(150,200,255,${sel ? 0.8 : 0.35})` : `rgba(201,182,255,${sel ? 0.8 : 0.4})`;
     ctx.lineWidth = sel ? 2 : rg.edge ? 2 : 1.2; ctx.setLineDash(rg.edge || rg.cmb ? [] : [6, 6]);
     ctx.beginPath(); ctx.arc(X, Y, Rr, 0, 7); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
-    if (rg.members) {   // what it's made of: its quasars or gamma-ray bursts (count real, places sketched inside its measured size and shape)
+    const mFar = sel ? 1 : sstep(Math.log(viewSpan()), Math.log(0.5 * Math.hypot(view.x - rg.x, view.y - rg.y, view.z - rg.z)), Math.log(1.2 * Math.hypot(view.x - rg.x, view.y - rg.y, view.z - rg.z)));
+    if (rg.members && mFar > 0.02) {   // what it's made of: its quasars or gamma-ray bursts (count real, places sketched inside its measured size and shape)
       const [n, kind, ax, ay, az] = rg.members;
       if (!rg.mpts) { let sd = n * 977; const rr = () => ((sd = (sd * 1664525 + 1013904223) >>> 0) / 4294967296), g = () => Math.sqrt(-2 * Math.log(rr() + 1e-9)) * Math.cos(6.2832 * rr());
         const u = [rr() - 0.5, rr() - 0.5, rr() - 0.5], ul = Math.hypot(...u); u.forEach((v, i) => u[i] = v / ul); const w = [u[1], -u[0], 0.3], wl = Math.hypot(...w); w.forEach((v, i) => w[i] = v / wl);
         const t = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
         rg.mpts = Array.from({ length: n }, () => { const a1 = g() * 0.45 * ax * rg.r, a2 = g() * 0.45 * ay * rg.r, a3 = g() * 0.45 * az * rg.r;
           return { x: rg.x + u[0] * a1 + w[0] * a2 + t[0] * a3, y: rg.y + u[1] * a1 + w[1] * a2 + t[1] * a3, z: rg.z + u[2] * a1 + w[2] * a2 + t[2] * a3, p: rr() * 6.28 }; }); }
-      const grb = kind !== 'quasars', tt = performance.now() / 1000; ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const grb = kind !== 'quasars', tt = performance.now() / 1000; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = mFar;
       for (const q of rg.mpts) { const [qx, qy] = proj(q.x, q.y, q.z); if (!isFinite(qx)) continue;
         const fl = grb ? 0.35 + 0.65 * Math.pow(0.5 + 0.5 * Math.sin(tt * 0.9 + q.p * 3), 6) : 1, rq = grb ? 3.2 : 2.4;
         const gr = ctx.createRadialGradient(qx, qy, 0, qx, qy, rq * 3); gr.addColorStop(0, grb ? `rgba(255,236,200,${0.95 * fl})` : 'rgba(170,240,255,0.95)'); gr.addColorStop(0.3, grb ? `rgba(255,170,90,${0.45 * fl})` : 'rgba(90,200,255,0.4)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(qx, qy, rq * 3, 0, 7); ctx.fill(); }
-      ctx.restore(); if (grb && sel) requestAnimationFrame(() => draw());
+      ctx.restore(); ctx.globalAlpha = 1; if (grb && sel) requestAnimationFrame(() => draw());
     }
     if (rg.edge) {
       const gg = ctx.createRadialGradient(X, Y, Rr * 0.97, X, Y, Rr * 1.03);
@@ -2306,7 +2309,7 @@ function pick(X, Y, loose) {
     let bv = null;
     for (const v of VOIDS) {
       const [VX, VY] = proj(v.x, v.y, v.z), R = v.r * view.s;
-      if (R < 12 || R > 30 * Math.max(Wd, Ht)) continue;
+      if (R < 12 || R > 0.7 * Math.min(Wd, Ht)) continue;   // only voids that are showing
       if (Math.hypot(VX - X, VY - Y) < R && (!bv || v.r < bv.r)) bv = v;
     }
     if (bv) return bv;
@@ -3928,7 +3931,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=12784c71" data-place="info" defer></script>
+<script src="../music/music.js?v=76fa0374" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
