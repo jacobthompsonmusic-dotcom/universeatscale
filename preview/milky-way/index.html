@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=d2d77f2c"></script>
-<script src="../shared/clock.js?v=d2d77f2c"></script>
-<script src="../shared/fold.js?v=d2d77f2c"></script>
-<script src="../shared/perf.js?v=d2d77f2c"></script>
-<script src="../shared/galaxy-volume.js?v=d2d77f2c"></script>
+<script src="../shared/frame.js?v=2b6c03e2"></script>
+<script src="../shared/clock.js?v=2b6c03e2"></script>
+<script src="../shared/fold.js?v=2b6c03e2"></script>
+<script src="../shared/perf.js?v=2b6c03e2"></script>
+<script src="../shared/galaxy-volume.js?v=2b6c03e2"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -664,10 +664,10 @@ const REGIONS = [
     ['Saraswati Supercluster', 87.18, -57.38, 3.75e9, 3.3e8, 'Pisces', 'SDSS Stripe 82 (Bagchi et al. 2017), z ≈ 0.28',
       'One of the largest superclusters known, about 650 million light-years long, seen as it was 4 billion years ago, holding the mass of some 20 million billion suns.'],
     ['Huge-LQG', 230.81, 58.78, 1.29e10, 2.0e9, 'Leo', 'A group of 73 quasars (Clowes et al. 2013), z ≈ 1.27; debated',
-      'A group of 73 quasars about 4 billion light-years long. Some astronomers argue a pattern this size can turn up by chance among quasars.', true],
+      'A group of 73 quasars about 4 billion light-years long. Some astronomers argue a pattern this size can turn up by chance among quasars. The quasars are drawn where such a group would put them (sketched, not their catalogued spots).', true, [73, 'quasars', 2.0, 0.6, 0.45]],
     ['Hercules–Corona Borealis Great Wall', 48.46, 48.79, 1.58e10, 5.0e9, 'Hercules, Corona Borealis & Boötes', 'Clustering of gamma-ray bursts (Horváth et al. 2014), z ≈ 1.6–2.1; debated',
-      'The largest structure ever claimed, about 10 billion light-years long, inferred from where gamma-ray bursts cluster on the sky. Many doubt it is real: there are few bursts to go on.', true],
-  ].map(([name, l, b, d, r, con, src, blurb, debated]) => { const q = galToWorld(d, l, b); return { name, type: 'region', x: q.x, y: q.y, z: q.z, r, d, con, src, blurb, debated, size: ['Across', `~${(2 * r / (r >= 1e9 ? 1e9 : 1e6)).toLocaleString('en-CA', { maximumFractionDigits: 1 })} ${r >= 1e9 ? 'billion' : 'million'} ly`] }; }),
+      'The largest structure ever claimed, about 10 billion light-years long, inferred from where gamma-ray bursts cluster on the sky. Many doubt it is real: there are few bursts to go on — the 31 drawn here (sketched, not their catalogued spots).', true, [31, 'gamma-ray bursts', 1.0, 0.75, 0.3]],
+  ].map(([name, l, b, d, r, con, src, blurb, debated, members]) => { const q = galToWorld(d, l, b); return { name, type: 'region', x: q.x, y: q.y, z: q.z, r, d, con, src, blurb, debated, members, size: ['Across', `~${(2 * r / (r >= 1e9 ? 1e9 : 1e6)).toLocaleString('en-CA', { maximumFractionDigits: 1 })} ${r >= 1e9 ? 'billion' : 'million'} ly`] }; }),
   // the largest structures claimed: drawn along their measured spines (outlines simplified), at their comoving distance
   { name: 'Sloan Great Wall', type: 'region', shape: shapeOf(SGW_PTS), size: ['Length', '~1.4 billion ly'], con: 'Sextans, Leo & Virgo', d: 1.1e9,
     src: 'SDSS galaxy maps (Gott et al. 2005; Sheth & Diaferio 2011); spine simplified, the galaxies drawn along it illustrative',
@@ -1099,15 +1099,15 @@ function drawWeb() {
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   const sz = Math.max(0.7, Math.min(1.8, 2.2e9 * view.s / 40));
   for (const [cool, col] of [[true, '#8e94ff'], [false, '#c7a8ff']]) {   // filaments: blue-violet galaxies, some cooler, some warmer
-    ctx.fillStyle = col; ctx.globalAlpha = 0.65 * a; ctx.beginPath();
+    ctx.fillStyle = col; ctx.globalAlpha = 0.3 * a; ctx.beginPath();   // kept faint, a backdrop behind the real objects
     for (const q of WEB.pts) { if (q.c !== cool) continue; const [X, Y] = proj(q.x, q.y, q.z); if (!(X > -2 && X < Wd + 2 && Y > -2 && Y < Ht + 2)) continue; const r = sz * (0.5 + q.b); ctx.rect(X - r / 2, Y - r / 2, r, r); }
     ctx.fill(); }
   for (const n of WEB.nodes) {   // the knots: clusters of galaxies, glowing where the filaments meet
     const [X, Y] = proj(n.x, n.y, n.z), R = Math.max(4, Math.min(40, n.m * (0.6 + 0.25 * n.k) * 8e7 * view.s * 6)); if (!(X > -R && X < Wd + R && Y > -R && Y < Ht + R)) continue;
-    ctx.globalAlpha = a * Math.min(1, 0.35 + 0.12 * n.k); ctx.drawImage(WEB.spr, X - R, Y - R, 2 * R, 2 * R); }
+    ctx.globalAlpha = a * 0.45 * Math.min(1, 0.35 + 0.12 * n.k); ctx.drawImage(WEB.spr, X - R, Y - R, 2 * R, 2 * R); }
   ctx.restore();
 }
-// ---------- Laniakea as its makers drew it: golden lines of galaxy flow, all draining toward the Great Attractor ----------
+// ---------- Laniakea as its makers drew it: lines of galaxy flow (silvery here), all draining toward the Great Attractor ----------
 // After Tully et al. 2014 (Nature), who traced how galaxies move, after the universe's expansion is taken out, to find where the
 // flows divide. Here the lines are a sketch of that picture (streams converging on the Great Attractor in Norma, swirling in from all
 // round its basin), not the measured flow field. They show at the scale of the supercluster and fade as you zoom in or far out.
@@ -1137,12 +1137,12 @@ function drawLaniakea() {
   LANI.a = a; if (a < 0.01) return;
   if (!LANI.lines) laniBuild();
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  for (const [lw, al] of [[9, 0.035], [3, 0.1], [1, 0.26]]) {   // a broad soft glow, then the brighter thread
-    ctx.lineWidth = lw; ctx.strokeStyle = `rgba(255,196,110,${(al * a).toFixed(3)})`; ctx.beginPath();
+  for (const [lw, al] of [[9, 0.022], [3, 0.055], [1, 0.14]]) {   // a broad soft glow, then the thread: silvery and faint, like the Milky Way, so it doesn't crowd the objects
+    ctx.lineWidth = lw; ctx.strokeStyle = `rgba(206,212,240,${(al * a).toFixed(3)})`; ctx.beginPath();
     for (const L of LANI.lines) { let first = true; for (const q of L.pts) { const [X, Y] = proj(q.x, q.y, q.z); if (!isFinite(X)) { first = true; continue; } if (first) ctx.moveTo(X, Y); else ctx.lineTo(X, Y); first = false; } }
     ctx.stroke(); }
   const A = gpos('Norma'), [X, Y] = proj(A.x, A.y, A.z), R = 0.12 * REGIONS.find(r => r.name === 'Laniakea Supercluster').r * view.s;   // the Great Attractor, where they all go
-  if (isFinite(X)) { const g = ctx.createRadialGradient(X, Y, 0, X, Y, R); g.addColorStop(0, `rgba(255,225,160,${(0.55 * a).toFixed(3)})`); g.addColorStop(1, 'rgba(255,190,100,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(X, Y, R, 0, 7); ctx.fill(); }
+  if (isFinite(X)) { const g = ctx.createRadialGradient(X, Y, 0, X, Y, R); g.addColorStop(0, `rgba(225,228,250,${(0.3 * a).toFixed(3)})`); g.addColorStop(1, 'rgba(200,205,240,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(X, Y, R, 0, 7); ctx.fill(); }
   ctx.restore();
 }
 function drawVoids() {
@@ -1919,6 +1919,20 @@ function drawGalaxies() {
     ctx.strokeStyle = rg.edge ? 'rgba(255,170,120,0.55)' : rg.cmb ? `rgba(150,200,255,${sel ? 0.8 : 0.35})` : `rgba(201,182,255,${sel ? 0.8 : 0.4})`;
     ctx.lineWidth = sel ? 2 : rg.edge ? 2 : 1.2; ctx.setLineDash(rg.edge || rg.cmb ? [] : [6, 6]);
     ctx.beginPath(); ctx.arc(X, Y, Rr, 0, 7); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+    if (rg.members) {   // what it's made of: its quasars or gamma-ray bursts (count real, places sketched inside its measured size and shape)
+      const [n, kind, ax, ay, az] = rg.members;
+      if (!rg.mpts) { let sd = n * 977; const rr = () => ((sd = (sd * 1664525 + 1013904223) >>> 0) / 4294967296), g = () => Math.sqrt(-2 * Math.log(rr() + 1e-9)) * Math.cos(6.2832 * rr());
+        const u = [rr() - 0.5, rr() - 0.5, rr() - 0.5], ul = Math.hypot(...u); u.forEach((v, i) => u[i] = v / ul); const w = [u[1], -u[0], 0.3], wl = Math.hypot(...w); w.forEach((v, i) => w[i] = v / wl);
+        const t = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+        rg.mpts = Array.from({ length: n }, () => { const a1 = g() * 0.45 * ax * rg.r, a2 = g() * 0.45 * ay * rg.r, a3 = g() * 0.45 * az * rg.r;
+          return { x: rg.x + u[0] * a1 + w[0] * a2 + t[0] * a3, y: rg.y + u[1] * a1 + w[1] * a2 + t[1] * a3, z: rg.z + u[2] * a1 + w[2] * a2 + t[2] * a3, p: rr() * 6.28 }; }); }
+      const grb = kind !== 'quasars', tt = performance.now() / 1000; ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      for (const q of rg.mpts) { const [qx, qy] = proj(q.x, q.y, q.z); if (!isFinite(qx)) continue;
+        const fl = grb ? 0.35 + 0.65 * Math.pow(0.5 + 0.5 * Math.sin(tt * 0.9 + q.p * 3), 6) : 1, rq = grb ? 3.2 : 2.4;
+        const gr = ctx.createRadialGradient(qx, qy, 0, qx, qy, rq * 3); gr.addColorStop(0, grb ? `rgba(255,236,200,${0.95 * fl})` : 'rgba(170,240,255,0.95)'); gr.addColorStop(0.3, grb ? `rgba(255,170,90,${0.45 * fl})` : 'rgba(90,200,255,0.4)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(qx, qy, rq * 3, 0, 7); ctx.fill(); }
+      ctx.restore(); if (grb && sel) requestAnimationFrame(() => draw());
+    }
     if (rg.edge) {
       const gg = ctx.createRadialGradient(X, Y, Rr * 0.97, X, Y, Rr * 1.03);
       gg.addColorStop(0, 'rgba(255,150,100,0)'); gg.addColorStop(0.5, 'rgba(255,150,100,0.25)'); gg.addColorStop(1, 'rgba(255,150,100,0)');
@@ -3744,7 +3758,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=d2d77f2c" data-place="info" defer></script>
+<script src="../music/music.js?v=2b6c03e2" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
