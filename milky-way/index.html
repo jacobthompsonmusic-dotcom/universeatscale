@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=52eae579"></script>
-<script src="../shared/clock.js?v=52eae579"></script>
-<script src="../shared/fold.js?v=52eae579"></script>
-<script src="../shared/perf.js?v=52eae579"></script>
-<script src="../shared/galaxy-volume.js?v=52eae579"></script>
+<script src="../shared/frame.js?v=9b44b14e"></script>
+<script src="../shared/clock.js?v=9b44b14e"></script>
+<script src="../shared/fold.js?v=9b44b14e"></script>
+<script src="../shared/perf.js?v=9b44b14e"></script>
+<script src="../shared/galaxy-volume.js?v=9b44b14e"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1666,7 +1666,8 @@ function orbitGraph() {   // the Sun's height above the midplane back to the Cam
   g.fillText(`+${zM} pc`, L - 10, Y(zM)); g.fillText('midplane', L - 10, Y(0)); g.fillText(`−${zM} pc`, L - 10, Y(-zM));
   S.ages.forEach(([t, , , short], k) => { const x = X(t);
     g.strokeStyle = 'rgba(255,207,110,0.35)'; g.lineWidth = 2; g.setLineDash([4, 6]); g.beginPath(); g.moveTo(x, top - 4); g.lineTo(x, bot + 8 + 25 * (k % 3)); g.stroke(); g.setLineDash([]);
-    g.fillStyle = 'rgba(255,207,110,0.9)'; g.textAlign = 'center'; g.fillText(short, Math.min(w - 60, Math.max(L + 50, x)), bot + 21 + 25 * (k % 3)); });
+    g.fillStyle = 'rgba(255,207,110,0.9)'; g.textAlign = 'center'; g.font = short === 'us' ? 'italic 23px "IM Fell English", Georgia, serif' : '23px "IM Fell English", Georgia, serif';   // 'us' set apart in italics
+    g.fillText(short, Math.min(w - 60, Math.max(L + 50, x)), bot + 21 + 25 * (k % 3)); });
   g.strokeStyle = '#ffcf6e'; g.lineWidth = 4; g.beginPath(); let first = true;
   for (const p of S.P) { if (-p.t > T_BACK) break; const x = X(-p.t), y = Y(p.z / PC); first ? g.moveTo(x, y) : g.lineTo(x, y); first = false; }
   g.stroke();
@@ -3738,7 +3739,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=52eae579" data-place="info" defer></script>
+<script src="../music/music.js?v=9b44b14e" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

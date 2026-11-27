@@ -349,12 +349,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=52eae579"></script>
-<script src="../shared/clock.js?v=52eae579"></script>
-<script src="../shared/fold.js?v=52eae579"></script>
-<script src="baked/manifest.js?v=52eae579"></script>
-<script src="../shared/perf.js?v=52eae579"></script>
-<script src="../shared/galaxy-volume.js?v=52eae579"></script>
+<script src="../shared/frame.js?v=9b44b14e"></script>
+<script src="../shared/clock.js?v=9b44b14e"></script>
+<script src="../shared/fold.js?v=9b44b14e"></script>
+<script src="baked/manifest.js?v=9b44b14e"></script>
+<script src="../shared/perf.js?v=9b44b14e"></script>
+<script src="../shared/galaxy-volume.js?v=9b44b14e"></script>
 <script>
 (() => {
 'use strict';
@@ -2225,7 +2225,7 @@ function flyTo(o, dist, dir, dur) {
       if (o.key === 'pluto') {   // face the side New Horizons photographed close up — the heart, Sputnik Planitia, always turned away from Charon —
         const C = MOONS.find(m => m.name === 'Charon');   // with Charon peeking out from behind; unless that side is in night just now
         if (C && C.mesh) { const pc = C.mesh.getWorldPosition(new THREE.Vector3()).sub(o.mesh.getWorldPosition(new THREE.Vector3())).normalize().negate();
-          if (pc.dot(sd) > -0.25) dir = pc.multiplyScalar(0.85).addScaledVector(side, 0.4).addScaledVector(sd, 0.35).addScaledVector(Y, 0.12).normalize(); }
+          const k = pc.dot(sd); if (k > -0.85) dir = pc.multiplyScalar(0.85).addScaledVector(side, 0.3).addScaledVector(sd, k > -0.2 ? 0.35 : 0.75).addScaledVector(Y, 0.12).normalize(); }
       }
     }
   }
@@ -3812,7 +3812,7 @@ function frame(t) {
   camera.fov = deep.fov; camera.far = camD > 1e7 ? 1e15 : 2e8; camera.near = Math.min(0.0005, Math.max(1e-9, camD * 0.02)); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
   if (SKY.on) skyPaint(); else if (WX.on) { WX.on = false; WX.cv.style.display = 'none'; }
 
-  plumeTick();
+  plumeTick(); faintTick();
   { // the Sun's surface moves: while it's big enough on screen to see that, keep drawing
     const sp = relOf(SUN).sub(camera.position), d = sp.length(), px = SUN.R / Math.max(d, 1e-9) * innerHeight / (2 * Math.tan(camera.fov * DEG / 2));
     SUN.anim.uSpin.value = (simMs / 86400000 / 25.38 % 1) * TAU; SUN.anim.uPix.value = 1 / Math.max(px, 1e-3);
@@ -3932,7 +3932,17 @@ function plumeTick() {   // keep the fountain moving while Enceladus is big enou
   const px = R / Math.max(d, 1e-12) * innerHeight / (2 * Math.tan(camera.fov * DEG / 2)); PLUME.mesh.visible = px > 4 && !SKY.on;
   PLUME.u.uPx.value = px; if (PLUME.mesh.visible && px > 12 && !document.hidden) { PLUME.u.uTime.value = (performance.now() / 1000) % 100000; IDLE.dirty++; }
 }
-const _plV = new THREE.Vector3();
+const _plV = new THREE.Vector3(), _fV = new THREE.Vector3();
+// The faint rings (Saturn's E ring, Jupiter's gossamer rings…) are clouds of dust thousands of km thick, drawn as flat sheets. From inside
+// or near that sheet a flat sheet turns into a hard line splitting the sky in two, so it fades away as the camera comes within ~15,000 km
+// of the ring plane, where the real dust would be far too thin to see.
+function faintTick() {
+  for (const g of GIANTS) { if (!g.faint || !g.faint.visible) continue;
+    g.eq.worldToLocal(_fV.copy(camera.position)); const h = Math.abs(_fV.y) / U, f = THREE.MathUtils.smoothstep(h, 2000, 15000);
+    if (g.faintF === f) continue; g.faintF = f;
+    g.faint.traverse(m => { if (!m.material) return; if (m.userData.op0 === undefined) m.userData.op0 = m.material.opacity; m.material.opacity = m.userData.op0 * f; m.visible = f > 0.01; });
+  }
+}
 function precompile() {
   const hid = []; for (const sc of [scene, skyScene, MWV.scene]) sc.traverse(o => { if (!o.visible) { hid.push(o); o.visible = true; } });
   try { renderer.compile(scene, camera); renderer.compile(skyScene, skyCam); if (!LITE) renderer.compile(MWV.scene, skyCam); } catch (e) {}
@@ -3965,7 +3975,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=52eae579" data-place="info" defer></script>
+<script src="../music/music.js?v=9b44b14e" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
