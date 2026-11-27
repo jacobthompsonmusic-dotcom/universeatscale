@@ -67,7 +67,7 @@
   #results small { color: var(--muted); margin-left: auto; white-space: nowrap; }
   .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 
-  #orbpanel { top: 16px; left: 50%; transform: translateX(-50%); width: min(560px, 92vw); padding: 10px 14px 9px; font-size: 13.5px; text-align: center; z-index: 4; }
+  #orbpanel { top: 12px; left: 50%; transform: translateX(-50%); width: min(860px, 94vw); padding: 10px 14px 9px; font-size: 13.5px; text-align: center; z-index: 4; }
   #orbpanel[hidden] { display: none; }
   #orbpanel h3 { margin: 0 0 4px; font-size: 16px; font-variant: small-caps; letter-spacing: 0.06em; color: #ffcf6e; font-weight: 400; }
   #orbpanel p { margin: 0 0 6px; line-height: 1.4; }
@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=723a114a"></script>
-<script src="../shared/clock.js?v=723a114a"></script>
-<script src="../shared/fold.js?v=723a114a"></script>
-<script src="../shared/perf.js?v=723a114a"></script>
-<script src="../shared/galaxy-volume.js?v=723a114a"></script>
+<script src="../shared/frame.js?v=e2a91a87"></script>
+<script src="../shared/clock.js?v=e2a91a87"></script>
+<script src="../shared/fold.js?v=e2a91a87"></script>
+<script src="../shared/perf.js?v=e2a91a87"></script>
+<script src="../shared/galaxy-volume.js?v=e2a91a87"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -289,8 +289,8 @@ void main() {
 <div id="orbpanel" class="panel" hidden>
   <h3>The Sun’s orbit</h3>
   <p id="orb-txt"></p>
-  <canvas id="orb-z" width="1060" height="250" aria-label="The Sun's height above and below the midplane of the disc over the last 260 million years"></canvas>
-  <div class="orb-play"><button id="orb-pp" aria-label="Play the Sun's journey">▶︎</button><input id="orb-t" type="range" min="-262" max="40" step="0.5" value="0" aria-label="Time"><span id="orb-when">today</span>
+  <canvas id="orb-z" width="1500" height="250" aria-label="The Sun's height above and below the midplane of the disc since the Cambrian, 545 million years"></canvas>
+  <div class="orb-play"><button id="orb-pp" aria-label="Play the Sun's journey">▶︎</button><input id="orb-t" type="range" min="-545" max="40" step="0.5" value="0" aria-label="Time"><span id="orb-when">today</span>
     <span class="orb-seg"><button data-r="2">slow</button><button data-r="10" class="on">medium</button><button data-r="30">fast</button></span></div>
   <p class="orb-note" id="orb-note"></p>
 </div>
@@ -1491,6 +1491,7 @@ function drawArms() {
 // through a smooth model of the Galaxy's gravity: a bulge (Hernquist), thin and thick discs (Miyamoto–Nagai) and a dark halo (NFW),
 // fitted to a flat 236 km/s rotation curve, the local midplane density 0.097 M☉/pc³ (McKee et al. 2015) and the 68 M☉/pc² within
 // 1.1 kpc of the plane (Bovy & Rix 2013). Units: kpc, km/s, Myr. The real path is also tugged by the bar and the spiral arms.
+const T_BACK = 545;   // back past the Cambrian explosion: a little over two laps
 const SORB = (() => {
   const G = 4.30091e-6, K = 1.0227e-3;   // G in kpc (km/s)²/M☉; 1 km/s in kpc/Myr
   const BUL = [5.0e9, 0.6], DISCS = [[5.95e10, 3.0, 0.25], [2.0e9, 2.5, 0.4]], HALO = [9.17e11, 19.0];
@@ -1518,7 +1519,7 @@ const SORB = (() => {
     }
     return pts;
   }
-  const past = run(-262, -0.05), fut = run(40, 0.05);
+  const past = run(-T_BACK, -0.05), fut = run(40, 0.05);
   const toLy = p => ({ t: p[0], x: p[1] * LY_PER_KPC, y: p[2] * LY_PER_KPC, z: p[3] * LY_PER_KPC });
   const P = past.map(toLy), F = fut.map(toLy);
   // facts for the panel, all from the integration
@@ -1529,8 +1530,10 @@ const SORB = (() => {
     const R = Math.hypot(b.x, b.y); Rmin = Math.min(Rmin, R); Rmax = Math.max(Rmax, R); zmax = Math.max(zmax, Math.abs(b.z)); }
   const cross = []; for (let i = 1; i < P.length; i++) if (Math.sign(P[i].z) !== Math.sign(P[i - 1].z)) cross.push(-P[i].t);
   const zPer = cross.length > 2 ? 2 * (cross[cross.length - 1] - cross[0]) / (cross.length - 1) : 0;
-  const ages = [[66, 'Dinosaurs die out', '66 Myr ago', 'dinosaurs end'], [130, 'First flowering plants', '~130 Myr ago', 'flowers'],
-    [201.4, 'End-Triassic extinction', '201 Myr ago', 'Triassic ends'], [231, 'First dinosaurs', '~231 Myr ago', 'first dinosaurs'], [251.9, 'The Great Dying', '252 Myr ago', 'Great Dying']];   // ICS chart 2024; earliest dinosaurs ~231 Myr (Ischigualasto)
+  const ages = [[0.3, 'Homo sapiens appears', '~300,000 years ago', 'us'], [66, 'Dinosaurs die out', '66 Myr ago', 'dinosaurs end'], [130, 'First flowering plants', '~130 Myr ago', 'flowers'],
+    [201.4, 'End-Triassic extinction', '201 Myr ago', 'Triassic ends'], [231, 'First dinosaurs', '~231 Myr ago', 'dinosaurs'], [251.9, 'The Great Dying', '252 Myr ago', 'Great Dying'],
+    [372.2, 'Late Devonian extinction', '372 Myr ago', 'Devonian'], [375, 'First animals with legs on land', '~375 Myr ago', 'legs'],
+    [443.8, 'End-Ordovician extinction', '444 Myr ago', 'Ordovician'], [470, 'First land plants', '~470 Myr ago', 'land plants'], [538.8, 'The Cambrian explosion', '539 Myr ago', 'Cambrian']];   // ICS chart 2024; earliest dinosaurs ~231 Myr (Ischigualasto); Homo sapiens ~300 kyr (Jebel Irhoud)
   const at = t => { const i = Math.min(P.length - 1, Math.round(t * 2)); return P[i]; };
   const pos = t => {   // the Sun's position t Myr from now (negative: the past), between the half-Myr points
     const A = t <= 0 ? P : F, u = Math.min(A.length - 1.001, Math.abs(t) * 2), i = Math.floor(u), f = u - i, a = A[i], b = A[i + 1];
@@ -1549,22 +1552,22 @@ function orbitPanel(on) {
     `crossing its midplane about every ${Math.round(S.zPer / 2)} million years — last about ${Math.round(S.cross[0])} million years ago, heading north.`;
   document.getElementById('orb-note').textContent =
     'Traced back from today’s measured position and velocity (GRAVITY 2021; Reid et al. 2019) through a smooth model of the Galaxy’s gravity, fitted to its 236 km/s rotation and the measured density of the disc here (McKee et al. 2015; Bovy & Rix 2013). ' +
-    'The bar and spiral arms also tug on the Sun, so the older half of the path is uncertain by a few thousand light-years. The arms on the map are where they are today: the pattern turns more slowly than the Sun, so it has moved since.';
+    'The bar and spiral arms also tug on the Sun, so the path is a projection that grows less certain the further back it goes: by a few thousand light-years 250 million years ago, and more by the Cambrian, so treat its oldest loops as a sketch. The arms on the map are where they are today: the pattern turns more slowly than the Sun, so it has moved since.';
   orbitGraph();
 }
-function orbitGraph() {   // the Sun's height above the midplane over the last 260 Myr (height true to scale; the time axis is squeezed)
-  const cv = document.getElementById('orb-z'), g = cv.getContext('2d'), w = cv.width, h = cv.height, S = SORB, L = 96, Rr = 16, top = 46, bot = h - 76;
-  const X = t => L + (w - L - Rr) * (1 - t / 260), zM = Math.ceil(S.zmax / PC / 50) * 50, Y = zpc => top + (bot - top) * (0.5 - zpc / (2 * zM));
+function orbitGraph() {   // the Sun's height above the midplane back to the Cambrian (height true to scale; the time axis is squeezed)
+  const cv = document.getElementById('orb-z'), g = cv.getContext('2d'), w = cv.width, h = cv.height, S = SORB, L = 96, Rr = 16, top = 46, bot = h - 84;
+  const X = t => L + (w - L - Rr) * (1 - t / T_BACK), zM = Math.ceil(S.zmax / PC / 50) * 50, Y = zpc => top + (bot - top) * (0.5 - zpc / (2 * zM));
   g.clearRect(0, 0, w, h); g.textBaseline = 'middle'; g.font = 'italic 25px "IM Fell English", Georgia, serif';
-  g.fillStyle = 'rgba(232,226,210,0.75)'; g.textAlign = 'center'; g.fillText('The Sun’s height above and below the disc — 260 million years ago → today', w / 2, 16);
+  g.fillStyle = 'rgba(232,226,210,0.75)'; g.textAlign = 'center'; g.fillText('The Sun’s height above and below the disc — 545 million years ago → today', w / 2, 16);
   g.strokeStyle = 'rgba(255,255,255,0.22)'; g.lineWidth = 2; g.beginPath(); g.moveTo(L, Y(0)); g.lineTo(w - Rr, Y(0)); g.stroke();
   g.fillStyle = 'rgba(232,226,210,0.6)'; g.textAlign = 'right'; g.font = '23px "IM Fell English", Georgia, serif';
   g.fillText(`+${zM} pc`, L - 10, Y(zM)); g.fillText('midplane', L - 10, Y(0)); g.fillText(`−${zM} pc`, L - 10, Y(-zM));
   S.ages.forEach(([t, , , short], k) => { const x = X(t);
-    g.strokeStyle = 'rgba(255,207,110,0.35)'; g.lineWidth = 2; g.setLineDash([4, 6]); g.beginPath(); g.moveTo(x, top - 4); g.lineTo(x, bot + 8 + 26 * (k % 2)); g.stroke(); g.setLineDash([]);
-    g.fillStyle = 'rgba(255,207,110,0.9)'; g.textAlign = 'center'; g.fillText(short, Math.min(w - 90, Math.max(L + 70, x)), bot + 22 + 26 * (k % 2)); });
+    g.strokeStyle = 'rgba(255,207,110,0.35)'; g.lineWidth = 2; g.setLineDash([4, 6]); g.beginPath(); g.moveTo(x, top - 4); g.lineTo(x, bot + 8 + 25 * (k % 3)); g.stroke(); g.setLineDash([]);
+    g.fillStyle = 'rgba(255,207,110,0.9)'; g.textAlign = 'center'; g.fillText(short, Math.min(w - 60, Math.max(L + 50, x)), bot + 21 + 25 * (k % 3)); });
   g.strokeStyle = '#ffcf6e'; g.lineWidth = 4; g.beginPath(); let first = true;
-  for (const p of S.P) { if (-p.t > 260) break; const x = X(-p.t), y = Y(p.z / PC); first ? g.moveTo(x, y) : g.lineTo(x, y); first = false; }
+  for (const p of S.P) { if (-p.t > T_BACK) break; const x = X(-p.t), y = Y(p.z / PC); first ? g.moveTo(x, y) : g.lineTo(x, y); first = false; }
   g.stroke();
   g.fillStyle = '#fff'; g.beginPath(); g.arc(X(0), Y(S.P[0].z / PC), 7, 0, 7); g.fill();
   if (S.t < -0.25) { const x = X(-S.t), y = Y(S.pos(S.t).z / PC);   // where the playback is
@@ -1572,7 +1575,8 @@ function orbitGraph() {   // the Sun's height above the midplane over the last 2
     g.fillStyle = '#ffcf6e'; g.beginPath(); g.arc(x, y, 8, 0, 7); g.fill(); }
 }
 function orbView() {   // the whole orbit, tilted, sitting a little below the middle so the panel doesn't cover it
-  const tilt = (Math.abs(view.tilt) > Math.PI / 2 ? 140 : 40) * DEG * (view.tilt < 0 ? -1 : 1), span = 82000, s1 = Math.min(Wd, Ht) / span, up = 90 / s1;
+  const ph = (document.getElementById('orbpanel').offsetHeight || 300) + 24, room = Math.max(0.45, (Ht - ph) / Ht);   // the galaxy sits in the room below the panel
+  const tilt = (Math.abs(view.tilt) > Math.PI / 2 ? 140 : 40) * DEG * (view.tilt < 0 ? -1 : 1), span = 82000 / (Wd < Ht ? 1 : room), s1 = Math.min(Wd, Ht) / span, up = (ph / 2) / s1;
   flyTo(-up * Math.sin(view.yaw) * Math.cos(tilt), -up * Math.cos(view.yaw) * Math.cos(tilt), up * Math.sin(tilt), span, { orient: { yaw: view.yaw, tilt } });
 }
 function orbWhen(t) {
@@ -1580,14 +1584,14 @@ function orbWhen(t) {
   return a < 0.25 ? 'today' : t < 0 ? `${n} million years ago` : `in ${n} million years`;
 }
 function orbSet(t, fromSlider) {   // move the playback to time t
-  const S = SORB; S.t = Math.max(-262, Math.min(40, t));
+  const S = SORB; S.t = Math.max(-T_BACK, Math.min(40, t));
   if (!fromSlider) document.getElementById('orb-t').value = S.t;
   document.getElementById('orb-when').textContent = orbWhen(S.t);
   orbitGraph(); draw();
 }
 function orbPlay(on) {
   const S = SORB; S.play = on; S.last = 0; document.getElementById('orb-pp').textContent = on ? '❚❚' : '▶\ufe0e'; document.getElementById('orbpanel').classList.toggle('playing', on);
-  if (on) { if (S.t >= 39.9 || Math.abs(S.t) < 0.25) orbSet(-262); if (viewSpan() < 40000) orbView(); }
+  if (on) { if (S.t >= 39.9 || Math.abs(S.t) < 0.25) orbSet(-T_BACK); if (viewSpan() < 40000) orbView(); }
   draw();
 }
 function orbTick(now) {   // called each frame: carry the Sun along at the chosen rate
@@ -1625,7 +1629,7 @@ function drawOrbit() {
   ctx.lineWidth = 1.6; ctx.strokeStyle = '#ffcf6e';
   // the past, fading with age, drawn in short runs so the fade shows
   for (let i = 0, R = 8; i < S.P.length - 1; i += R) {
-    const age = -S.P[i].t; ctx.globalAlpha = fade * (0.95 - 0.65 * age / 262);
+    const age = -S.P[i].t; ctx.globalAlpha = fade * (0.95 - 0.7 * age / T_BACK);
     ctx.beginPath(); let first = true;
     for (let j = i; j <= Math.min(i + R, S.P.length - 1); j++) { const p = S.P[j], [X, Y] = proj(p.x, p.y, p.z);
       if (!isFinite(X)) { first = true; continue; } if (first) PEN.start(); PEN.to(X, Y); first = false; }
@@ -3631,7 +3635,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=723a114a" data-place="info" defer></script>
+<script src="../music/music.js?v=e2a91a87" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
