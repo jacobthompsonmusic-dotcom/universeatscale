@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=8e920921"></script>
-<script src="../shared/clock.js?v=8e920921"></script>
-<script src="../shared/fold.js?v=8e920921"></script>
-<script src="baked/manifest.js?v=8e920921"></script>
-<script src="../shared/perf.js?v=8e920921"></script>
-<script src="../shared/galaxy-volume.js?v=8e920921"></script>
+<script src="../shared/frame.js?v=c3ef62ef"></script>
+<script src="../shared/clock.js?v=c3ef62ef"></script>
+<script src="../shared/fold.js?v=c3ef62ef"></script>
+<script src="baked/manifest.js?v=c3ef62ef"></script>
+<script src="../shared/perf.js?v=c3ef62ef"></script>
+<script src="../shared/galaxy-volume.js?v=c3ef62ef"></script>
 <script>
 (() => {
 'use strict';
@@ -1107,7 +1107,7 @@ const SPH = (r, w, h) => new THREE.SphereGeometry(r, LITE ? Math.max(16, w >> 1)
   const V3 = () => ({ value: new THREE.Vector3() });
   MWV.mat = new THREE.ShaderMaterial({
     uniforms: { uGal: { value: tex }, uCam: V3(), uRight: V3(), uUp: V3(), uFwd: V3(), uRes: { value: new THREE.Vector2(1, 1) }, uTanH: { value: TAN20 },
-      uOrtho: { value: 0 }, uHalfH: { value: 0 }, uExpo: { value: 1.35 }, uAlpha: { value: 1 }, uGam: { value: 1.8 }, uSky: { value: null }, uSkyMix: { value: 0 }, uSkyGain: { value: 0.8 }, uDesat: { value: 0.85 } },
+      uOrtho: { value: 0 }, uHalfH: { value: 0 }, uExpo: { value: 1.35 }, uAlpha: { value: 1 }, uGam: { value: 1.8 }, uSky: { value: null }, uSkyMix: { value: 0 }, uSkyGain: { value: 0.6 }, uDesat: { value: 0.85 } },
     vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }', fragmentShader: GALAXY_FS,
     blending: THREE.NoBlending, depthTest: false, depthWrite: false, extensions: { shaderTextureLOD: true } });
   if (renderer.capabilities.isWebGL2 || renderer.extensions.get('EXT_shader_texture_lod')) { MWV.mat.defines = { UAS_LOD: 1 }; }   // sample the disc picture at an explicit detail level (see galaxy-volume.js)
@@ -1157,7 +1157,7 @@ function updateMWV() {
   const ground = SKY.on && !SKY.lifted, photo = SKYPHOTO.ready && opts.milky && (ground || !LITE);
   SKYPHOTO.mesh.visible = photo && !lit;
   if (SKYPHOTO.mesh.visible) { const u = SKYPHOTO.mesh.material.uniforms;
-    u.gnd.value = ground ? 1 : 0; u.bp.value = ground ? 0.035 : 0.065; u.gam.value = ground ? 1.15 : 1.35; u.gain.value = ground ? 1.05 : 0.8;
+    u.gnd.value = ground ? 1 : 0; u.bp.value = ground ? 0.035 : 0.065; u.gam.value = ground ? 1.15 : 1.35; u.gain.value = ground ? 1.05 : 0.6;
     u.a.value = ground ? (1 - sstep(SKY.day, 0.08, 0.55)) * (1 - sstep(ECL.obsc, 0.2, 0.6)) : 1;   /* no Milky Way in an eclipse's daytime dark */ u.up.value.copy(SKY.up).applyQuaternion(_q3.copy(bandRoot.quaternion).invert()); }
   MWV.mesh.visible = MWV.ready && opts.milky && !lit && !photo; milky.visible = opts.milky && !MWV.ready && !photo;
   if (!MWV.mesh.visible) return;
@@ -3508,7 +3508,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=8e920921" data-place="info" defer></script>
+<script src="../music/music.js?v=c3ef62ef" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
