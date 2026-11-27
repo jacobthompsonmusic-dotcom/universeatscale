@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=54984842"></script>
-<script src="../shared/clock.js?v=54984842"></script>
-<script src="../shared/fold.js?v=54984842"></script>
-<script src="../shared/perf.js?v=54984842"></script>
-<script src="../shared/galaxy-volume.js?v=54984842"></script>
+<script src="../shared/frame.js?v=723a114a"></script>
+<script src="../shared/clock.js?v=723a114a"></script>
+<script src="../shared/fold.js?v=723a114a"></script>
+<script src="../shared/perf.js?v=723a114a"></script>
+<script src="../shared/galaxy-volume.js?v=723a114a"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -2560,7 +2560,7 @@ function acenTrack() {
 function acenClock() {
   if (ACEN.IN < 0.5) { CK.unboost('acen'); return null; }
   const au = viewSpan() * AU_PER_LY, r = au > 12 ? 2 : au > 0.8 ? 0.1 : 1 / 365.25, rate = r * 365.25 * 864e5 / 1000;
-  if (!CK.boosted || CK.rate !== rate) CK.boost(rate, 'acen');
+  CK.boost(rate, 'acen');
   return r;
 }
 function acenPanel(show, r) {
@@ -2753,7 +2753,7 @@ function qsoClock() {
   const q = QSO.active; if (!q || QSO.IN < 0.5) { CK.unboost('qso'); return null; }
   const r = Math.max(3 * q.Rs, 0.35 * viewSpan()), P = 2 * Math.PI / qOmega(q, r);   // the orbital period at the edge of the view, years
   let yps = Math.pow(2, Math.round(Math.log2(Math.max(1 / 8760, Math.min(64, P / 30)))));   // rounded to a power of two, between an hour and 64 years a second
-  const rate = yps * 365.25 * 864e5 / 1000; if (!CK.boosted || CK.rate !== rate) CK.boost(rate, 'qso');
+  const rate = yps * 365.25 * 864e5 / 1000; CK.boost(rate, 'qso');
   return yps;
 }
 function qsoPanel(q, yps) {
@@ -2939,7 +2939,7 @@ function psrDraw() { const yr = PSR.yr, t = performance.now() / 1000; for (const
 function psrClock() {
   const p = PSR.active, oPx = p && p.bin ? p.bin.a * PSR.KM * view.s : 0; if (!p || !p.bin || PSR.IN < 0.5 || oPx < 30) { CK.unboost('psr'); return null; }
   const rate = oPx < 6 * Math.max(Wd, Ht) ? p.bin.Pb * 86400 / 20 : 1;   // the whole orbit in ~20 s; zoomed in on one star, real time
-  if (!CK.boosted || CK.rate !== rate) CK.boost(rate, 'psr');
+  CK.boost(rate, 'psr');
   return rate;
 }
 // a magnetar's field, in words
@@ -3631,7 +3631,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=54984842" data-place="info" defer></script>
+<script src="../music/music.js?v=723a114a" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
