@@ -346,12 +346,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=03256a39"></script>
-<script src="../shared/clock.js?v=03256a39"></script>
-<script src="../shared/fold.js?v=03256a39"></script>
-<script src="baked/manifest.js?v=03256a39"></script>
-<script src="../shared/perf.js?v=03256a39"></script>
-<script src="../shared/galaxy-volume.js?v=03256a39"></script>
+<script src="../shared/frame.js?v=47d59e5f"></script>
+<script src="../shared/clock.js?v=47d59e5f"></script>
+<script src="../shared/fold.js?v=47d59e5f"></script>
+<script src="baked/manifest.js?v=47d59e5f"></script>
+<script src="../shared/perf.js?v=47d59e5f"></script>
+<script src="../shared/galaxy-volume.js?v=47d59e5f"></script>
 <script>
 (() => {
 'use strict';
@@ -3688,6 +3688,7 @@ function frame(t) {
   camera.fov = deep.fov; camera.far = camD > 1e7 ? 1e15 : 2e8; camera.near = Math.min(0.0005, Math.max(1e-9, camD * 0.02)); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
   if (SKY.on) skyPaint(); else if (WX.on) { WX.on = false; WX.cv.style.display = 'none'; }
 
+  plumeTick();
   { // the Sun's surface moves: while it's big enough on screen to see that, keep drawing
     const sp = relOf(SUN).sub(camera.position), d = sp.length(), px = SUN.R / Math.max(d, 1e-9) * innerHeight / (2 * Math.tan(camera.fov * DEG / 2));
     SUN.anim.uSpin.value = (simMs / 86400000 / 25.38 % 1) * TAU; SUN.anim.uPix.value = 1 / Math.max(px, 1e-3);
@@ -3768,13 +3769,52 @@ if (EMBED) addEventListener('message', e => {
   else if (m.cmd === 'opt') { if (opts[m.k] !== m.on) document.querySelector(`.tg[data-k="${m.k}"]`).click(); }
 });
 
+// Enceladus' plumes: about a hundred jets along the 'tiger stripe' cracks near its south pole throw ice grains hundreds of km up at
+// several hundred m/s — the source of Saturn's E ring (Cassini). Drawn as a fountain of grains rising from the south polar region,
+// sped up so you can watch them; heights and spread follow Cassini's images, the grains themselves are illustrative.
+const PLUME = { mesh: null, u: { uTime: { value: 0 }, uR: { value: 1 }, uPx: { value: 1 } } };
+function addPlumes() {
+  const E = MOONS.find(o => o.name === 'Enceladus'); if (!E || !E.mesh) return;
+  const N = LITE ? 1500 : 5000, sd = new Float32Array(N * 4), r = mulberry32(252);
+  for (let i = 0; i < N; i++) sd.set([r(), r(), r(), r()], i * 4);
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3)); geo.setAttribute('seed', new THREE.BufferAttribute(sd, 4));
+  const R = Math.max(E.r * U, 0.0008); PLUME.u.uR.value = R;
+  const m = new THREE.ShaderMaterial({ uniforms: PLUME.u, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `attribute vec4 seed; uniform float uTime; uniform float uR; uniform float uPx; varying float vA;
+      #include <common>
+      #include <logdepthbuf_pars_vertex>
+      void main() {
+        float k = fract(uTime * (0.05 + 0.04 * seed.w) + seed.z);                 // each grain's moment in its climb
+        float lat = -1.5708 + 0.26 * sqrt(seed.x), lon = 6.2832 * seed.y;          // from within ~15° of the south pole, where the stripes are
+        vec3 n = vec3(cos(lat) * cos(lon), sin(lat), cos(lat) * sin(lon));
+        vec3 jet = normalize(n + 0.35 * vec3(sin(lon * 7.0 + seed.w * 6.0), 0.0, cos(lon * 5.0 + seed.w * 4.0)));
+        float h = uR * (0.3 + 2.4 * seed.w) * (1.0 - (1.0 - k) * (1.0 - k));        // rising and slowing, most falling back well below the top
+        vec3 p = n * uR + jet * h;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv;
+        gl_PointSize = clamp(uPx * 0.012 * (0.6 + seed.z), 1.0, 3.0);
+        vA = (1.0 - k) * (0.35 + 0.65 * (1.0 - seed.w)) * smoothstep(0.0, 0.08, k);
+        #include <logdepthbuf_vertex>
+      }`,
+    fragmentShader: `varying float vA;
+      #include <common>
+      #include <logdepthbuf_pars_fragment>
+      void main() { #include <logdepthbuf_fragment>
+        vec2 q = gl_PointCoord - 0.5; float f = smoothstep(0.5, 0.0, length(q)); gl_FragColor = vec4(vec3(0.82, 0.9, 1.0) * f * vA * 0.55, 1.0); }` });
+  const pts = new THREE.Points(geo, m); pts.frustumCulled = false; E.mesh.add(pts); PLUME.mesh = pts; PLUME.E = E;
+}
+function plumeTick() {   // keep the fountain moving while Enceladus is big enough on screen to see it
+  if (!PLUME.mesh) return; const E = PLUME.E, p = E.mesh.getWorldPosition(_plV), d = p.distanceTo(camera.position), R = PLUME.u.uR.value;
+  const px = R / Math.max(d, 1e-12) * innerHeight / (2 * Math.tan(camera.fov * DEG / 2)); PLUME.mesh.visible = px > 4 && !SKY.on;
+  PLUME.u.uPx.value = px; if (PLUME.mesh.visible && px > 12 && !document.hidden) { PLUME.u.uTime.value = (performance.now() / 1000) % 100000; IDLE.dirty++; }
+}
+const _plV = new THREE.Vector3();
 function precompile() {
   const hid = []; for (const sc of [scene, skyScene, MWV.scene]) sc.traverse(o => { if (!o.visible) { hid.push(o); o.visible = true; } });
   try { renderer.compile(scene, camera); renderer.compile(skyScene, skyCam); if (!LITE) renderer.compile(MWV.scene, skyCam); } catch (e) {}
   for (const o of hid) o.visible = false;
 }
 function init() {
-  ['jupiter', 'saturn', 'uranus', 'neptune'].forEach(buildGiant); if (typeof photoNext === 'function' && !LITE) setTimeout(photoNext, 4000);   // their photographs join the queue
+  ['jupiter', 'saturn', 'uranus', 'neptune'].forEach(buildGiant); addPlumes(); if (typeof photoNext === 'function' && !LITE) setTimeout(photoNext, 4000);   // their photographs join the queue
   buildFields();
   makeLabels();
   for (const g of GIANTS) g.faint.visible = opts.faint;
@@ -3800,7 +3840,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=03256a39" data-place="info" defer></script>
+<script src="../music/music.js?v=47d59e5f" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

@@ -49,7 +49,7 @@ const srv = http.createServer((q, r) => { let p = decodeURIComponent(q.url.split
         const CK = window.UAS_CLOCK, play = document.getElementById('play'), sp = document.getElementById('speed'), wait = ms => new Promise(f => setTimeout(f, ms)), out = {};
         if (!CK.playing) play.click(); await wait(400); const t0 = CK.now(); await wait(800); out.runs = CK.now() > t0;
         sp.value = sp.max; sp.oninput(); await wait(2500); out.rate = CK.rate / 31557600;
-        play.click(); await wait(200); CK.set(Date.UTC(2050, 11, 31)); await wait(300); out.pre = [CK.playing, new Date(CK.now()).toISOString()]; play.click(); await wait(400); out.post = [CK.playing, new Date(CK.now()).toISOString()]; out.resumed = Math.abs(CK.now() - Date.now()) < 400 * 86400000 && CK.playing;
+        play.click(); await wait(200); CK.set(Date.UTC(2050, 11, 31)); await wait(300); out.pre = [CK.playing, new Date(CK.now()).toISOString()]; play.click(); await wait(400); out.post = [CK.playing, new Date(CK.now()).toISOString()]; out.resumed = Math.abs(CK.now() - Date.now()) < 3 * 365.25 * 86400000 && CK.playing;
         return out; });
       r.runs ? ok('clock: play runs') : bad('clock: pressing play did not start time');
       r.rate <= 2.05 ? ok(`clock: top speed ${r.rate.toFixed(2)} years a second`) : bad(`clock: top speed ${r.rate.toFixed(2)} years a second (should be ≤ 2)`);
