@@ -346,12 +346,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=42c5cb81"></script>
-<script src="../shared/clock.js?v=42c5cb81"></script>
-<script src="../shared/fold.js?v=42c5cb81"></script>
-<script src="baked/manifest.js?v=42c5cb81"></script>
-<script src="../shared/perf.js?v=42c5cb81"></script>
-<script src="../shared/galaxy-volume.js?v=42c5cb81"></script>
+<script src="../shared/frame.js?v=364faf6a"></script>
+<script src="../shared/clock.js?v=364faf6a"></script>
+<script src="../shared/fold.js?v=364faf6a"></script>
+<script src="baked/manifest.js?v=364faf6a"></script>
+<script src="../shared/perf.js?v=364faf6a"></script>
+<script src="../shared/galaxy-volume.js?v=364faf6a"></script>
 <script>
 (() => {
 'use strict';
@@ -1147,7 +1147,7 @@ function skyPhotoLoad() {
   if (SKYPHOTO.loading) return; SKYPHOTO.loading = true;
   new THREE.TextureLoader().setCrossOrigin('anonymous').load(SKYPHOTO.url, t => {
     t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; t.wrapS = THREE.RepeatWrapping;   // no mipmaps: no seam where the map wraps round
-    SKYPHOTO.mesh.material.uniforms.map.value = t; SKYPHOTO.ready = true; IDLE.dirty++;
+    SKYPHOTO.mesh.material.uniforms.map.value = t; SKYPHOTO.ready = true; gpuUp(t); IDLE.dirty++;
     if (MWV.mat) { MWV.mat.uniforms.uSky.value = t; MWV.mat.uniforms.uSkyMix.value = 1; MWV.ready = true; MWV.key = ''; }   // in space too: the band is the photograph out here (see galaxy-volume.js)
   }, undefined, () => { SKYPHOTO.loading = false; });
 }
@@ -2524,6 +2524,7 @@ function moonPrep(t, P, m) {   // returns the texture to use, after toning; sets
   if (P.desat) for (let i = 0; i < w * h; i++) { const o = 4 * i, y = 0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2]; d[o] += (y - d[o]) * P.desat; d[o + 1] += (y - d[o + 1]) * P.desat; d[o + 2] += (y - d[o + 2]) * P.desat; }
   g.putImageData(im, 0, 0); const ct = new THREE.CanvasTexture(c); ct.encoding = THREE.sRGBEncoding; t.dispose(); return ct;
 }
+const gpuUp = t => { try { if (renderer.initTexture) renderer.initTexture(t); } catch (e) {} };   // upload a texture ahead of its first use
 const photoQ = [];
 function photoLoad(item) {
   if (item.state) return; item.state = 1;
@@ -2534,6 +2535,7 @@ function photoLoad(item) {
     item.state = 2; item.tex = t;
     if (item.b.see && item.b.origMap !== undefined) { item.b.origMap = t; item.b.origColor = P.tint; }   // Venus/Titan-style "see the surface" keeps its own map until turned off
     else { m.map = t; if (P.tint !== null) m.color.setHex(P.tint); m.needsUpdate = true; }
+    gpuUp(t);   // send it to the graphics card now, while nothing's happening, not on the first frame it comes into view mid-flight
     if (item.b.key === 'jupiter' && !LITE) junoPoles(item.mesh.material);
     if (RELIEF[item.b.key]) reliefLoad(item.b.key, m);
     bumpIdle(); photoNext();
@@ -2560,10 +2562,10 @@ function junoPoles(mat) {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x; if (!grow[i]) continue; const o = 4 * i;
       for (const L of lv) { const q = 4 * (Math.min(L.h - 1, y >> L.k) * L.w + Math.min(L.w - 1, x >> L.k)); if (L.d[q + 3] > 60 || L.k === 7) { d[o] = L.d[q]; d[o + 1] = L.d[q + 1]; d[o + 2] = L.d[q + 2]; break; } } }   // the finest level that has clean pixels nearby
     g.putImageData(im, 0, 0);
-    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; U.uJN.value = t; ready();
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; U.uJN.value = t; gpuUp(t); ready();
   };
   N.src = 'https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia24/pia24237/PIA24237.jpg';
-  ld.load(CM + 'b/b0/PIA21641-Jupiter-SouthernStorms-JunoCam-20170525.jpg', t => { t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; U.uJS.value = t; ready(); });
+  ld.load(CM + 'b/b0/PIA21641-Jupiter-SouthernStorms-JunoCam-20170525.jpg', t => { t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; U.uJS.value = t; gpuUp(t); ready(); });
   function ready() {
     if (!U.uJN.value || !U.uJS.value) return;
     mat.onBeforeCompile = sh => {
@@ -2643,7 +2645,7 @@ function reliefLoad(key, mat) {
       const { out, W, H } = e.data, n = document.createElement('canvas'); n.width = W; n.height = H;
       n.getContext('2d').putImageData(new ImageData(out, W, H), 0, 0);
       const t = new THREE.CanvasTexture(n); t.wrapS = THREE.RepeatWrapping; t.anisotropy = renderer.capabilities.getMaxAnisotropy();
-      mat.normalMap = t; mat.normalScale.set(1, 1); mat.needsUpdate = true; P.tex = t; P.state = 2; wk.terminate(); bumpIdle();
+      mat.normalMap = t; mat.normalScale.set(1, 1); mat.needsUpdate = true; P.tex = t; P.state = 2; wk.terminate(); gpuUp(t); bumpIdle();
     };
     wk.postMessage({ d, w: c.width, h: c.height, P: { kind: P.kind, lo: P.lo, hi: P.hi, eq: P.eq, k: P.k, R: P.R, X: P.X, W: LITE ? 1280 : (key === 'mars' ? 2880 : 2560) } }, [d.buffer]);
   };
@@ -3841,7 +3843,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=42c5cb81" data-place="info" defer></script>
+<script src="../music/music.js?v=364faf6a" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
