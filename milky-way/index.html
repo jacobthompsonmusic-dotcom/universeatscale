@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=3f65f7d4"></script>
-<script src="../shared/clock.js?v=3f65f7d4"></script>
-<script src="../shared/fold.js?v=3f65f7d4"></script>
-<script src="../shared/perf.js?v=3f65f7d4"></script>
-<script src="../shared/galaxy-volume.js?v=3f65f7d4"></script>
+<script src="../shared/frame.js?v=23049810"></script>
+<script src="../shared/clock.js?v=23049810"></script>
+<script src="../shared/fold.js?v=23049810"></script>
+<script src="../shared/perf.js?v=23049810"></script>
+<script src="../shared/galaxy-volume.js?v=23049810"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1150,11 +1150,17 @@ function drawVoids() {
     if (R < 6 || R > 30 * Math.max(Wd, Ht)) continue;
     if (X + R < 0 || X - R > Wd || Y + R < 0 || Y - R > Ht) continue;
     const sel = v === selected || v === hover;
-    ctx.globalAlpha = v.disputed ? 0.45 : 1;
-    ctx.drawImage(SPR.void, X - R, Y - R, 2 * R, 2 * R);
-    ctx.globalAlpha = 1;
+    // voids aren't balls: each is drawn as a lumpy, somewhat flattened bubble (its measured size, an illustrative shape), so one seen
+    // edge-on looks shallow. The flattening is about the galactic pole's direction on screen, the wobble fixed per void.
+    if (!v.shp) { let sd = 0; for (const ch of v.name) sd = (sd * 31 + ch.charCodeAt(0)) >>> 0; const rr = () => ((sd = (sd * 1664525 + 1013904223) >>> 0) / 4294967296);
+      v.shp = { f: 0.5 + 0.4 * rr(), h: [1, 2, 3, 4].map(k => [0.16 / k * (0.4 + rr()), rr() * 6.2832]) }; }
+    const ry = R * Math.sqrt(CT * CT + v.shp.f * v.shp.f * ST * ST), rad = th => 1 + v.shp.h.reduce((acc, [amp, ph], k) => acc + amp * Math.sin((k + 2) * th + ph), 0);
+    ctx.save(); ctx.translate(X, Y); ctx.scale(1, ry / R);
+    ctx.globalAlpha = v.disputed ? 0.45 : 1; ctx.drawImage(SPR.void, -R, -R, 2 * R, 2 * R); ctx.globalAlpha = 1;
+    ctx.beginPath(); for (let i = 0; i <= 72; i++) { const th = i / 72 * 6.2832, q = R * rad(th); i ? ctx.lineTo(q * Math.cos(th), q * Math.sin(th)) : ctx.moveTo(q * Math.cos(th), q * Math.sin(th)); }
+    ctx.restore();
     ctx.strokeStyle = `rgba(150,158,255,${sel ? 0.85 : 0.35})`; ctx.lineWidth = sel ? 2 : 1;
-    ctx.setLineDash(v.disputed ? [8, 8] : []); ctx.beginPath(); ctx.arc(X, Y, R, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    ctx.setLineDash(v.disputed ? [8, 8] : []); ctx.stroke(); ctx.setLineDash([]);
     if (opts.labels && R > 22) {
       const f = 'italic 14px "IM Fell English", Georgia, serif', t = v.name.toUpperCase().split('').join('\u200A'), w = lblW(f, t);
       const ly = v.disputed ? (Y - R - 10 > 14 ? Y - R - 10 : Y + R + 14) : (R > 60 ? Y : Y - R - 10);
@@ -3729,7 +3735,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=3f65f7d4" data-place="info" defer></script>
+<script src="../music/music.js?v=23049810" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
