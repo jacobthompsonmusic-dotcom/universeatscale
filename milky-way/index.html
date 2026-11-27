@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=c8d157a3"></script>
-<script src="../shared/clock.js?v=c8d157a3"></script>
-<script src="../shared/fold.js?v=c8d157a3"></script>
-<script src="../shared/perf.js?v=c8d157a3"></script>
-<script src="../shared/galaxy-volume.js?v=c8d157a3"></script>
+<script src="../shared/frame.js?v=b8b30d74"></script>
+<script src="../shared/clock.js?v=b8b30d74"></script>
+<script src="../shared/fold.js?v=b8b30d74"></script>
+<script src="../shared/perf.js?v=b8b30d74"></script>
+<script src="../shared/galaxy-volume.js?v=b8b30d74"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1055,20 +1055,21 @@ const SPR = {};
       const q = g.createRadialGradient(0, 0, 0, 0, 0, sz);
       q.addColorStop(0, `rgba(255,250,240,${a0})`); q.addColorStop(0.18, `rgba(${col},${a0 * 0.75})`); q.addColorStop(0.55, `rgba(${col},${a0 * 0.22})`); q.addColorStop(1, `rgba(${col},0)`);
       g.fillStyle = q; g.beginPath(); g.arc(0, 0, sz, 0, 7); g.fill();
-      if (kind === 1 && sz > 5 && flat > 0.4) {   // a hint of spiral arms on the bigger face-on ones
+      if (kind === 1 && sz > 9 && flat > 0.4) {   // a hint of spiral arms on the bigger face-on ones
         g.strokeStyle = `rgba(${col},${a0 * 0.25})`; g.lineWidth = sz * 0.12;
         for (const s0 of [0, Math.PI]) { g.beginPath(); for (let t = 0; t <= 1; t += 0.1) { const th = s0 + t * 3.4, rr = sz * (0.15 + 0.7 * t); g.lineTo(rr * Math.cos(th), rr * Math.sin(th)); } g.stroke(); }
       }
       g.restore();
     };
     const pick = () => { const u = r(); return u < 0.4 ? 0 : u < 0.8 ? 1 : 2; };
-    for (let k = 0; k < 150; k++) {   // groups strung round the wall
-      const a = r() * 2 * Math.PI, rc = h * (0.86 + 0.045 * ga()), n = 3 + Math.floor(r() * r() * 18), spread = h * (0.012 + 0.03 * r());
+    const wall = () => h * (0.97 - 0.34 * Math.pow(r(), 1.6));   // a thick, ragged shell: crowded at the rim, thinning inward
+    for (let k = 0; k < 120; k++) {   // groups strung round the wall
+      const a = r() * 2 * Math.PI, rc = wall(), n = 3 + Math.floor(r() * r() * 16), spread = h * (0.015 + 0.035 * r());
       for (let i = 0; i < n; i++) { const x = h + Math.cos(a) * rc + spread * ga(), y = h + Math.sin(a) * rc + spread * ga(), kind = pick();
-        gal(x, y, (kind === 2 ? 1.2 : 1.6) + 7 * Math.pow(r(), 4), kind); }
+        gal(x, y, (kind === 2 ? 3 : 4) + 18 * Math.pow(r(), 4), kind); }
     }
-    for (let i = 0; i < 900; i++) { const a = r() * 2 * Math.PI, rr = h * (0.84 + 0.06 * ga()), kind = pick(); gal(h + Math.cos(a) * rr, h + Math.sin(a) * rr, 1 + 2.2 * r(), kind); }   // the faint field between
-    for (let i = 0; i < 40; i++) { const a = r() * 2 * Math.PI, rr = h * Math.sqrt(r()) * 0.72; gal(h + Math.cos(a) * rr, h + Math.sin(a) * rr, 1 + 1.6 * r(), r() < 0.5 ? 1 : 2); }   // a few lonely dwarfs inside
+    for (let i = 0; i < 520; i++) { const a = r() * 2 * Math.PI, rr = wall(), kind = pick(); gal(h + Math.cos(a) * rr, h + Math.sin(a) * rr, 2.5 + 4 * r(), kind); }   // the faint field between
+    for (let i = 0; i < 30; i++) { const a = r() * 2 * Math.PI, rr = h * Math.sqrt(r()) * 0.6; gal(h + Math.cos(a) * rr, h + Math.sin(a) * rr, 2.5 + 3 * r(), r() < 0.5 ? 1 : 2); }   // a few lonely dwarfs inside
   }
   SPR.void = c;
 })();
@@ -3781,7 +3782,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=c8d157a3" data-place="info" defer></script>
+<script src="../music/music.js?v=b8b30d74" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
