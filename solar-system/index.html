@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=edc77e91"></script>
-<script src="../shared/clock.js?v=edc77e91"></script>
-<script src="../shared/fold.js?v=edc77e91"></script>
-<script src="baked/manifest.js?v=edc77e91"></script>
-<script src="../shared/perf.js?v=edc77e91"></script>
-<script src="../shared/galaxy-volume.js?v=edc77e91"></script>
+<script src="../shared/frame.js?v=b343f508"></script>
+<script src="../shared/clock.js?v=b343f508"></script>
+<script src="../shared/fold.js?v=b343f508"></script>
+<script src="baked/manifest.js?v=b343f508"></script>
+<script src="../shared/perf.js?v=b343f508"></script>
+<script src="../shared/galaxy-volume.js?v=b343f508"></script>
 <script>
 (() => {
 'use strict';
@@ -1282,14 +1282,14 @@ vec2 sunCells(vec3 p, float t) {   // distance to the nearest and second-nearest
   {
     vec3 n = normalize(vSunP); float cs = cos(uSpin), sn = sin(uSpin); vec3 q = vec3(cs * n.x + sn * n.z, n.y, -sn * n.x + cs * n.z);   // the turning surface
     float mu = clamp(dot(normalize(vSunVN), normalize(-vSunVP)), 0.0, 1.0);
-    vec3 col = vec3(1.0, 0.74, 0.32) * (1.0 - vec3(0.47, 0.60, 0.78) * (1.0 - mu));          // limb darkening, per colour
+    vec3 col = vec3(1.0, 0.74, 0.32) * (1.0 - vec3(0.6, 0.72, 0.88) * (1.0 - mu));            // limb darkening, per colour
     float sg = 1.0 - smoothstep(0.25, 0.7, uPix * 23.0 / max(mu, 0.15));                      // supergranules (~30,000 km) once they're resolved
     if (sg > 0.0) { vec2 c = sunCells(q * 23.0, uTime * 0.02); float lane = 1.0 - smoothstep(0.0, 0.35, c.y - c.x);
       col *= 1.0 + sg * (0.025 * (0.5 - c.x) + lane * 0.3 * pow(1.0 - mu, 2.5)); }   // the network, and bright faculae toward the edge
     #ifndef UAS_SUN_LITE
     float gv = 1.0 - smoothstep(0.25, 0.7, uPix * 535.0 / max(mu, 0.15));                     // granules (~1,300 km), only when you're close
-    if (gv > 0.0) { vec2 c = sunCells(q * 535.0, uTime * 0.6); float g = smoothstep(0.0, 0.3, c.y - c.x) * (1.1 - 0.6 * c.x);
-      col *= 1.0 + gv * 0.22 * (g - 0.55); }
+    if (gv > 0.0) { vec2 c = sunCells(q * 535.0, uTime * 0.6); float g = smoothstep(0.0, 0.5, c.y - c.x) * (1.25 - c.x);             // bright, rounded granules; broad dark lanes between
+      col *= 1.0 + gv * 0.3 * (g - 0.5); }
     #endif
     for (int i = 0; i < 9; i++) { float d = acos(clamp(dot(q, uSpots[i].xyz), -1.0, 1.0)), r = uSpots[i].w;   // sunspots: dark umbra in a lighter penumbra
       col *= mix(vec3(0.22, 0.16, 0.12), vec3(1.0), smoothstep(r * 0.9, r * 1.1, d)) * mix(vec3(0.72, 0.66, 0.6), vec3(1.0), smoothstep(r * 2.0, r * 2.4, d)); }
@@ -3764,7 +3764,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=edc77e91" data-place="info" defer></script>
+<script src="../music/music.js?v=b343f508" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
