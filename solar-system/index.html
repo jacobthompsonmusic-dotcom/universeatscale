@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=31bc9cd3"></script>
-<script src="../shared/clock.js?v=31bc9cd3"></script>
-<script src="../shared/fold.js?v=31bc9cd3"></script>
-<script src="baked/manifest.js?v=31bc9cd3"></script>
-<script src="../shared/perf.js?v=31bc9cd3"></script>
-<script src="../shared/galaxy-volume.js?v=31bc9cd3"></script>
+<script src="../shared/frame.js?v=0d2b07e5"></script>
+<script src="../shared/clock.js?v=0d2b07e5"></script>
+<script src="../shared/fold.js?v=0d2b07e5"></script>
+<script src="baked/manifest.js?v=0d2b07e5"></script>
+<script src="../shared/perf.js?v=0d2b07e5"></script>
+<script src="../shared/galaxy-volume.js?v=0d2b07e5"></script>
 <script>
 (() => {
 'use strict';
@@ -2457,9 +2457,9 @@ function junoPoles(mat) {
     // fill from the surroundings only: masked pixels made transparent, so shrinking averages just the clean ones
     const hole = new ImageData(new Uint8ClampedArray(d), W, H); for (let i = 0; i < W * H; i++) if (grow[i]) hole.data[4 * i + 3] = 0;
     const hc = document.createElement('canvas'); hc.width = W; hc.height = H; hc.getContext('2d').putImageData(hole, 0, 0);
-    const bl = document.createElement('canvas'); bl.width = W >> 4; bl.height = H >> 4; const bg = bl.getContext('2d'); bg.imageSmoothingQuality = 'high'; bg.drawImage(hc, 0, 0, bl.width, bl.height);
-    const bd = bg.getImageData(0, 0, bl.width, bl.height).data;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x; if (!grow[i]) continue; const q = 4 * (Math.min(bl.height - 1, y >> 4) * bl.width + Math.min(bl.width - 1, x >> 4)), o = 4 * i; d[o] = bd[q]; d[o + 1] = bd[q + 1]; d[o + 2] = bd[q + 2]; }
+    const lv = [4, 5, 6, 7].map(k => { const c2 = document.createElement('canvas'); c2.width = W >> k; c2.height = H >> k; const g2 = c2.getContext('2d'); g2.imageSmoothingQuality = 'high'; g2.drawImage(hc, 0, 0, c2.width, c2.height); return { k, w: c2.width, h: c2.height, d: g2.getImageData(0, 0, c2.width, c2.height).data }; });
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x; if (!grow[i]) continue; const o = 4 * i;
+      for (const L of lv) { const q = 4 * (Math.min(L.h - 1, y >> L.k) * L.w + Math.min(L.w - 1, x >> L.k)); if (L.d[q + 3] > 60 || L.k === 7) { d[o] = L.d[q]; d[o + 1] = L.d[q + 1]; d[o + 2] = L.d[q + 2]; break; } } }   // the finest level that has clean pixels nearby
     g.putImageData(im, 0, 0);
     const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; U.uJN.value = t; ready();
   };
@@ -3597,7 +3597,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=31bc9cd3" data-place="info" defer></script>
+<script src="../music/music.js?v=0d2b07e5" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
