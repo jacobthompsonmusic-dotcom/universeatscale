@@ -198,10 +198,18 @@
   }
   // Not logged in to Spotify: say so once, with a way to log in — whole tracks for the visitor, and every full listen counts as a play.
   // After logging in (in a new tab) Spotify's player has to start again, which needs a tap here: browsers only allow sound after one.
-  var toast = null, toldPreview = false;
+  // Logged in already: nothing shows, the music just plays. Spotify only says which it is once a track starts, so this appears a moment
+  // after 'Enter the universe'. If it's still previews after logging in, the browser is keeping Spotify's login out of other sites'
+  // pages (Safari and Firefox do), so offer the album in Spotify itself instead.
+  var toast = null, toldPreview = false, retried = false;
   function preview() {
     if (toldPreview) return; toldPreview = true;
     toast = document.createElement('div'); toast.className = 'uas-mu-toast';
+    if (retried) {
+      toast.innerHTML = '<p>Still 30-second previews: this browser keeps your Spotify login away from other sites. <b>Open the album in Spotify</b> to hear it whole.</p>' +
+        '<div><a class="go" href="' + SPOTIFY + '" target="_blank" rel="noopener">Open in Spotify</a><button class="no" type="button">Not now</button></div>';
+      document.body.appendChild(toast); toast.querySelector('.no').onclick = function () { toast.remove(); }; return;
+    }
     toast.innerHTML = '<p>You\'re hearing 30-second previews. <b>Log in to Spotify</b> to hear the whole album — and every listen counts.</p>' +
       '<div><a class="go" href="https://accounts.spotify.com/login" target="_blank" rel="noopener">Log in to Spotify</a><button class="no" type="button">Not now</button></div>';
     document.body.appendChild(toast);
@@ -210,7 +218,7 @@
       toast.querySelector('p').innerHTML = 'Logged in? <b>Tap to start the music again</b> with the full tracks.';
       var d = toast.querySelector('div'); d.innerHTML = '<button class="go" type="button">Start the music again</button><button class="no" type="button">×</button>';
       d.querySelector('.no').onclick = function () { toast.remove(); };
-      d.querySelector('.go').onclick = function () { toast.remove(); toldPreview = false; var fr = pop.querySelector('.frame'); fr.innerHTML = ''; window.__uasPlayer = null; startPlayer(fr, true); };
+      d.querySelector('.go').onclick = function () { toast.remove(); toldPreview = false; retried = true; var fr = pop.querySelector('.frame'); fr.innerHTML = ''; window.__uasPlayer = null; startPlayer(fr, true); };
     });
   }
   // the welcome page's 'Enter the universe' click starts the album (that click is the visitor's go-ahead for sound; browsers allow

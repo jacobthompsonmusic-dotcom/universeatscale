@@ -96,8 +96,6 @@
   #status { margin: 18px 0 0; font: 400 12.5px/1.4 var(--mono); letter-spacing: 0.06em; color: var(--dim); min-height: 1.4em; }
   #status::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin: 0 8px 1px 0; background: var(--dim); vertical-align: middle; }
   #status.ready::before { background: #8fd18a; box-shadow: 0 0 8px #8fd18a; }
-  .sp-note { margin: 8px auto 0; max-width: 30em; font: italic 14px/1.4 "IM Fell English", Georgia, serif; color: var(--dim); }
-  .sp-note a { color: #ffcf6e; text-decoration: none; border-bottom: 1px solid rgba(255,207,110,0.4); }
   .cue { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); font: 500 11.5px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); text-decoration: none; }
   .cue:hover, .cue:focus-visible { color: var(--amber); outline: none; }
 
@@ -134,7 +132,7 @@
 </head>
 <body>
 <!-- the universe, loading from the moment the page opens -->
-<iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=9c65c2f6" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
+<iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=eb84cd44" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
 
 <div id="howto" role="dialog" aria-modal="true" aria-labelledby="howto-h" hidden>
   <div class="card">
@@ -161,7 +159,6 @@
       <h1>Universe <em>at&nbsp;Scale</em></h1>
       <button id="enter" type="button">Enter the universe</button>
       <p id="status" aria-live="polite">Loading the Solar System…</p>
-      <p class="sp-note">♪ The soundtrack plays on Spotify: <a href="https://accounts.spotify.com/login" target="_blank" rel="noopener">log in there first</a> to hear whole tracks, and every listen counts.</p>
       <button class="linkish" id="howto-open" type="button">How to explore</button>
       <a class="cue" href="#credits">Credits ↓</a>
     </div>
@@ -276,4 +273,4 @@
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
-<!-- preview built 2026-11-27T15:29:06Z from 90ff843 -->
+<!-- preview built 2026-11-27T15:33:56Z from 248d9b5 -->
