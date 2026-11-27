@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=1c2971ec"></script>
-<script src="../shared/clock.js?v=1c2971ec"></script>
-<script src="../shared/fold.js?v=1c2971ec"></script>
-<script src="baked/manifest.js?v=1c2971ec"></script>
-<script src="../shared/perf.js?v=1c2971ec"></script>
-<script src="../shared/galaxy-volume.js?v=1c2971ec"></script>
+<script src="../shared/frame.js?v=1f071b9e"></script>
+<script src="../shared/clock.js?v=1f071b9e"></script>
+<script src="../shared/fold.js?v=1f071b9e"></script>
+<script src="baked/manifest.js?v=1f071b9e"></script>
+<script src="../shared/perf.js?v=1f071b9e"></script>
+<script src="../shared/galaxy-volume.js?v=1f071b9e"></script>
 <script>
 (() => {
 'use strict';
@@ -3358,6 +3358,10 @@ SSQ.g = window.UAS_PERF.governor('ss', 4, [0, 2, 3][window.UAS_PERF.tier], l => 
 let lastFG = undefined, paused = false, lastPost = '', FREED = false;
 const IDLE = { k: [], n: 0, dirty: 0 }, bumpIdle = () => { IDLE.dirty++; };   // anything the user does, or that arrives, means draw again
 for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'wheel', 'keydown', 'click', 'touchstart', 'touchmove', 'resize', 'message', 'input', 'change']) addEventListener(ev, bumpIdle, { capture: true, passive: true });
+// The browser may throw away a WebGL picture while the window is hidden, covered or loses focus (the labels, being HTML, stay):
+// draw again whenever the page comes back, the pointer re-enters, and — as a safety net — once a second and a half while idle.
+for (const ev of ['visibilitychange', 'focus', 'blur', 'pageshow', 'pointerenter', 'pointerleave', 'mouseout']) (ev === 'visibilitychange' ? document : window).addEventListener(ev, bumpIdle, { passive: true });
+setInterval(() => { if (!document.hidden) bumpIdle(); }, 1500);
 { const M = THREE.DefaultLoadingManager, prev = M.onLoad; M.onLoad = function () { bumpIdle(); if (prev) prev.apply(this, arguments); }; M.onProgress = bumpIdle; }
 const camNom = new THREE.Vector3(), _v1 = new THREE.Vector3(), _qn = new THREE.Quaternion(), _dq = new THREE.Quaternion(), _qp = new THREE.Quaternion();
 function frame(t) {
@@ -3541,7 +3545,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=1c2971ec" data-place="info" defer></script>
+<script src="../music/music.js?v=1f071b9e" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
