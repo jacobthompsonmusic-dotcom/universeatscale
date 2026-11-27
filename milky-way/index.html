@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=f2ef4824"></script>
-<script src="../shared/clock.js?v=f2ef4824"></script>
-<script src="../shared/fold.js?v=f2ef4824"></script>
-<script src="../shared/perf.js?v=f2ef4824"></script>
-<script src="../shared/galaxy-volume.js?v=f2ef4824"></script>
+<script src="../shared/frame.js?v=d2d77f2c"></script>
+<script src="../shared/clock.js?v=d2d77f2c"></script>
+<script src="../shared/fold.js?v=d2d77f2c"></script>
+<script src="../shared/perf.js?v=d2d77f2c"></script>
+<script src="../shared/galaxy-volume.js?v=d2d77f2c"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1094,7 +1094,7 @@ function webBuild() {
 }
 function drawWeb() {
   if (!opts.web) return;
-  const span = viewSpan(), a = sstep(Math.log(span), Math.log(4e8), Math.log(4e9)) * (1 - sstep(PT, 0, 1e-3)); if (a < 0.01) return;
+  const span = viewSpan(), a = sstep(Math.log(span), Math.log(1.5e9), Math.log(9e9)) * (1 - sstep(PT, 0, 1e-3)); if (a < 0.01) return;   // only once the superclusters have shrunk into it
   if (!WEB.pts) webBuild();
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   const sz = Math.max(0.7, Math.min(1.8, 2.2e9 * view.s / 40));
@@ -1133,7 +1133,7 @@ function laniBuild() {
   LANI.lines = lines;
 }
 function drawLaniakea() {
-  const span = viewSpan(), a = sstep(Math.log(span), Math.log(6e7), Math.log(2.5e8)) * (1 - sstep(Math.log(span), Math.log(3e9), Math.log(1.2e10))) * (1 - sstep(PT, 0, 1e-3));
+  const span = viewSpan(), a = sstep(Math.log(span), Math.log(6e7), Math.log(2.5e8)) * (1 - sstep(Math.log(span), Math.log(1.2e9), Math.log(4e9))) * (1 - sstep(PT, 0, 1e-3));
   LANI.a = a; if (a < 0.01) return;
   if (!LANI.lines) laniBuild();
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -1151,6 +1151,7 @@ function drawVoids() {
   for (const v of VOIDS) {
     const [X, Y] = proj(v.x, v.y, v.z), R = v.r * view.s;
     if (R < 6 || R > 30 * Math.max(Wd, Ht)) continue;
+    if (R > 2.4 * Math.max(Wd, Ht) && v !== selected) continue;   // declutter: a void far bigger than the view is just where you are
     if (X + R < 0 || X - R > Wd || Y + R < 0 || Y - R > Ht) continue;
     const sel = v === selected || v === hover;
     // voids aren't balls: each is drawn as a lumpy, somewhat flattened bubble (its measured size, an illustrative shape), so one seen
@@ -1801,7 +1802,7 @@ function drawShape(rg, Rr) {
   ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   { const sw = shapeSwarm(rg), g = Math.min(1, (Rr - 10) / 60) * far, dr = Math.max(0.7, Math.min(1.9, Rr / 160));   // the galaxies (illustrative): the structure is shown by them alone
     ctx.globalCompositeOperation = 'lighter';
-    for (const [halo, k] of [[2.6, 0.12], [1, 0.6]]) for (const pass of [true, false]) {   // each a soft glow round a small bright core, old yellow-white or young blue-white
+    for (const [halo, k] of [[2.6, 0.08], [1, 0.38]]) for (const pass of [true, false]) {   // each a soft glow round a small bright core, old yellow-white or young blue-white
       ctx.fillStyle = pass ? '#ffeccc' : '#d2dcff'; ctx.beginPath();
       for (const q of sw) { if (q.w !== pass) continue; const [X, Y] = proj(q.x, q.y, q.z); if (!(X > -6 && X < Wd + 6 && Y > -6 && Y < Ht + 6)) continue; const r = dr * (0.55 + q.b) * halo; ctx.moveTo(X + r, Y); ctx.arc(X, Y, r, 0, 6.2832); }
       ctx.globalAlpha = g * k; ctx.fill(); }
@@ -1903,6 +1904,10 @@ function drawGalaxies() {
     if (!isFinite(X)) continue;
     if (rg.shape) { drawShape(rg, Rr); continue; }
     if (Rr < 40 || Rr > 40 * Math.max(Wd, Ht)) continue;
+    // declutter: a structure is the subject while it fits on screen; once it's much bigger than the view it's just context, so it fades,
+    // and the debated or proposed ones stay faint unless picked
+    const big = rg.cmb || rg.edge ? 1 : 1 - sstep(Rr, 0.9 * Math.max(Wd, Ht), 2.4 * Math.max(Wd, Ht)), keep = Math.min(1, (Rr - 40) / 50) * big * (rg.debated ? 0.5 : 1);
+    if (keep < 0.04 && rg !== selected) continue;
     if (X + Rr < 0 || X - Rr > Wd || Y + Rr < 0 || Y - Rr > Ht) continue;
     if (PD !== Infinity && Math.hypot(view.x - rg.x, view.y - rg.y, view.z - rg.z) < rg.r) continue;   // zoomed in somewhere inside it: its outline means nothing here
     if (rg.cmb) {   // only from outside, looking at the whole universe; anywhere inside it is just night sky
@@ -1910,7 +1915,7 @@ function drawGalaxies() {
       cmbDraw(X, Y, R0);
     }
     const sel = rg === selected || rg === hover;
-    if (rg.name === 'Laniakea Supercluster' && LANI.a > 0.5 && !sel) { ctx.globalAlpha = 1 - 0.85 * LANI.a; }   // its golden flow stands in for the outline
+    ctx.globalAlpha = sel ? 1 : keep; if (rg.name === 'Laniakea Supercluster' && LANI.a > 0.5 && !sel) ctx.globalAlpha *= 1 - 0.85 * LANI.a;   // its golden flow stands in for the outline
     ctx.strokeStyle = rg.edge ? 'rgba(255,170,120,0.55)' : rg.cmb ? `rgba(150,200,255,${sel ? 0.8 : 0.35})` : `rgba(201,182,255,${sel ? 0.8 : 0.4})`;
     ctx.lineWidth = sel ? 2 : rg.edge ? 2 : 1.2; ctx.setLineDash(rg.edge || rg.cmb ? [] : [6, 6]);
     ctx.beginPath(); ctx.arc(X, Y, Rr, 0, 7); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
@@ -1919,7 +1924,7 @@ function drawGalaxies() {
       gg.addColorStop(0, 'rgba(255,150,100,0)'); gg.addColorStop(0.5, 'rgba(255,150,100,0.25)'); gg.addColorStop(1, 'rgba(255,150,100,0)');
       ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(X, Y, Rr * 1.03, 0, Math.PI * 2); ctx.arc(X, Y, Rr * 0.97, Math.PI * 2, 0, true); ctx.fill();
     }
-    if (opts.labels) {
+    if (opts.labels && (sel || keep > 0.45)) {
       const f = 'italic 14px "IM Fell English", Georgia, serif', t = rg.name.toUpperCase().split('').join('\u200A'), w = lblW(f, t), edge = rg.edge;
       const ly = rg.cmb ? Math.max(40, Y - Rr + 24) : Y - Rr - 10 > 14 ? Y - Rr - 10 : Y + Rr + 14 < Ht ? Y + Rr + 14 : 14, cmb = rg.cmb;   // the CMB's name sits just inside its top edge
       lbl(sel ? -9 : 1, [X - w / 2, ly - 7, w, 14], () => { ctx.font = f; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -3739,7 +3744,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=f2ef4824" data-place="info" defer></script>
+<script src="../music/music.js?v=d2d77f2c" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

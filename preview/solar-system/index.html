@@ -349,12 +349,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=f2ef4824"></script>
-<script src="../shared/clock.js?v=f2ef4824"></script>
-<script src="../shared/fold.js?v=f2ef4824"></script>
-<script src="baked/manifest.js?v=f2ef4824"></script>
-<script src="../shared/perf.js?v=f2ef4824"></script>
-<script src="../shared/galaxy-volume.js?v=f2ef4824"></script>
+<script src="../shared/frame.js?v=d2d77f2c"></script>
+<script src="../shared/clock.js?v=d2d77f2c"></script>
+<script src="../shared/fold.js?v=d2d77f2c"></script>
+<script src="baked/manifest.js?v=d2d77f2c"></script>
+<script src="../shared/perf.js?v=d2d77f2c"></script>
+<script src="../shared/galaxy-volume.js?v=d2d77f2c"></script>
 <script>
 (() => {
 'use strict';
@@ -1289,12 +1289,13 @@ vec2 sunCells(vec3 p, float t) {   // distance to the nearest and second-nearest
     float mu = clamp(dot(normalize(vSunVN), normalize(-vSunVP)), 0.0, 1.0);
     // coloured as NASA's Solar Dynamics Observatory sees it in extreme ultraviolet (304 Å, the chromosphere): a deep orange disc
     // netted with bright magnetic network, lit up by active regions; in visible light the Sun is white
-    vec3 col = vec3(1.0, 0.30, 0.035) * (0.62 + 0.38 * pow(mu, 0.35));                        // a little darker toward the edge…
+    vec3 col = vec3(1.0, 0.22, 0.02) * (0.6 + 0.4 * pow(mu, 0.35));                        // a little darker toward the edge…
     col += vec3(1.0, 0.45, 0.08) * 0.35 * smoothstep(0.22, 0.0, mu);                          // …then a bright rim right at the limb
     float sg = 1.0 - smoothstep(0.3, 0.9, uPix * 23.0 / max(mu, 0.2));                        // the chromospheric network (~30,000 km cells)
     if (sg > 0.0) { vec2 c = sunCells(q * 23.0, uTime * 0.02); float lane = 1.0 - smoothstep(0.0, 0.22, c.y - c.x);
       vec2 c2 = sunCells(q * 61.0 + 3.7, uTime * 0.05); float fine = 1.0 - smoothstep(0.0, 0.3, c2.y - c2.x);
-      col *= 1.0 + sg * (0.9 * lane - 0.28 + 0.35 * fine - 0.12 + 0.2 * (0.45 - c.x)); }
+      float h = fract(sin(dot(floor(q * 23.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453);   // each cell's network lit unevenly, as in SDO's pictures
+      col *= 1.0 + sg * ((0.25 + 0.55 * h) * lane - 0.2 + 0.45 * fine - 0.15 + 0.25 * (0.45 - c.x)); }
     #ifndef UAS_SUN_LITE
     float gv = 1.0 - smoothstep(0.25, 0.7, uPix * 535.0 / max(mu, 0.15));                     // close up: the fine mottling boils
     if (gv > 0.0) { vec2 c = sunCells(q * 535.0, uTime * 0.6); float g = smoothstep(0.0, 0.5, c.y - c.x) * (1.25 - c.x);
@@ -1303,7 +1304,7 @@ vec2 sunCells(vec3 p, float t) {   // distance to the nearest and second-nearest
     for (int i = 0; i < 9; i++) { float d = acos(clamp(dot(q, uSpots[i].xyz), -1.0, 1.0)), r = uSpots[i].w;   // active regions: bright plage round a white-hot core
       vec2 c = sunCells(q * 140.0 + float(i) * 7.0, uTime * 0.04); float knot = 1.0 - smoothstep(0.0, 0.3, c.y - c.x);
       float halo = smoothstep(r * 5.0, r * 1.2, d), core = smoothstep(r * 1.6, r * 0.3, d);
-      col += vec3(1.0, 0.55, 0.12) * halo * (0.35 + 0.9 * knot) + vec3(1.0, 0.9, 0.7) * core * 1.4; }
+      col += vec3(1.0, 0.5, 0.1) * halo * (0.3 + 0.8 * knot) + vec3(1.0, 0.85, 0.6) * core * 1.2; }
     diffuseColor.rgb = col;
   }`).replace('#include <dithering_fragment>',
     '#include <dithering_fragment>\n  if (uOn > 0.5 && dot(normalize(vEclW - cameraPosition), uDir) > uCos) gl_FragColor.rgb = vec3(0.0);');
@@ -4015,7 +4016,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=f2ef4824" data-place="info" defer></script>
+<script src="../music/music.js?v=d2d77f2c" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
