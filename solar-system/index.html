@@ -349,12 +349,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=d58c0a96"></script>
-<script src="../shared/clock.js?v=d58c0a96"></script>
-<script src="../shared/fold.js?v=d58c0a96"></script>
-<script src="baked/manifest.js?v=d58c0a96"></script>
-<script src="../shared/perf.js?v=d58c0a96"></script>
-<script src="../shared/galaxy-volume.js?v=d58c0a96"></script>
+<script src="../shared/frame.js?v=9c65c2f6"></script>
+<script src="../shared/clock.js?v=9c65c2f6"></script>
+<script src="../shared/fold.js?v=9c65c2f6"></script>
+<script src="baked/manifest.js?v=9c65c2f6"></script>
+<script src="../shared/perf.js?v=9c65c2f6"></script>
+<script src="../shared/galaxy-volume.js?v=9c65c2f6"></script>
 <script>
 (() => {
 'use strict';
@@ -1262,7 +1262,7 @@ SUN.root = new THREE.Group(); space.add(SUN.root);
 // The photosphere, alive: granulation (cells ~1,300 km across that boil away in minutes — sped up here so you can see them move),
 // the larger supergranulation network with bright faculae near the edge, and limb darkening, strongest in blue
 // (the edge is cooler and redder because we see less deep into the gas there). The Sun turns once in 25.4 days at its equator about its
-// real pole (RA 286.13°, Dec 63.87°). True colour (white); the network is exaggerated so it shows, and the active regions are illustrative, not today's.
+// real pole (RA 286.13°, Dec 63.87°). True colour (white), as the eye would see it; the active regions are illustrative, not today's.
 SUN.spots = (() => { const r = mulberry32(11), out = [];
   for (let i = 0; i < 9; i++) { const lat = (r() < 0.5 ? -1 : 1) * (7 + r() * 23) * DEG, lon = r() * TAU, rad = 0.006 + Math.pow(r(), 2) * 0.02;
     out.push(new THREE.Vector4(Math.cos(lat) * Math.sin(lon), Math.sin(lat), Math.cos(lat) * Math.cos(lon), rad)); }
@@ -1288,13 +1288,8 @@ vec2 sunCells(vec3 p, float t) {   // distance to the nearest and second-nearest
     vec3 n = normalize(vSunP); float cs = cos(uSpin), sn = sin(uSpin); vec3 q = vec3(cs * n.x + sn * n.z, n.y, -sn * n.x + cs * n.z);   // the turning surface
     float mu = clamp(dot(normalize(vSunVN), normalize(-vSunVP)), 0.0, 1.0);
     // true colour: in space the Sun is white (it peaks in green but puts out every colour, so the eye sees white); the edge is
-    // darker and warmer because there we see only the cooler upper gas. The magnetic network is brightened so its texture shows.
-    vec3 col = 0.9 * vec3(pow(mu, 0.3), pow(mu, 0.4), pow(mu, 0.55)) * vec3(1.0, 0.985, 0.96);   // limb darkening, strongest in blue
-    float sg = 1.0 - smoothstep(0.3, 0.9, uPix * 23.0 / max(mu, 0.2));                        // the chromospheric network (~30,000 km cells)
-    if (sg > 0.0) { vec2 c = sunCells(q * 23.0, uTime * 0.02); float lane = 1.0 - smoothstep(0.0, 0.22, c.y - c.x);
-      vec2 c2 = sunCells(q * 61.0 + 3.7, uTime * 0.05); float fine = 1.0 - smoothstep(0.0, 0.3, c2.y - c2.x);
-      float h = fract(sin(dot(floor(q * 23.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453);   // each cell's network lit unevenly, as in SDO's pictures
-      col *= 1.0 + sg * (0.6 + 0.4 * pow(1.0 - mu, 1.5)) * ((0.25 + 0.55 * h) * lane - 0.2 + 0.45 * fine - 0.15 + 0.25 * (0.45 - c.x)); }
+    // darker and warmer because there we see only the cooler upper gas
+    vec3 col = vec3(pow(mu, 0.3), pow(mu, 0.4), pow(mu, 0.55)) * vec3(1.0, 0.985, 0.96);   // limb darkening, strongest in blue
     #ifndef UAS_SUN_LITE
     float gv = 1.0 - smoothstep(0.25, 0.7, uPix * 535.0 / max(mu, 0.15));                     // close up: the fine mottling boils
     if (gv > 0.0) { vec2 c = sunCells(q * 535.0, uTime * 0.6); float g = smoothstep(0.0, 0.5, c.y - c.x) * (1.25 - c.x);
@@ -1316,6 +1311,46 @@ SUN.corona = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialSprite([[0, 
 SUN.corona.scale.set(SUN.R * 6, SUN.R * 6, 1); SUN.root.add(SUN.corona);
 SUN.glare = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialSprite([[0, 'rgba(255,255,250,1)'], [0.08, 'rgba(255,250,235,1)'], [0.25, 'rgba(255,230,190,0.25)'], [1, 'rgba(255,220,180,0)']]), depthWrite: false, transparent: true, sizeAttenuation: false }));
 SUN.root.add(SUN.glare);
+// Prominences: loops of cooler gas (~10,000 K) held up by magnetic fields above the edge. They glow pink-red in hydrogen-alpha light
+// and are faint beside the white disc — the eye sees them best at a total eclipse, as pink flames round the black Moon. Each one here
+// slowly rises, swells and fades, and now and then one lifts right off; sped up a great deal (real ones take hours to days), and
+// where they appear is illustrative.
+SUN.prom = { u: { uTime: SUN.anim.uTime, uA: { value: 0.35 } } };
+SUN.prom.mesh = new THREE.Mesh(new THREE.PlaneGeometry(SUN.R * 3, SUN.R * 3), new THREE.ShaderMaterial({ uniforms: SUN.prom.u,
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  vertexShader: `varying vec2 vUv;
+    #include <common>
+    #include <logdepthbuf_pars_vertex>
+    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      #include <logdepthbuf_vertex>
+    }`,
+  fragmentShader: `uniform float uTime; uniform float uA; varying vec2 vUv;
+    #include <common>
+    #include <logdepthbuf_pars_fragment>
+    float ph(float n) { return fract(sin(n * 91.345) * 47453.21); }
+    void main() {
+      #include <logdepthbuf_fragment>
+      vec2 p = (vUv - 0.5) * 3.0; float r = length(p); if (r < 0.98 || r > 1.5) discard;   // in units of the Sun's radius
+      float glow = 0.0;
+      for (int i = 0; i < 7; i++) {
+        float fi = float(i), per = 70.0 + 60.0 * ph(fi + 1.0), k = fract(uTime / per + ph(fi + 2.0));   // each loop's life
+        float a = 6.2832 * ph(fi + 3.0) + 0.08 * sin(uTime * 0.01 + fi);                                  // where it stands on the edge
+        vec2 n = vec2(cos(a), sin(a)), t = vec2(-n.y, n.x);
+        bool erupt = ph(fi + 4.0) > 0.7;
+        float w = 0.035 + 0.07 * ph(fi + 5.0), H = 0.05 + 0.12 * ph(fi + 6.0);
+        float rise = erupt ? H * (0.4 + 2.2 * k * k) : H * (0.5 + 0.5 * smoothstep(0.0, 0.6, k));
+        float lift = erupt ? max(0.0, k - 0.55) * 0.5 : 0.0;                                             // an eruption lifts off the surface
+        float x = dot(p, t), y = dot(p, n) - 1.0 - lift;
+        float e = length(vec2(x / w, y / rise)), d = abs(e - 1.0) * min(w, rise);
+        float th = 0.006 + 0.01 * ph(fi + 7.0);
+        float ang = atan(y, x), braid = 0.6 + 0.4 * sin(ang * 9.0 + uTime * 0.15 + fi * 3.0);             // threads along the loop
+        float life = sin(3.1416 * k) * (erupt ? 1.0 - smoothstep(0.7, 1.0, k) : 1.0);
+        glow += life * step(-0.005 - lift, y) * (exp(-d * d / (th * th)) * braid + 0.25 * smoothstep(1.0, 0.0, e) * step(0.0, y));
+      }
+      glow *= smoothstep(1.5, 1.2, r);
+      gl_FragColor = vec4(vec3(1.0, 0.32, 0.42) * glow * uA, 1.0);
+    }` }));
+SUN.prom.mesh.frustumCulled = false; SUN.prom.mesh.renderOrder = 2; SUN.root.add(SUN.prom.mesh);
 
 // ===================================================================
 //  beyond the planets: the Kuiper belt, the heliopause, the Oort cloud — and rings to judge distance by
@@ -3857,6 +3892,9 @@ function frame(t) {
   { // the Sun's surface moves: while it's big enough on screen to see that, keep drawing
     const sp = relOf(SUN).sub(camera.position), d = sp.length(), px = SUN.R / Math.max(d, 1e-9) * innerHeight / (2 * Math.tan(camera.fov * DEG / 2));
     SUN.anim.uSpin.value = (simMs / 86400000 / 25.38 % 1) * TAU; SUN.anim.uPix.value = 1 / Math.max(px, 1e-3);
+    SUN.prom.mesh.visible = px > 12; if (SUN.prom.mesh.visible) {   // the prominences turn to face you; faint in daylight, vivid at totality
+      SUN.prom.mesh.quaternion.copy(SUN.root.getWorldQuaternion(_q3).invert()).multiply(camera.quaternion);
+      SUN.prom.u.uA.value = SKY.on ? 1.6 * sstep(ECL.obsc, 0.97, 1) : 0.45; }
     if (px > 30 && !document.hidden && sp.dot(_sunF.set(0, 0, -1).applyQuaternion(camera.quaternion)) > -SUN.R) { SUN.anim.uTime.value = (performance.now() / 1000) % 10000; IDLE.dirty++; }
   }
   // draw only when something has changed (the camera, the date, a tap, a picture arriving, the Milky Way still sharpening):
@@ -4016,7 +4054,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=d58c0a96" data-place="info" defer></script>
+<script src="../music/music.js?v=9c65c2f6" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
