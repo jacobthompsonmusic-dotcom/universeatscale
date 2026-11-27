@@ -344,12 +344,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=65ce5004"></script>
-<script src="../shared/clock.js?v=65ce5004"></script>
-<script src="../shared/fold.js?v=65ce5004"></script>
-<script src="baked/manifest.js?v=65ce5004"></script>
-<script src="../shared/perf.js?v=65ce5004"></script>
-<script src="../shared/galaxy-volume.js?v=65ce5004"></script>
+<script src="../shared/frame.js?v=31bc9cd3"></script>
+<script src="../shared/clock.js?v=31bc9cd3"></script>
+<script src="../shared/fold.js?v=31bc9cd3"></script>
+<script src="baked/manifest.js?v=31bc9cd3"></script>
+<script src="../shared/perf.js?v=31bc9cd3"></script>
+<script src="../shared/galaxy-volume.js?v=31bc9cd3"></script>
 <script>
 (() => {
 'use strict';
@@ -2454,7 +2454,10 @@ function junoPoles(mat) {
     const im = g.getImageData(0, 0, c.width, c.height), d = im.data, W = c.width, H = c.height, mask = new Uint8Array(W * H);
     for (let i = 0, o = 0; i < W * H; i++, o += 4) { const r = d[o], gg = d[o + 1], b = d[o + 2]; if ((r > 80 && gg > 70 && Math.abs(r - gg) < 80 && (r + gg) / 2 - b > 45 && b < 0.62 * gg) || (r > 150 && gg < 90 && b < 90 && r - gg > 70)) mask[i] = 1; }   // yellow labels (and their dim, antialiased edges), the red pole mark
     const grow = new Uint8Array(mask); for (let y = 5; y < H - 5; y++) for (let x = 5; x < W - 5; x++) if (mask[y * W + x]) for (let dy = -5; dy <= 5; dy++) for (let dx = -5; dx <= 5; dx++) grow[(y + dy) * W + x + dx] = 1;
-    const bl = document.createElement('canvas'); bl.width = W >> 4; bl.height = H >> 4; const bg = bl.getContext('2d'); bg.imageSmoothingQuality = 'high'; bg.drawImage(c, 0, 0, bl.width, bl.height);
+    // fill from the surroundings only: masked pixels made transparent, so shrinking averages just the clean ones
+    const hole = new ImageData(new Uint8ClampedArray(d), W, H); for (let i = 0; i < W * H; i++) if (grow[i]) hole.data[4 * i + 3] = 0;
+    const hc = document.createElement('canvas'); hc.width = W; hc.height = H; hc.getContext('2d').putImageData(hole, 0, 0);
+    const bl = document.createElement('canvas'); bl.width = W >> 4; bl.height = H >> 4; const bg = bl.getContext('2d'); bg.imageSmoothingQuality = 'high'; bg.drawImage(hc, 0, 0, bl.width, bl.height);
     const bd = bg.getImageData(0, 0, bl.width, bl.height).data;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x; if (!grow[i]) continue; const q = 4 * (Math.min(bl.height - 1, y >> 4) * bl.width + Math.min(bl.width - 1, x >> 4)), o = 4 * i; d[o] = bd[q]; d[o + 1] = bd[q + 1]; d[o + 2] = bd[q + 2]; }
     g.putImageData(im, 0, 0);
@@ -3594,7 +3597,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=65ce5004" data-place="info" defer></script>
+<script src="../music/music.js?v=31bc9cd3" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
