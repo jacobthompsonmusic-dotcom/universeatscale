@@ -95,6 +95,10 @@
   #howto-go:hover, #howto-go:focus-visible { background: #f6c886; outline: none; }
   .linkish { display: block; margin: 14px auto 0; background: none; border: 0; cursor: pointer; font: 500 11.5px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
   .linkish:hover, .linkish:focus-visible { color: var(--amber); outline: none; }
+  #journey { display: flex; align-items: center; gap: 9px; margin: 18px auto 0; background: rgba(8,9,14,0.45); border: 1px solid rgba(240,181,106,0.55); border-radius: 999px; padding: 10px 22px; cursor: pointer;
+    font: 400 clamp(16px, 1.9vw, 19px)/1 var(--display); color: var(--amber); }
+  #journey svg { width: 11px; height: 11px; }
+  #journey:hover, #journey:focus-visible { background: rgba(240,181,106,0.14); border-color: var(--amber); outline: none; }
   #enter:focus-visible { box-shadow: 0 0 0 2px var(--sky), 0 0 0 3px rgba(240, 181, 106, 0.7); }
   @keyframes breathe { 50% { opacity: 1; } }
   #status { margin: 18px 0 0; font: 400 12.5px/1.4 var(--mono); letter-spacing: 0.06em; color: var(--dim); min-height: 1.4em; }
@@ -136,7 +140,7 @@
 </head>
 <body>
 <!-- the universe, loading from the moment the page opens -->
-<iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=a6f78138" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
+<iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=a07505f2" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
 
 <div id="howto" role="dialog" aria-modal="true" aria-labelledby="howto-h" hidden>
   <div class="card">
@@ -162,6 +166,7 @@
     <div class="hero">
       <h1>Universe <em>at&nbsp;Scale</em></h1>
       <button id="enter" type="button">Enter the universe</button>
+      <button id="journey" type="button"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1l7 4-7 4z" fill="currentColor"/></svg>Take the five-minute journey</button>
       <p id="status" aria-live="polite">Loading the Solar System…</p>
       <button class="linkish" id="howto-open" type="button">How to explore</button>
       <a class="cue" href="#credits">Credits ↓</a>
@@ -253,7 +258,8 @@
     try { window.gtag && gtag('event', 'enter_universe', { ready }); } catch (e) {}
     const done = () => { wel.hidden = true; wel.classList.remove('leaving'); try { uni.focus(); } catch (e) {}
       let seen = false; try { seen = localStorage.getItem('uas-howto') === '1'; } catch (e) {}
-      if (!seen) showHowto();   // first time in (this browser remembers): how to get around; the ? button brings it back
+      if (!seen && !enter.journey) showHowto();
+      if (enter.journey) { enter.journey = false; let n = 0; const go = () => { try { const w = uni.contentWindow; if (w.UAS_JOURNEY) { w.UAS_JOURNEY(); return; } } catch (e) {} if (++n < 100) setTimeout(go, 200); }; go(); }   // first time in (this browser remembers): how to get around; the ? button brings it back
       try { const w = uni.contentWindow; w.UAS_MUSIC_ARRIVE ? w.UAS_MUSIC_ARRIVE() : w.addEventListener('load', () => w.UAS_MUSIC_ARRIVE && w.UAS_MUSIC_ARRIVE()); } catch (e) {} };   // the soundtrack note pulses as the map comes into view
     if (animate) { wel.classList.add('leaving'); setTimeout(done, 800); } else done();
     if (location.hash !== '#universe') history.pushState(null, '', '#universe');   // Back brings the sign back; a reload goes straight in
@@ -274,6 +280,11 @@
   document.getElementById('enter').onclick = () => {
     try { const w = uni.contentWindow; w.UAS_MUSIC_PLAY && w.UAS_MUSIC_PLAY(); } catch (e) {}   // the click itself starts the soundtrack (browsers need a click for sound)
     enter(true);
+  };
+  document.getElementById('journey').onclick = () => {   // the guided tour: Earth to the edge in five minutes, to the soundtrack
+    try { const w = uni.contentWindow; w.UAS_MUSIC_PLAY && w.UAS_MUSIC_PLAY(); } catch (e) {}
+    try { window.gtag && gtag('event', 'journey_from_sign'); } catch (e) {}
+    enter.journey = true; enter(true);
   };
   addEventListener('popstate', () => { location.hash === '#universe' ? enter(false) : leave(); });
   window.UAS_WELCOME = () => { if (inside) history.pushState(null, '', location.pathname + location.search); leave(); };   // the maps' "← Universe at Scale" link

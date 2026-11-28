@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=a6f78138"></script>
-<script src="../shared/clock.js?v=a6f78138"></script>
-<script src="../shared/fold.js?v=a6f78138"></script>
-<script src="../shared/perf.js?v=a6f78138"></script>
-<script src="../shared/galaxy-volume.js?v=a6f78138"></script>
+<script src="../shared/frame.js?v=a07505f2"></script>
+<script src="../shared/clock.js?v=a07505f2"></script>
+<script src="../shared/fold.js?v=a07505f2"></script>
+<script src="../shared/perf.js?v=a07505f2"></script>
+<script src="../shared/galaxy-volume.js?v=a07505f2"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -1327,6 +1327,7 @@ function render(t) {
   render.lr = t;
   raf = 0; pf(); if (PROF) PROF.n++;
   MWQ.g.frame(t);
+  if (TOUR.spin && !anim && !following) { const dt = TOUR.lt ? Math.min(t - TOUR.lt, 100) : 0; view.yaw += TOUR.spin * dt / 1000; TOUR.lt = t; raf = raf || requestAnimationFrame(render); } else TOUR.lt = 0;
   if (anim) {
     const k = Math.min(1, (t - anim.t0) / anim.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
     const f = anim.from, to = anim.to;
@@ -3855,6 +3856,14 @@ if (EMBED) {
     if (m.cmd === 'search') { parent.postMessage({ src: 'uas-mw', results: searchHere(m.q, 6).filter(o => o.type !== 'sun').map(o => ({ name: o.name, color: TYPES[o.type].color, sub: fmtLy(o.d) })), id: m.id }, '*'); return; }
     if (m.cmd === 'results') { if (m.id !== searchId || !sIn.value.trim()) return; extHits = m.results.map(r => ({ ...r, ext: true })); hits = [...localHits.slice(0, Math.max(4, 10 - extHits.length)), ...extHits]; renderHits(); return; }
     if (m.cmd === 'pick') { following = false; const o = findHere(m.name); if (o) select(o, true); return; }
+    if (m.cmd === 'tour') { following = false;   // the guided journey: a slow, scenic flight to a place (or a whole-scale view), and a gentle turn while it lingers
+      if (m.spin !== undefined) { TOUR.spin = m.spin; TOUR.lt = 0; draw(); }
+      if (m.jump) { anim = null; Object.assign(view, m.jump); draw(); return; }
+      let at = m.at && TOUR_AT[m.at] ? TOUR_AT[m.at]() : null, o = null;
+      if (m.name) { o = findHere(m.name); if (!o) return; select(o); const s = m.span || (m.deep && o.qso ? 60 * o.qso.Rs : spanFor(o)); at = [o.x, o.y, o.z || 0, s]; }
+      else if (m.at) select(null);
+      if (at) flyTo(at[0], at[1], at[2], at[3], { dur: m.dur, raw: !!m.raw, orient: m.orient });
+      return; }
     if (m.cmd === 'snap') { SNAP.id = m.id; draw(); return; }
     if (m.cmd === 'walk') { document.body.classList.toggle('walk', !!m.on); draw(); return; }
     if (m.cmd === 'ssready') ssReady = true;
@@ -3866,6 +3875,8 @@ if (EMBED) {
       else document.getElementById({ milkyway: 'goall', lg: 'golg', lan: 'golan', obs: 'goobs' }[m.key]).onclick(); }
     else if (m.cmd === 'opt') { opts[m.k] = m.on; document.querySelector(`.tg[data-k="${m.k}"]`).classList.toggle('on', m.on); draw(); }
   });
+  { let lw = 0; const user = e => { if (e.type === 'wheel') { const n = performance.now(); if (n - lw < 300) return; lw = n; } parent.postMessage({ src: 'uas-mw', user: 1 }, '*'); };   // a hand on the map ends the guided journey
+    for (const ev of ['pointerdown', 'wheel', 'keydown']) addEventListener(ev, user, { capture: true, passive: true }); }
   parent.postMessage({ src: 'uas-mw', ready: true }, '*');
 }
 if (/[?&]debug=1/.test(location.search)) window.__mw = { NSUN, drawNearSuns, pick, sunDive, get ssReady() { return ssReady; }, PROF, REGIONS, MWQ, PSR, QSO, ACEN, ACEN_A, fieldObj, get selected() { return selected; }, spanFor, GX, gal, view, opts, proj, helioToWorld, draw, SUNW, flyTo, select, OBJ, viewSpan, setupView, gcScale, drawGCNear, drawS2, drawBH, GC, get following() { return following; }, get ssReady() { return ssReady; } };
@@ -3903,6 +3914,9 @@ function searchHere(q, n) {
   const extra = q.length < 2 ? [] : FIELD_IDX.filter(i => fname[i].toLowerCase().includes(q)).slice(0, 40).map(fieldObj);
   return [...main, ...extra].sort((x, y) => score(x) - score(y) || x.pr - y.pr).slice(0, n);
 }
+const TOUR = { spin: 0, lt: 0 };
+const TOUR_AT = { milkyway: () => [0, 4000, 0, 118000], lg: () => { const m = gpos('Andromeda'); return [m.x * 0.5, m.y * 0.5, m.z * 0.5, 3.6e6]; },
+  lan: () => { const r = REGIONS[1]; return [r.x * 0.5, r.y * 0.5, r.z * 0.5, 7e8]; }, obs: () => [0, 0, 0, 1.0e11], gc: () => [GCO.x, GCO.y, GCO.z, 26000] };
 function findHere(name) { return [...OBJ, ...REGIONS, ...VOIDS].find(o => o.name === name) || (() => { const i = FIELD_IDX.find(k => fname[k] === name); return i === undefined ? null : fieldObj(i); })(); }
 function renderHits() {
   let firstExt = true;
@@ -3941,7 +3955,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=a6f78138" data-place="info" defer></script>
+<script src="../music/music.js?v=a07505f2" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

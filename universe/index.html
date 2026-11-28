@@ -76,6 +76,30 @@
   #snapbox .x { position: absolute; top: -12px; right: -10px; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); background: #14151d; color: #c9cede; font-size: 16px; cursor: pointer; }
   #snapbox .hold { display: none; }
   @media (pointer: coarse) { #snapbox .hold { display: inline; } }
+  /* the guided journey: Earth to the edge in five minutes */
+  #tourbtn { position: fixed; z-index: 30; box-sizing: border-box; padding: 0 12px 0 10px; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(255,207,110,0.4); border-radius: 999px;
+    background: rgba(12,13,20,0.72); color: #ffcf6e; cursor: pointer; font: italic 15px/1 "IM Fell English", Georgia, serif; white-space: nowrap; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  #tourbtn[hidden] { display: none; } #tourbtn:hover, #tourbtn:focus-visible { border-color: rgba(255,207,110,0.8); background: rgba(40,32,16,0.8); outline: none; }
+  #tourbtn svg { width: 11px; height: 11px; display: block; }
+  body.walk #tourbtn, body.intro #tourbtn { display: none !important; }
+  #tourfade { position: fixed; inset: 0; z-index: 34; background: #000; opacity: 0; pointer-events: none; transition: opacity 1.4s ease; }
+  #tourcap { position: fixed; z-index: 35; left: 50%; bottom: max(64px, calc(env(safe-area-inset-bottom) + 56px)); transform: translateX(-50%); width: min(640px, calc(100vw - 40px)); text-align: center; pointer-events: none;
+    opacity: 0; transition: opacity 1.1s ease; text-shadow: 0 1px 3px #000, 0 0 18px rgba(0,0,0,0.9); }
+  #tourcap.on { opacity: 1; }
+  #tourcap h2 { margin: 0 0 6px; font: 400 clamp(26px, 3.4vw, 38px)/1.05 "IM Fell English SC", "IM Fell English", Georgia, serif; letter-spacing: 0.05em; color: #f3e6c4; }
+  #tourcap p { margin: 0; font: italic clamp(15px, 1.6vw, 18px)/1.4 "IM Fell English", Georgia, serif; color: #ddd3bb; }
+  #tourbar { position: fixed; z-index: 36; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,0.06); display: none; pointer-events: none; }
+  #tourbar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, rgba(255,207,110,0.3), #ffcf6e); }
+  #tourend { position: fixed; z-index: 36; top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); display: none; border: 1px solid rgba(255,255,255,0.16); border-radius: 999px;
+    background: rgba(12,13,20,0.5); color: #c9cede; padding: 7px 14px; cursor: pointer; font: italic 14px/1 "IM Fell English", Georgia, serif; opacity: 0.7; }
+  #tourend:hover, #tourend:focus-visible { opacity: 1; color: #ffcf6e; outline: none; }
+  body.tour #tourbar, body.tour #tourend { display: block; }
+  body.tour #walkbtn { display: none !important; }
+  #tourdone { position: fixed; z-index: 37; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; gap: 12px; }
+  #tourdone[hidden] { display: none; }
+  #tourdone button { border: 0; border-radius: 999px; padding: 11px 22px; cursor: pointer; font: italic 17px/1 "IM Fell English", Georgia, serif; background: rgba(12,13,20,0.82); color: #e9ecf5; border: 1px solid rgba(255,255,255,0.16); }
+  #tourdone button.main { background: #f0b56a; color: #16110a; border-color: #f0b56a; }
+  @media (prefers-reduced-motion: reduce) { #tourfade, #tourcap { transition-duration: .2s; } }
 </style>
 <style id="globe-type">
   /* clean lining figures for read-outs (distances, dates, coordinates): digits come from a plain system face, letters stay in Fell */
@@ -96,6 +120,12 @@
 <button id="walkbtn" type="button" title="Spacewalk: hide every panel and button — just you and the universe. Tap again to bring them back." aria-label="Spacewalk: hide the panels" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="11" r="7.2"/><path d="M7.6 9.6c0-1.9 2-3.1 4.4-3.1s4.4 1.2 4.4 3.1c0 1.7-2 2.6-4.4 2.6S7.6 11.3 7.6 9.6z"/><path d="M6.4 16.4 5 20.5h14l-1.4-4.1"/></svg></button>
 <button id="helpbtn" type="button" title="How to explore" aria-label="How to explore" hidden>?</button>
 <button id="snapbtn" type="button" title="Take a picture of this view, without the menus or names" aria-label="Take a picture" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3.2l1.6-2.4h6.4L16.8 8H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.2" r="3.6"/></svg></button>
+<button id="tourbtn" type="button" title="A five-minute guided journey from Earth to the edge of the observable universe" aria-label="Take the five-minute journey" hidden><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1l7 4-7 4z" fill="currentColor"/></svg>Journey</button>
+<div id="tourfade" aria-hidden="true"></div>
+<div id="tourcap" aria-live="polite"><h2></h2><p></p></div>
+<div id="tourbar" aria-hidden="true"><i></i></div>
+<button id="tourend" type="button">End journey ×</button>
+<div id="tourdone" hidden><button class="main" type="button" data-a="earth">Back to Earth</button><button type="button" data-a="stay">Explore from here</button><button type="button" data-a="again">Again</button></div>
 <div id="snapbox" role="dialog" aria-label="Your picture" hidden><div class="card"><button class="x" type="button" aria-label="Close">×</button><img alt="A picture of the view"><div class="row"><span class="hold">Press and hold the picture to save it, or</span><a id="snapsave" href="#" download="universe-at-scale.jpg">Save picture</a></div></div></div>
 
 <h1 class="sr-only">From Earth to the Edge of the Universe</h1>
@@ -182,6 +212,7 @@ addEventListener('message', e => {
   const m = e.data; if (!m || typeof m !== 'object') return;
   if (m.snap !== undefined && (e.source === ssEl.contentWindow || e.source === mwEl.contentWindow)) { gotSnap(m); return; }
   if ((m.src === 'uas-ss' && e.source === ssEl.contentWindow && relaySearch(m, true)) || (m.src === 'uas-mw' && e.source === mwEl.contentWindow && relaySearch(m, false))) return;
+  if (m.user && (e.source === ssEl.contentWindow || e.source === mwEl.contentWindow)) { if (TOUR.on && performance.now() > TOUR.grace) tourStop(); return; }
   if (m.src === 'uas-ss' && e.source === ssEl.contentWindow) {
     if (m.ready) {
       st.ssReady = true; toMW({ cmd: 'ssready' }); if (document.body.classList.contains('walk')) toSS({ cmd: 'walk', on: true }); if (parent !== window) post({ contentWindow: parent }, { src: 'uas-uni', ready: true });   /* tells the welcome sign on the home page */ setTimeout(loadMW, LAZY_MW ? 2500 : 600);   // phones too, but a little later: building it mid-zoom (they share one thread) was the big stutter on the way out   // the two maps share one thread: let the first picture appear before the galaxy map starts up
@@ -233,13 +264,14 @@ snapSave.onclick = async e => {   // phones: the share sheet (Save Image); elsew
 snapBox.addEventListener('click', e => { if (e.target === snapBox || e.target.classList.contains('x')) snapBox.hidden = true; });
 addEventListener('keydown', e => { if (e.key === 'Escape' && !snapBox.hidden) snapBox.hidden = true; });
 // sits just left of the soundtrack note, wherever that note has moved to
-const walkBtn = document.getElementById('walkbtn'), helpBtn = document.getElementById('helpbtn');
+const walkBtn = document.getElementById('walkbtn'), helpBtn = document.getElementById('helpbtn'), tourBtn = document.getElementById('tourbtn');
 helpBtn.onclick = () => { try { top.UAS_HOWTO(); } catch (e) {} };   // the how-to card, any time (it lives on the home page)
 (function follow() { const mu = document.querySelector('.uas-mu-btn'); if (mu && !document.body.classList.contains('walk')) { const r = mu.getBoundingClientRect();
   if (r.width) { snapBtn.style.top = walkBtn.style.top = r.top + 'px'; snapBtn.style.right = (innerWidth - r.left + 8) + 'px'; snapBtn.style.height = walkBtn.style.height = r.height + 'px'; snapBtn.hidden = false;
     walkBtn.style.right = (innerWidth - r.left + 8 + snapBtn.offsetWidth + 8) + 'px'; walkBtn.hidden = false;
     let hasHelp = false; try { hasHelp = !!top.UAS_HOWTO; } catch (e) {}
-    if (hasHelp) { helpBtn.style.top = r.top + 'px'; helpBtn.style.height = r.height + 'px'; helpBtn.style.right = (innerWidth - r.left + 8 + snapBtn.offsetWidth + 8 + walkBtn.offsetWidth + 8) + 'px'; helpBtn.hidden = false; } } }
+    if (hasHelp) { helpBtn.style.top = r.top + 'px'; helpBtn.style.height = r.height + 'px'; helpBtn.style.right = (innerWidth - r.left + 8 + snapBtn.offsetWidth + 8 + walkBtn.offsetWidth + 8) + 'px'; helpBtn.hidden = false; }
+    tourBtn.style.top = r.top + 'px'; tourBtn.style.height = r.height + 'px'; tourBtn.style.right = (innerWidth - r.left + 8 + snapBtn.offsetWidth + 8 + walkBtn.offsetWidth + 8 + (hasHelp ? helpBtn.offsetWidth + 8 : 0)) + 'px'; tourBtn.hidden = false; } }
   setTimeout(follow, 300); })();
 // spacewalk: every panel, list and button goes away (in both maps and up here) but this one, which brings them back
 function walk(on) { document.body.classList.toggle('walk', on); walkBtn.setAttribute('aria-pressed', on); walkBtn.setAttribute('aria-label', on ? 'Bring the panels back' : 'Spacewalk: hide the panels');
@@ -250,9 +282,86 @@ window.UAS_INTRO = on => { if (document.body.classList.contains('intro') === on)
   document.body.classList.toggle('walk', on); toSS({ cmd: 'walk', on }); toMW({ cmd: 'walk', on }); };
 addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('walk')) walk(false); });
 
+
+// ---- The journey: five minutes from Earth to the edge of the observable universe, stopping at the sights on the way. ----
+// It drives the two maps with the same messages as the ladder and search, only slower, and lingers at each stop with a caption.
+// Any touch, scroll or key on the map (or End journey) hands control straight back, leaving you wherever the journey had got to.
+const TOUR = { on: false, run: 0, t0: 0, grace: 0, total: 300000 };
+const tFade = document.getElementById('tourfade'), tCap = document.getElementById('tourcap'), tBar = document.querySelector('#tourbar i'), tDone = document.getElementById('tourdone');
+function cap(h, p) { tCap.classList.remove('on'); clearTimeout(cap.t);
+  if (h) cap.t = setTimeout(() => { tCap.querySelector('h2').textContent = h; tCap.querySelector('p').textContent = p || ''; tCap.classList.add('on'); }, tCap.querySelector('h2').textContent ? 700 : 0); }
+const fade = on => { tFade.style.opacity = on ? 1 : 0; };
+function tourStop(finished) {
+  if (!TOUR.on) return; TOUR.on = false; TOUR.run++;
+  document.body.classList.remove('tour'); cap(null); fade(false); tBar.style.width = '0';
+  toSS({ cmd: 'tour', spin: 0 }); toMW({ cmd: 'tour', spin: 0 }); toMW({ cmd: 'opt', k: 'lani', on: TOUR.lani }); if (!finished) toMW({ cmd: 'opt', k: 'cmb', on: TOUR.cmb });
+  if (finished) tDone.hidden = false; else walk(false);
+}
+window.UAS_JOURNEY = function () {
+  if (TOUR.on) return; tDone.hidden = true; loadMW();
+  const run = ++TOUR.run; TOUR.on = true; TOUR.t0 = performance.now(); TOUR.grace = TOUR.t0 + 1500; TOUR.lani = false; TOUR.cmb = false;
+  document.body.classList.add('tour'); walk(true); snapBox.hidden = true;
+  if (typeof gtag === 'function') try { gtag('event', 'journey_start'); } catch (e) {}
+  const live = () => TOUR.on && TOUR.run === run;
+  const wait = ms => new Promise((ok, no) => { const end = performance.now() + ms; (function tick() { if (!live()) return no(); if (performance.now() >= end) return ok(); setTimeout(tick, 100); })(); });
+  const until = (f, max) => new Promise((ok, no) => { const end = performance.now() + max; (function tick() { if (!live()) return no(); if (f() || performance.now() >= end) return ok(); setTimeout(tick, 120); })(); });
+  (function bar() { if (!live()) return; tBar.style.width = Math.min(100, (performance.now() - TOUR.t0) / TOUR.total * 100).toFixed(2) + '%'; requestAnimationFrame(bar); })();
+  const SS = m => toSS(m), MW = m => toMW({ cmd: 'tour', ...m });
+  (async () => {
+    // a cut to black, then up on Earth, wherever you were
+    fade(true); await wait(1500);
+    st.pending = null; st.driver = 'ss'; show(); ssEl.style.opacity = 1; SS({ cmd: 'tour', spin: 0 }); SS({ cmd: 'fly', key: 'earth', dur: 60 }); mark(1e-8);
+    await wait(900); fade(false); SS({ cmd: 'tour', spin: 0.35 });
+    cap('Earth', 'Home: a rocky world 12,742 km across, and everyone who has ever lived.'); await wait(11000);
+    SS({ cmd: 'tour', spin: 0, name: 'Moon', dur: 7000 });
+    cap('The Moon', '384,400 km away. Its light takes 1.3 seconds to reach us.'); await wait(7200); SS({ cmd: 'tour', spin: 0.4 }); await wait(7000);
+    SS({ cmd: 'tour', spin: 0 }); SS({ cmd: 'fly', key: 'saturn', dur: 10000 });
+    cap('Saturn', 'Its rings are 280,000 km wide, yet most of them are only about ten metres thick.'); await wait(10200); SS({ cmd: 'tour', spin: 0.45 }); await wait(8000);
+    SS({ cmd: 'tour', spin: 0 }); SS({ cmd: 'fly', key: 'all', dur: 9000 });
+    cap('The Solar System', 'Eight planets round one star. Sunlight takes about four hours to reach Neptune.'); await wait(9200); SS({ cmd: 'tour', spin: 0.25 }); await wait(6000);
+    SS({ cmd: 'tour', spin: 0 }); SS({ cmd: 'fly', key: 'far', span: 3, dur: 15000 });
+    cap('The Oort cloud', 'A vast shell of icy bodies, home of the long-period comets, a light-year or more out.'); await wait(17000);
+    SS({ cmd: 'fly', key: 'far', span: 6.15, dur: 6000 }); cap(null);
+    await until(() => st.driver === 'mw', 16000); await wait(800);
+    if (st.driver !== 'mw') { loadMW(); toMap(); }   // in case the hand-over hadn't happened yet
+    MW({ name: 'Alpha Centauri', dur: 7000 });
+    cap('Alpha Centauri', 'Our nearest neighbours, 4.4 light-years away: three suns, and at least one planet.'); await wait(13000);
+    MW({ name: 'Orion Nebula', dur: 9000 });
+    cap('The Orion Nebula', 'A nursery of new stars about 1,300 light-years away, visible by eye in Orion’s sword.'); await wait(9200); MW({ spin: 0.05 }); await wait(5800);
+    MW({ spin: 0, name: 'Eagle Nebula', dur: 9000 });
+    cap('The Eagle Nebula', 'Home of the Pillars of Creation, columns of gas light-years tall, 5,700 light-years away.'); await wait(15000);
+    MW({ at: 'gc', dur: 10000 });
+    cap('The heart of the Milky Way', '27,000 light-years from Earth, through the dust, lies the galaxy’s centre.'); await wait(13000);
+    MW({ name: 'Sagittarius A*', span: 1.4e-5, raw: true, dur: 11000 });
+    cap('Sagittarius A*', 'A black hole of 4.3 million suns. The stars round it whip by in orbits of a few years.'); await wait(19000);
+    MW({ name: 'Sagittarius A*', span: 1.2e-6, raw: true, dur: 4500 });
+    cap('Into the event horizon', 'Past this edge nothing, not even light, gets back out. (Here, and only here, we cheat.)');
+    await wait(3200); fade(true); await wait(1800);
+    MW({ at: 'gc', dur: 30 }); await wait(400); MW({ at: 'milkyway', dur: 12000, orient: { yaw: 0.6, tilt: 1.05 } }); await wait(700); fade(false);
+    cap('The Milky Way', 'Out the other side: our galaxy, 100,000 light-years across, with a few hundred billion stars.'); await wait(12200); MW({ spin: 0.035 }); await wait(4000);
+    MW({ spin: 0, name: 'Andromeda Galaxy (M31)', dur: 11000 });
+    cap('Andromeda', 'The nearest big galaxy. Its light set off 2.5 million years ago, when our ancestors made the first stone tools.'); await wait(11200); MW({ spin: 0.04 }); await wait(5000);
+    MW({ spin: 0, at: 'lg', dur: 8000 });
+    cap('The Local Group', 'The Milky Way, Andromeda and about a hundred smaller galaxies, bound together by gravity.'); await wait(13000);
+    toMW({ cmd: 'opt', k: 'lani', on: true }); MW({ at: 'lan', dur: 11000 });
+    cap('Laniakea', 'Our supercluster, 500 million light-years across: about 100,000 galaxies, all flowing the same way.'); await wait(18000);
+    toMW({ cmd: 'opt', k: 'lani', on: false }); MW({ name: 'TON 618', deep: true, dur: 12000 });
+    cap('TON 618', 'One of the heaviest black holes known, about 40 billion suns. This light left it some 11 billion years ago.'); await wait(19000);
+    MW({ at: 'obs', dur: 13000 });
+    cap('The observable universe', '93 billion light-years across, and hundreds of billions of galaxies, as far as light has had time to reach us.'); await wait(15000);
+    toMW({ cmd: 'opt', k: 'cmb', on: true }); MW({ spin: 0.02 });
+    cap('The edge', 'The afterglow of the Big Bang: light that has travelled for 13.8 billion years. Nothing we can see lies farther.'); await wait(16000);
+    cap(null); await wait(1200); tourStop(true);
+  })().catch(() => {});
+};
+tourBtn.onclick = () => { try { window.UAS_MUSIC_PLAY && window.UAS_MUSIC_PLAY(); } catch (e) {} window.UAS_JOURNEY(); };   // with the soundtrack
+document.getElementById('tourend').onclick = () => tourStop();
+tDone.onclick = e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; tDone.hidden = true; toMW({ cmd: 'opt', k: 'cmb', on: false });
+  if (a === 'again') window.UAS_JOURNEY(); else { walk(false); if (a === 'earth') go('earth'); } };
+addEventListener('keydown', e => { if (e.key === 'Escape' && TOUR.on) tourStop(); });
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-const UAS_V = 'a6f78138';
+const UAS_V = 'a07505f2';
 const MW_SRC = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
 ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 // phones: load the galaxy map only once it's needed — zooming out past the Oort cloud, or a stop or search result out there —
@@ -262,9 +371,9 @@ if (STOPS[start].map === 'mw') loadMW();
 else if (!LAZY_MW) setTimeout(loadMW, 4000);   // desktop: after the Solar System is up (see its ready message), or 4 s at the latest
 })();
 </script>
-<script src="../shared/fold.js?v=a6f78138"></script>
+<script src="../shared/fold.js?v=a07505f2"></script>
 <script>UAS_FOLD.foldable(document.getElementById('ladder'), { title: 'Scale', arrow: '▾', onToggle: () => dispatchEvent(new Event('resize')) });   // the soundtrack note below it moves up</script>
-<script src="../music/music.js?v=a6f78138" data-place="ladder" defer></script>
+<script src="../music/music.js?v=a07505f2" data-place="ladder" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

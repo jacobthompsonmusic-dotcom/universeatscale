@@ -349,12 +349,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="../shared/frame.js?v=a6f78138"></script>
-<script src="../shared/clock.js?v=a6f78138"></script>
-<script src="../shared/fold.js?v=a6f78138"></script>
-<script src="baked/manifest.js?v=a6f78138"></script>
-<script src="../shared/perf.js?v=a6f78138"></script>
-<script src="../shared/galaxy-volume.js?v=a6f78138"></script>
+<script src="../shared/frame.js?v=a07505f2"></script>
+<script src="../shared/clock.js?v=a07505f2"></script>
+<script src="../shared/fold.js?v=a07505f2"></script>
+<script src="baked/manifest.js?v=a07505f2"></script>
+<script src="../shared/perf.js?v=a07505f2"></script>
+<script src="../shared/galaxy-volume.js?v=a07505f2"></script>
 <script>
 (() => {
 'use strict';
@@ -2284,7 +2284,7 @@ function flyTo(o, dist, dir, dur) {
 function preset(dir, dist) { if (SKY.on) { skyOff(true); camera.position.copy(SKY.up).multiplyScalar(EARTH.R * 4); controls.target.set(0, 0, 0); } fly = { o: focus, t0: performance.now(), dur: 1400, fromPos: camera.position.clone(), fromTgt: controls.target.clone(), dist: dist || camera.position.distanceTo(controls.target), dir: dir.clone().normalize(), travel: 0 }; }
 // The flight keeps its destination in the middle of the view the whole way: the eye turns to it in the first moment, then the camera
 // swings smoothly round it (along a great circle) while closing in, so the planet grows in place instead of arriving from the side.
-let entry = null;   // the zoom speed handed on by the galaxy map (e-folds per ms) and when
+let entry = null, TOURSPIN = 0;   // the zoom speed handed on by the galaxy map (e-folds per ms) and when
 function stepFly(t) {
   const k = Math.min(1, (t - fly.t0) / fly.dur), m0 = fly.m0 || 0;
   // eased in and out; or, carrying on from the galaxy map, starting at its speed (a Hermite curve with that initial slope) and easing out
@@ -3849,6 +3849,7 @@ function frame(t) {
   if (SKY.on) skyCamera();
   else { if (fly) stepFly(t);
     if (HX.tw && !fly) { const k = Math.min(1, (performance.now() - HX.tw.t0) / HX.tw.dur), e = k * k * (3 - 2 * k); camera.position.lerpVectors(HX.tw.from, HX.tw.to, e); if (k >= 1) HX.tw = null; }
+    controls.autoRotate = !!TOURSPIN && !fly && !HX.tw; controls.autoRotateSpeed = TOURSPIN;
     controls.update(); keepOutside(); }
   const camD = camera.position.distanceTo(controls.target), pxs = innerHeight / 2 / Math.tan(camera.fov * DEG / 2), p = new THREE.Vector3();
   updateHelix(camD);
@@ -3965,6 +3966,8 @@ function enterFrom(s, yaw, tilt) {
   const r = Math.min(MAXD, innerHeight / s * LY / (2 * TAN20)), ph = THREE.MathUtils.clamp(tilt, 0.002, Math.PI - 0.002), th = yaw + MW_AZ;
   controls.target.set(0, 0, 0); camera.position.set(r * Math.sin(ph) * Math.sin(th), r * Math.cos(ph), r * Math.sin(ph) * Math.cos(th)); controls.update(); lastPost = '';
 }
+if (EMBED) { let lw = 0; const user = e => { if (e.type === 'wheel') { const n = performance.now(); if (n - lw < 300) return; lw = n; } parent.postMessage({ src: 'uas-ss', user: 1 }, '*'); };   // a hand on the map ends the guided journey
+  for (const ev of ['pointerdown', 'wheel', 'keydown']) addEventListener(ev, user, { capture: true, passive: true }); }
 if (EMBED) addEventListener('message', e => {
   const m = e.data; if (!m || m.to !== 'uas-ss') return;
   if (m.cmd === 'search') {   // the galaxy map's search box asking what's here
@@ -3981,7 +3984,9 @@ if (EMBED) addEventListener('message', e => {
   if (m.cmd === 'pause') paused = true;
   else if (m.cmd === 'resume') wake();
   else if (m.cmd === 'enter') { enterFrom(m.s, m.yaw, m.tilt); entry = m.rate ? { rate: m.rate, t: performance.now() } : null; wake(); }
-  else if (m.cmd === 'fly') { wake(); if (m.key === 'all') document.getElementById('p-all').onclick(); else if (m.key === 'far') goFar(m.span); else if (byKey(m.key)) flyTo(byKey(m.key)); }
+  else if (m.cmd === 'fly') { wake(); if (m.key === 'all') document.getElementById('p-all').onclick(); else if (m.key === 'far') goFar(m.span); else if (byKey(m.key)) flyTo(byKey(m.key)); if (m.dur && fly) fly.dur = m.dur; }
+  else if (m.cmd === 'tour') { wake(); if (SKY.on) skyOff(true); if (m.spin !== undefined) TOURSPIN = m.spin;   // the guided journey
+    if (m.name) { const o = [...LIST, ...PROBES].find(x => x.name === m.name); if (o) { flyTo(o, m.dist ? defaultDist(o) * m.dist : undefined, undefined, m.dur); select(o); } } }
   else if (m.cmd === 'opt') { if (opts[m.k] !== m.on) document.querySelector(`.tg[data-k="${m.k}"]`).click(); }
 });
 
@@ -4067,7 +4072,7 @@ function init() {
 setTimeout(init, 30);
 })();
 </script>
-<script src="../music/music.js?v=a6f78138" data-place="info" defer></script>
+<script src="../music/music.js?v=a07505f2" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
