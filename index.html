@@ -118,6 +118,13 @@
   a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule); }
   a:hover, a:focus-visible { color: var(--amber); border-color: var(--amber); outline: none; }
 
+  .gal { text-align: center; }
+  .gal p { max-width: 52ch; margin: 0 auto; color: var(--dim); font-size: 15px; }
+  #galstrip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 26px 0 0; }
+  #galstrip:empty { display: none; }
+  #galstrip a { display: block; border: 1px solid rgba(236,231,221,0.08); border-radius: 10px; overflow: hidden; aspect-ratio: 16 / 10; }
+  #galstrip img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+  #galstrip a:hover img, #galstrip a:focus-visible img { transform: scale(1.04); }
   .support { text-align: center; }
   .support p { max-width: 50ch; margin: 0 auto; color: var(--dim); font-size: 15px; }
   .give { display: inline-block; margin-top: 20px; font: 500 14px/1 var(--body); color: var(--amber); background: none; border: 1px solid rgba(240, 181, 106, 0.5); border-radius: 999px; padding: 11px 22px; cursor: pointer; }
@@ -140,7 +147,7 @@
 </head>
 <body>
 <!-- the universe, loading from the moment the page opens -->
-<iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=b91b7bde" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
+<iframe id="uni" title="Universe at Scale: from Earth to the edge of the universe" src="universe/index.html?v=da3a1744" allow="autoplay; encrypted-media; fullscreen" inert></iframe>
 
 <div id="howto" role="dialog" aria-modal="true" aria-labelledby="howto-h" hidden>
   <div class="card">
@@ -188,6 +195,13 @@
       <p class="more"><a href="credits/">Full credits, sources &amp; what's illustrative →</a></p>
     </section>
 
+    <section class="gal" id="gallery" aria-labelledby="gallery-h">
+      <h2 id="gallery-h">Gallery</h2>
+      <p>Pictures taken inside the map with its camera button. Take one of your own and send it in.</p>
+      <div id="galstrip"></div>
+      <p class="more"><a href="gallery/">See the gallery &amp; share yours →</a></p>
+    </section>
+
     <section class="support" id="support" hidden aria-labelledby="support-h">
       <h2 id="support-h">Support the site</h2>
       <p>Universe at Scale is free and has no ads. If it gave you a new sense of where we are, you can chip in to help keep it growing.</p>
@@ -202,6 +216,13 @@
   </div>
 </div>
 
+<script src="gallery/photos.js" defer></script>
+<script>
+addEventListener('DOMContentLoaded', () => {   // a strip of the six newest gallery pictures
+  const P = (window.UAS_GALLERY || []).slice(-6).reverse(), box = document.getElementById('galstrip');
+  for (const p of P) { const a = document.createElement('a'), i = new Image(); a.href = 'gallery/'; a.title = p.title; i.src = 'gallery/shots/' + (p.thumb || p.src); i.alt = p.title; i.loading = 'lazy'; i.decoding = 'async'; a.appendChild(i); box.appendChild(a); }
+});
+</script>
 <script>
 (() => {
   // where the tip button goes; the Support section stays hidden until this is set

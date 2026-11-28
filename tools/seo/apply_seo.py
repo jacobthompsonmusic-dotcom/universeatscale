@@ -50,6 +50,10 @@ PAGES = {
         path='/credits/', og='home', crumb='Credits & sources', page=True,
         title='Credits & Sources | Universe at Scale',
         desc='Where every measurement on Universe at Scale comes from: NASA JPL orbits, Gaia star distances, GRAVITY, maser-mapped spiral arms and more, plus picture credits and what is illustrative.'),
+    'gallery/index.html': dict(
+        path='/gallery/', og='home', crumb='Gallery', page=True,
+        title='Gallery | Universe at Scale',
+        desc='Pictures taken inside Universe at Scale: planets, eclipses, nebulae and galaxies, each where the measurements put it. Send in your own.'),
 }
 
 FAQ = [
