@@ -315,7 +315,7 @@ window.UAS_JOURNEY = function () {
     cap('Earth', 'Home: a rocky world 12,742 km across, and everyone who has ever lived.'); await wait(11000);
     SS({ cmd: 'tour', spin: 0, name: 'Moon', dur: 7000 });
     cap('The Moon', '384,400 km away. Its light takes 1.3 seconds to reach us.'); await wait(7200); SS({ cmd: 'tour', spin: 0.4 }); await wait(7000);
-    SS({ cmd: 'tour', spin: 0 }); SS({ cmd: 'fly', key: 'saturn', dur: 10000 });
+    SS({ cmd: 'tour', spin: 0, name: 'Saturn', distR: 6.5, dur: 10000 });
     cap('Saturn', 'Its rings are 280,000 km wide, yet most of them are only about ten metres thick.'); await wait(10200); SS({ cmd: 'tour', spin: 0.45 }); await wait(8000);
     SS({ cmd: 'tour', spin: 0 }); SS({ cmd: 'fly', key: 'all', dur: 9000 });
     cap('The Solar System', 'Eight planets round one star. Sunlight takes about four hours to reach Neptune.'); await wait(9200); SS({ cmd: 'tour', spin: 0.25 }); await wait(6000);
@@ -330,21 +330,20 @@ window.UAS_JOURNEY = function () {
     cap('The Orion Nebula', 'A nursery of new stars about 1,300 light-years away, visible by eye in Orion’s sword.'); await wait(9200); MW({ spin: 0.05 }); await wait(5800);
     MW({ spin: 0, name: 'Eagle Nebula', dur: 9000 });
     cap('The Eagle Nebula', 'Home of the Pillars of Creation, columns of gas light-years tall, 5,700 light-years away.'); await wait(15000);
-    MW({ at: 'gc', dur: 10000 });
-    cap('The heart of the Milky Way', '27,000 light-years from Earth, through the dust, lies the galaxy’s centre.'); await wait(13000);
-    MW({ name: 'Sagittarius A*', span: 1.4e-5, raw: true, dur: 11000 });
-    cap('Sagittarius A*', 'A black hole of 4.3 million suns. The stars round it whip by in orbits of a few years.'); await wait(19000);
+    MW({ name: 'Sagittarius A*', span: 1.4e-5, raw: true, dur: 14000 });
+    cap('The heart of the Milky Way', '27,000 light-years away, hidden behind the dust, lies the centre of our galaxy.'); await wait(8500);
+    cap('Sagittarius A*', 'A black hole of 4.3 million suns. The stars round it whip by in orbits of a few years.'); await wait(14500);
     MW({ name: 'Sagittarius A*', span: 1.2e-6, raw: true, dur: 4500 });
     cap('Into the event horizon', 'Past this edge nothing, not even light, gets back out. (Here, and only here, we cheat.)');
     await wait(3200); fade(true); await wait(1800);
-    MW({ at: 'gc', dur: 30 }); await wait(400); MW({ at: 'milkyway', dur: 12000, orient: { yaw: 0.6, tilt: 1.05 } }); await wait(700); fade(false);
+    MW({ at: 'gc', dur: 30 }); await wait(400); MW({ at: 'milkyway', span: 96000, dur: 12000, orient: { yaw: 0.6, tilt: 1.05 } }); await wait(700); fade(false);
     cap('The Milky Way', 'Out the other side: our galaxy, 100,000 light-years across, with a few hundred billion stars.'); await wait(12200); MW({ spin: 0.035 }); await wait(4000);
     MW({ spin: 0, name: 'Andromeda Galaxy (M31)', dur: 11000 });
-    cap('Andromeda', 'The nearest big galaxy. Its light set off 2.5 million years ago, when our ancestors made the first stone tools.'); await wait(11200); MW({ spin: 0.04 }); await wait(5000);
+    cap('Andromeda', 'The nearest big galaxy. Its light set off 2.5 million years ago, when our ancestors made the first stone tools.'); await wait(11200); MW({ spin: 0.04 }); await wait(7000);
     MW({ spin: 0, at: 'lg', dur: 8000 });
     cap('The Local Group', 'The Milky Way, Andromeda and about a hundred smaller galaxies, bound together by gravity.'); await wait(13000);
     toMW({ cmd: 'opt', k: 'lani', on: true }); MW({ at: 'lan', dur: 11000 });
-    cap('Laniakea', 'Our supercluster, 500 million light-years across: about 100,000 galaxies, all flowing the same way.'); await wait(18000);
+    cap('Laniakea', 'Our supercluster, 500 million light-years across: about 100,000 galaxies, all flowing the same way.'); await wait(20000);
     toMW({ cmd: 'opt', k: 'lani', on: false }); MW({ name: 'TON 618', deep: true, dur: 12000 });
     cap('TON 618', 'One of the heaviest black holes known, about 40 billion suns. This light left it some 11 billion years ago.'); await wait(19000);
     MW({ at: 'obs', dur: 13000 });
@@ -361,7 +360,7 @@ tDone.onclick = e => { const a = e.target.dataset && e.target.dataset.a; if (!a)
 addEventListener('keydown', e => { if (e.key === 'Escape' && TOUR.on) tourStop(); });
 addEventListener('hashchange', () => go(hash()));
 show(); mark(Math.pow(10, STOPS[start].log));
-const UAS_V = 'a07505f2';
+const UAS_V = 'e12e047e';
 const MW_SRC = '../milky-way/index.html?v=' + UAS_V + dbg.replace('?', '&');
 ssEl.src = '../solar-system/index.html?v=' + UAS_V + dbg.replace('?', '&');
 // phones: load the galaxy map only once it's needed — zooming out past the Oort cloud, or a stop or search result out there —
@@ -371,9 +370,9 @@ if (STOPS[start].map === 'mw') loadMW();
 else if (!LAZY_MW) setTimeout(loadMW, 4000);   // desktop: after the Solar System is up (see its ready message), or 4 s at the latest
 })();
 </script>
-<script src="../shared/fold.js?v=a07505f2"></script>
+<script src="../shared/fold.js?v=e12e047e"></script>
 <script>UAS_FOLD.foldable(document.getElementById('ladder'), { title: 'Scale', arrow: '▾', onToggle: () => dispatchEvent(new Event('resize')) });   // the soundtrack note below it moves up</script>
-<script src="../music/music.js?v=a07505f2" data-place="ladder" defer></script>
+<script src="../music/music.js?v=e12e047e" data-place="ladder" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>

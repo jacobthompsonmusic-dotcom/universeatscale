@@ -193,11 +193,11 @@
 <canvas id="bh"></canvas>
 <canvas id="tw" aria-hidden="true"></canvas>
 <div id="bhnote"><b>Sagittarius A*</b> · 4.3 million Suns · every pixel's light traced back through curved spacetime (non-spinning hole) · the gas is hot, thin and puffy, brighter on the side swinging toward us · false colour, after the Event Horizon Telescope · time ×120: the bright flare circles in about 50 minutes</div>
-<script src="../shared/frame.js?v=a07505f2"></script>
-<script src="../shared/clock.js?v=a07505f2"></script>
-<script src="../shared/fold.js?v=a07505f2"></script>
-<script src="../shared/perf.js?v=a07505f2"></script>
-<script src="../shared/galaxy-volume.js?v=a07505f2"></script>
+<script src="../shared/frame.js?v=e12e047e"></script>
+<script src="../shared/clock.js?v=e12e047e"></script>
+<script src="../shared/fold.js?v=e12e047e"></script>
+<script src="../shared/perf.js?v=e12e047e"></script>
+<script src="../shared/galaxy-volume.js?v=e12e047e"></script>
 <script type="x-shader/x-fragment" id="bh-fs">precision highp float;
 uniform vec2 uRes, uC; uniform float uPx;        // screen centre of the hole (device px, y up) and pixels per Schwarzschild radius
 uniform vec3 uR, uU, uF;                          // screen right, screen up and toward-the-viewer, in the disc's frame (disc normal = +z)
@@ -3862,6 +3862,7 @@ if (EMBED) {
       let at = m.at && TOUR_AT[m.at] ? TOUR_AT[m.at]() : null, o = null;
       if (m.name) { o = findHere(m.name); if (!o) return; select(o); const s = m.span || (m.deep && o.qso ? 60 * o.qso.Rs : spanFor(o)); at = [o.x, o.y, o.z || 0, s]; }
       else if (m.at) select(null);
+      if (at && m.span && !m.name) at[3] = m.span;
       if (at) flyTo(at[0], at[1], at[2], at[3], { dur: m.dur, raw: !!m.raw, orient: m.orient });
       return; }
     if (m.cmd === 'snap') { SNAP.id = m.id; draw(); return; }
@@ -3955,7 +3956,7 @@ view.s = fitScale(); view.x = 0; view.y = 4000; view.z = 0; view.tilt = 48 * DEG
 draw();
 })();
 </script>
-<script src="../music/music.js?v=a07505f2" data-place="info" defer></script>
+<script src="../music/music.js?v=e12e047e" data-place="info" defer></script>
 <script>/* keep the site's files on the device for fast repeat visits (sw.js) */ if ('serviceWorker' in navigator && /(^|\.)universeatscale\.com$/.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 </body>
 </html>
